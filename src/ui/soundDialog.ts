@@ -5,7 +5,7 @@ import type { SoundMeta, SoundStore } from '../sounds/soundStore';
 import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
-import { byId } from './dom';
+import { byId, closeOnBackdropClick } from './dom';
 import type { Toast } from './toast';
 
 type SlotKey = 'accentSoundId' | 'normalSoundId';
@@ -175,6 +175,7 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
     dialog.showModal();
     void refresh();
   });
+  closeOnBackdropClick(dialog);
 
   store.subscribe((s, prev) => {
     if (s.accentSoundId !== prev.accentSoundId || s.normalSoundId !== prev.normalSoundId) render(s);

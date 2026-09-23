@@ -1,27 +1,75 @@
 :root {
   color-scheme: dark;
-  --bg: #141416;
-  --bg-hi: #1d1d20;
-  --panel: #232327;
-  --panel-lo: #1a1a1d;
-  --edge: #0c0c0e;
-  --line: #34343a;
-  --text: #ececf0;
-  --muted: #8d8d96;
-  --pink: #ff2f7d;
-  --pink-soft: rgb(255 47 125 / 0.35);
-  --radius: 18px;
-  /* Visualiser palette, read by the canvas renderers */
-  --viz-ring: #b9b9c0;
-  --viz-spoke: #8e8e96;
-  --viz-node: #d23c73;
-  --viz-accent: #ff2f7d;
-  --viz-node-idle: #5a5a62;
-  --viz-hand: #ff2f7d;
-  --viz-label: #b5b5bd;
-  --viz-glow: #ff2f7d;
-  --viz-core: #fff3f7;
-  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* Neutrals: identical across every theme — only the accent family below changes. */
+  --bg: #141310;
+  --bg-hi: #1d1b15;
+  --panel: #221f18;
+  --panel-lo: #17150f;
+  --edge: #090805;
+  --line: #443f30;
+  --text: #f2ead9;
+  --muted: #a2967d;
+  --radius: 4px;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
+
+  /* Accent family (theme: Teal, default) — one hue, three roles */
+  --pink: #4fb894;
+  --pink-soft: rgb(79 184 148 / 0.3);
+  --select: #4fb894;
+  --select-soft: rgb(79 184 148 / 0.28);
+  --brass: #7fe0bb;
+  --brass-soft: rgb(127 224 187 / 0.35);
+  --copper: #2f7a5f;
+  --viz-ring: #55665f;
+  --viz-spoke: #3a453f;
+  --viz-node: #2f7a5f;
+  --viz-accent: #7fe0bb;
+  --viz-node-idle: #3a453f;
+  --viz-hand: #4fb894;
+  --viz-label: #9db0a7;
+  --viz-glow: #7fe0bb;
+  --viz-core: #f0fff8;
+}
+
+/* Theme: Amber — brass/copper accent (matches a real metronome's pendulum) */
+:root[data-theme="amber"] {
+  --pink: #d99a3f;
+  --pink-soft: rgb(217 154 63 / 0.3);
+  --select: #d99a3f;
+  --select-soft: rgb(217 154 63 / 0.28);
+  --brass: #f0be6a;
+  --brass-soft: rgb(240 190 106 / 0.35);
+  --copper: #8a5a2e;
+  --viz-ring: #6d6248;
+  --viz-spoke: #4a4330;
+  --viz-node: #8a5a2e;
+  --viz-accent: #f0be6a;
+  --viz-node-idle: #4a4330;
+  --viz-hand: #d99a3f;
+  --viz-label: #a89772;
+  --viz-glow: #f0be6a;
+  --viz-core: #fff6e8;
+}
+
+/* Theme: Yellow — bright gold accent */
+:root[data-theme="yellow"] {
+  --pink: #e8c445;
+  --pink-soft: rgb(232 196 69 / 0.32);
+  --select: #e8c445;
+  --select-soft: rgb(232 196 69 / 0.3);
+  --brass: #f5dc7a;
+  --brass-soft: rgb(245 220 122 / 0.35);
+  --copper: #9c7a1f;
+  --viz-ring: #706a48;
+  --viz-spoke: #4c472e;
+  --viz-node: #9c7a1f;
+  --viz-accent: #f5dc7a;
+  --viz-node-idle: #4c472e;
+  --viz-hand: #e8c445;
+  --viz-label: #b1a678;
+  --viz-glow: #f5dc7a;
+  --viz-core: #fffbe8;
 }
 
 * {
@@ -86,14 +134,15 @@ svg.stroke {
 }
 .title {
   margin: 0;
-  font-size: 20px;
+  font-family: var(--serif);
+  font-size: 21px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
 }
 .seg {
   display: inline-flex;
-  padding: 3px;
-  border-radius: 999px;
+  padding: 2px;
+  border-radius: 8px;
   background: var(--panel-lo);
   border: 1px solid var(--line);
 }
@@ -101,21 +150,19 @@ svg.stroke {
   border: 0;
   background: transparent;
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 13px;
   color: var(--muted);
 }
 .seg-btn[aria-checked="true"] {
   background: var(--panel);
-  color: var(--text);
-  box-shadow:
-    0 0 0 1px var(--pink),
-    0 0 12px var(--pink-soft);
+  color: var(--select);
+  box-shadow: inset 0 0 0 1px var(--select);
 }
 
 .stage {
   position: relative;
-  width: min(100%, 58vh);
+  width: min(100%, 58svh, 320px);
   aspect-ratio: 1;
   margin: 0 auto;
 }
@@ -132,12 +179,9 @@ svg.stroke {
   height: var(--hub, 96px);
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 3px solid var(--edge);
-  background: radial-gradient(circle at 50% 30%, #3b3b41, #151517 70%);
-  box-shadow:
-    0 0 0 3px var(--pink),
-    0 0 26px var(--pink-soft),
-    inset 0 2px 4px rgb(255 255 255 / 0.08);
+  border: 2px solid var(--pink);
+  background: var(--panel);
+  box-shadow: 0 0 0 6px var(--bg);
   color: var(--pink);
   display: grid;
   place-items: center;
@@ -149,7 +193,6 @@ svg.stroke {
 .play-btn svg {
   width: 42%;
   height: 42%;
-  filter: drop-shadow(0 0 6px var(--pink-soft));
 }
 .play-btn .icon-pause,
 .play-btn[aria-pressed="true"] .icon-play {
@@ -168,12 +211,11 @@ svg.stroke {
 }
 .panel {
   position: relative;
-  background: linear-gradient(180deg, #2a2a2f, #1f1f23);
-  border: 1px solid var(--edge);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 1px solid var(--pink-soft);
   border-radius: var(--radius);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.05),
-    0 10px 30px rgb(0 0 0 / 0.45);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
   padding: 14px 16px;
 }
 .beats {
@@ -193,21 +235,26 @@ svg.stroke {
   border: 0;
   font-size: 12px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   display: grid;
   place-items: center;
   color: #fff;
 }
 .beat.level-accent {
-  background: radial-gradient(circle at 35% 30%, #ff8cb5, var(--pink) 55%, #a0164a);
-  box-shadow: 0 0 14px var(--pink-soft);
+  background:
+    radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0) 45%),
+    radial-gradient(circle at 50% 60%, transparent 55%, rgb(0 0 0 / 0.4) 100%), var(--brass);
+  box-shadow: 0 0 12px var(--brass-soft);
 }
 .beat.level-normal {
-  background: radial-gradient(circle at 35% 30%, #e7729f, var(--viz-node) 55%, #6d1a3a);
+  background:
+    radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0) 45%),
+    radial-gradient(circle at 50% 60%, transparent 55%, rgb(0 0 0 / 0.4) 100%), var(--copper);
 }
 .beat.level-mute {
   background: transparent;
-  box-shadow: inset 0 0 0 2px var(--viz-node-idle);
-  color: var(--viz-node-idle);
+  box-shadow: inset 0 0 0 2px var(--line);
+  color: var(--muted);
   text-decoration: line-through;
 }
 
@@ -219,28 +266,7 @@ svg.stroke {
   padding: 22px 18px;
 }
 .bolt {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #9a9aa0, #3a3a40);
-  box-shadow: inset 0 0 0 1px #111;
-}
-.bolt.tl {
-  top: 8px;
-  left: 8px;
-}
-.bolt.tr {
-  top: 8px;
-  right: 8px;
-}
-.bolt.bl {
-  bottom: 8px;
-  left: 8px;
-}
-.bolt.br {
-  bottom: 8px;
-  right: 8px;
+  display: none;
 }
 .col {
   display: grid;
@@ -253,12 +279,9 @@ svg.stroke {
 .square-btn {
   width: 64px;
   height: 64px;
-  border-radius: 14px;
-  border: 2px solid var(--edge);
-  background: linear-gradient(180deg, #1c1c1f, #141416);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 4px 10px rgb(0 0 0 / 0.5);
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-lo);
   display: grid;
   place-items: center;
 }
@@ -351,8 +374,9 @@ svg.stroke {
   pointer-events: none;
 }
 .bpm-value {
+  font-family: var(--serif);
   font-size: clamp(28px, 9vw, 40px);
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -367,10 +391,10 @@ svg.stroke {
   gap: 12px;
 }
 .nudge {
-  width: 40px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid var(--edge);
+  width: 44px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
   background: var(--panel-lo);
   font-size: 18px;
   line-height: 1;
@@ -414,8 +438,9 @@ svg.stroke {
   overflow: auto;
   background: var(--panel);
   color: var(--text);
-  border: 1px solid var(--edge);
-  border-radius: 18px;
+  border: 1px solid var(--line);
+  border-top: 1px solid var(--pink-soft);
+  border-radius: 8px;
   padding: 18px 20px 22px;
   box-shadow: 0 20px 60px rgb(0 0 0 / 0.6);
 }
@@ -457,9 +482,9 @@ svg.stroke {
 }
 .chip[aria-checked="true"],
 .chip.active {
-  border-color: var(--pink);
-  color: var(--pink);
-  box-shadow: 0 0 10px var(--pink-soft);
+  border-color: var(--select);
+  color: var(--select);
+  box-shadow: 0 0 10px var(--select-soft);
 }
 .sig-editor {
   display: grid;
@@ -472,8 +497,9 @@ svg.stroke {
   gap: 16px;
 }
 .stepper-value {
+  font-family: var(--serif);
   font-size: 36px;
-  font-weight: 700;
+  font-weight: 600;
   min-width: 2ch;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -558,7 +584,7 @@ svg.stroke {
 }
 .drop-zone.over {
   border-color: var(--pink);
-  background: rgb(255 47 125 / 0.06);
+  background: var(--pink-soft);
 }
 .drop-zone p {
   margin: 0;

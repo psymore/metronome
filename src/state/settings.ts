@@ -4,6 +4,8 @@ export type BeatLevel = 'accent' | 'normal' | 'mute';
 export type VisualizerKind = 'circular' | 'linear';
 export const BEAT_UNITS = [2, 4, 8, 16] as const;
 export type BeatUnit = (typeof BEAT_UNITS)[number];
+export const THEMES = ['teal', 'amber', 'yellow'] as const;
+export type ThemeName = (typeof THEMES)[number];
 
 export const MIN_BEATS = 1;
 export const MAX_BEATS = 16;
@@ -21,6 +23,7 @@ export interface Settings {
   volume: number;
   accentSoundId: string;
   normalSoundId: string;
+  theme: ThemeName;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -33,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.8,
   accentSoundId: 'builtin:click-high',
   normalSoundId: 'builtin:click',
+  theme: 'teal',
 };
 
 export function defaultSettings(): Settings {
@@ -47,12 +51,29 @@ export function isBeatUnit(v: unknown): v is BeatUnit {
   return (BEAT_UNITS as readonly unknown[]).includes(v);
 }
 
+export function isThemeName(v: unknown): v is ThemeName {
+  return (THEMES as readonly unknown[]).includes(v);
+}
+
 function defaultLevel(index: number): BeatLevel {
   return index === 0 ? 'accent' : 'normal';
 }
 
 export function resizeLevels(levels: readonly BeatLevel[], n: number): BeatLevel[] {
   return Array.from({ length: n }, (_, i) => levels[i] ?? defaultLevel(i));
+}
+
+/**
+ * Canonical accent pattern for compound meters (6/8, 9/8, 12/8, ...): each
+ * dotted-quarter group of 3 gets its own accent ("ONE-two-three FOUR-five-six"),
+ * not just beat 1.
+ */
+export function compoundAccentLevels(beatsPerBar: number): BeatLevel[] {
+  return Array.from({ length: beatsPerBar }, (_, i) => (i % 3 === 0 ? 'accent' : 'normal'));
+}
+
+export function isCompoundMeter(beatsPerBar: number, beatUnit: BeatUnit): boolean {
+  return beatUnit === 8 && beatsPerBar > 3 && beatsPerBar % 3 === 0;
 }
 
 export function nextLevel(level: BeatLevel): BeatLevel {
@@ -100,6 +121,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     volume: clampNumber(r.volume, d.volume, 0, 1),
     accentSoundId: isSoundId(r.accentSoundId) ? r.accentSoundId : d.accentSoundId,
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
+    theme: isThemeName(r.theme) ? r.theme : d.theme,
   };
 }
 

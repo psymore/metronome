@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  compoundAccentLevels,
   DEFAULT_SETTINGS,
   defaultSettings,
+  isCompoundMeter,
   loadSettings,
   nextLevel,
   resizeLevels,
@@ -82,6 +84,7 @@ describe('sanitizeSettings', () => {
       volume: -1,
       accentSoundId: '',
       normalSoundId: 42,
+      theme: 'bogus',
     });
     expect(s).toEqual({
       bpm: 400,
@@ -93,6 +96,7 @@ describe('sanitizeSettings', () => {
       volume: 0,
       accentSoundId: 'builtin:click-high',
       normalSoundId: 'builtin:click',
+      theme: 'teal',
     });
   });
 
@@ -114,6 +118,7 @@ describe('sanitizeSettings', () => {
       syncOffsetMs: -35,
       volume: 0.3,
       accentSoundId: 'user:abc',
+      theme: 'yellow' as const,
     };
     expect(sanitizeSettings(JSON.parse(JSON.stringify(s)))).toEqual(s);
   });
@@ -130,6 +135,37 @@ describe('level helpers', () => {
     expect(nextLevel('accent')).toBe('normal');
     expect(nextLevel('normal')).toBe('mute');
     expect(nextLevel('mute')).toBe('accent');
+  });
+
+  it('accents the start of every group of 3 in a compound meter', () => {
+    expect(compoundAccentLevels(6)).toEqual([
+      'accent',
+      'normal',
+      'normal',
+      'accent',
+      'normal',
+      'normal',
+    ]);
+    expect(compoundAccentLevels(9)).toEqual([
+      'accent',
+      'normal',
+      'normal',
+      'accent',
+      'normal',
+      'normal',
+      'accent',
+      'normal',
+      'normal',
+    ]);
+  });
+
+  it('recognises compound meters as multiples of 3 eighth-note beats', () => {
+    expect(isCompoundMeter(6, 8)).toBe(true);
+    expect(isCompoundMeter(9, 8)).toBe(true);
+    expect(isCompoundMeter(12, 8)).toBe(true);
+    expect(isCompoundMeter(3, 8)).toBe(false); // a single group needs no secondary accent
+    expect(isCompoundMeter(6, 4)).toBe(false); // only eighth-denominator meters are treated as compound
+    expect(isCompoundMeter(7, 8)).toBe(false); // not evenly divisible into groups of 3
   });
 
   it('withBeatsPerBar clamps and resizes', () => {

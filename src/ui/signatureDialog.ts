@@ -1,6 +1,12 @@
-import { isBeatUnit, type Settings, withBeatsPerBar } from '../state/settings';
+import {
+  compoundAccentLevels,
+  isBeatUnit,
+  isCompoundMeter,
+  type Settings,
+  withBeatsPerBar,
+} from '../state/settings';
 import type { Store } from '../state/store';
-import { byId } from './dom';
+import { byId, closeOnBackdropClick } from './dom';
 
 export function mountSignatureDialog({ store }: { store: Store<Settings> }): void {
   const dialog = byId<HTMLDialogElement>('signatureDialog');
@@ -9,6 +15,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
 
   byId('signatureBtn').addEventListener('click', () => dialog.showModal());
+  closeOnBackdropClick(dialog);
 
   const setBeats = (n: number) => store.set(withBeatsPerBar(store.get(), n));
   byId('beatsDown').addEventListener('click', () => setBeats(store.get().beatsPerBar - 1));
@@ -24,9 +31,12 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   for (const button of presetButtons) {
     button.addEventListener('click', () => {
       const [top, bottom] = (button.dataset.preset ?? '').split('/').map(Number);
-      if (top && isBeatUnit(bottom)) {
-        store.set({ ...withBeatsPerBar(store.get(), top), beatUnit: bottom });
-      }
+      if (!top || !isBeatUnit(bottom)) return;
+      store.set({
+        ...withBeatsPerBar(store.get(), top),
+        beatUnit: bottom,
+        ...(isCompoundMeter(top, bottom) ? { levels: compoundAccentLevels(top) } : {}),
+      });
     });
   }
 

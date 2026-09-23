@@ -1,6 +1,6 @@
-import { defaultSettings, type Settings } from '../state/settings';
+import { defaultSettings, isThemeName, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
-import { byId } from './dom';
+import { byId, closeOnBackdropClick } from './dom';
 
 export function mountSettingsDialog({ store }: { store: Store<Settings> }): void {
   const dialog = byId<HTMLDialogElement>('settingsDialog');
@@ -9,8 +9,12 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
   const offsetInput = byId<HTMLInputElement>('offsetInput');
   const offsetValue = byId('offsetValue');
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
+  const themeButtons = Array.from(
+    dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
+  );
 
   byId('settingsBtn').addEventListener('click', () => dialog.showModal());
+  closeOnBackdropClick(dialog);
 
   volumeInput.addEventListener('input', () => {
     store.set({ volume: Number(volumeInput.value) / 100 });
@@ -18,6 +22,12 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
   offsetInput.addEventListener('input', () => {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
   });
+  for (const button of themeButtons) {
+    button.addEventListener('click', () => {
+      const theme = button.dataset.themeOption;
+      if (isThemeName(theme)) store.set({ theme });
+    });
+  }
 
   // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
   let armed: ReturnType<typeof setTimeout> | undefined;
@@ -42,6 +52,9 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
     volumeValue.textContent = `${percent}%`;
     offsetInput.value = String(s.syncOffsetMs);
     offsetValue.textContent = `${s.syncOffsetMs > 0 ? '+' : ''}${s.syncOffsetMs} ms`;
+    for (const button of themeButtons) {
+      button.setAttribute('aria-checked', String(button.dataset.themeOption === s.theme));
+    }
   };
   render(store.get());
   store.subscribe(render);

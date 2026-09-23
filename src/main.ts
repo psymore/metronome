@@ -27,6 +27,12 @@ const storage = safeLocalStorage();
 const store = createStore<Settings>(loadSettings(storage));
 store.subscribe((s) => saveSettings(storage, s));
 
+const applyTheme = (s: Settings) => {
+  document.documentElement.dataset.theme = s.theme;
+};
+applyTheme(store.get());
+store.subscribe(applyTheme);
+
 const toast = createToast(byId('toast'));
 const engine = new AudioEngine({ getPattern: () => store.get() });
 engine.setVolume(store.get().volume);
