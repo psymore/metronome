@@ -1906,7 +1906,7 @@ This task produces the first thing you can hear. It creates the full page markup
   - `mountDebugOverlay(el: HTMLElement, engine: AudioEngine): void`
   - DOM ids used by later tasks: `stage` (with `data-viz`), `viz` (canvas), `playBtn`, `beatRow`, `signatureBtn`, `sigTop`, `sigBottom`, `soundBtn`, `dial`, `dialRing`, `bpmValue`, `bpmDown`, `bpmUp`, `tapBtn`, `settingsBtn`, `toast`, `debug`, `signatureDialog`, `beatsDown`, `beatsValue`, `beatsUp`, `settingsDialog`, `volumeInput`, `volumeValue`, `offsetInput`, `offsetValue`, `resetBtn`, `soundDialog`, `accentSelect`, `normalSelect`, `dropZone`, `soundFile`, `userSounds`. Also the classes `.seg-btn[data-viz]`, `[data-unit]`, `[data-preset]`, `[data-preview]`.
 
-- [ ] **Step 1: Worker** — `src/engine/timerWorker.ts`
+- [x] **Step 1: Worker** — `src/engine/timerWorker.ts`
 
 ```ts
 // Wakes the scheduler. Worker timers are throttled far less than main-thread timers in
@@ -1926,7 +1926,7 @@ self.onmessage = (e: MessageEvent<'start' | 'stop'>) => {
 export {};
 ```
 
-- [ ] **Step 2: Engine** — `src/engine/audioEngine.ts`
+- [x] **Step 2: Engine** — `src/engine/audioEngine.ts`
 
 ```ts
 import type { PcmData } from '../sounds/pcm';
@@ -2063,7 +2063,7 @@ export class AudioEngine {
 }
 ```
 
-- [ ] **Step 3: Small UI helpers**
+- [x] **Step 3: Small UI helpers**
 
 `src/ui/dom.ts`:
 ```ts
@@ -2163,7 +2163,7 @@ export function mountDebugOverlay(el: HTMLElement, engine: AudioEngine): void {
 }
 ```
 
-- [ ] **Step 4: Page markup** — replace `index.html`
+- [x] **Step 4: Page markup** — replace `index.html`
 
 ```html
 <!doctype html>
@@ -2321,7 +2321,7 @@ export function mountDebugOverlay(el: HTMLElement, engine: AudioEngine): void {
 </html>
 ```
 
-- [ ] **Step 5: Styles** — `src/styles.css`
+- [x] **Step 5: Styles** — `src/styles.css`
 
 ```css
 :root {
@@ -2586,7 +2586,7 @@ svg.stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: 
 }
 ```
 
-- [ ] **Step 6: Composition root** — replace `src/main.ts`
+- [x] **Step 6: Composition root** — replace `src/main.ts`
 
 ```ts
 import './styles.css';
@@ -2657,7 +2657,7 @@ if (new URLSearchParams(location.search).has('debug')) {
 }
 ```
 
-- [ ] **Step 7: Type-check, test and build**
+- [x] **Step 7: Type-check, test and build**
 
 Run: `npm test && npm run build`
 Expected: all tests pass and the build succeeds. If `copyToChannel` or `getChannelData` report a `Float32Array<ArrayBufferLike>` mismatch, the installed TypeScript is older than 5.7. Upgrade it (`npm i -D typescript@latest`) rather than casting.
@@ -2672,7 +2672,7 @@ Expected:
 - Switch to another tab for 60 s, come back: the click never stopped and `skipped` is still 0.
 - Clicking Pause stops the sound immediately.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add index.html src tests
