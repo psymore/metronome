@@ -80,7 +80,7 @@
     <dialog id="signatureDialog" class="sheet" aria-labelledby="sigTitle">
       <form method="dialog" class="sheet-head">
         <h2 id="sigTitle">Time signature</h2>
-        <button class="icon-btn" aria-label="Close">✕</button>
+        <button type="button" class="icon-btn" aria-label="Close">✕</button>
       </form>
       <div class="sig-editor">
         <div class="stepper">
@@ -89,10 +89,10 @@
           <button type="button" id="beatsUp" class="nudge" aria-label="More beats">+</button>
         </div>
         <div class="unit-row" role="radiogroup" aria-label="Beat unit">
-          <button type="button" role="radio" class="chip" data-unit="2">2</button>
-          <button type="button" role="radio" class="chip" data-unit="4">4</button>
-          <button type="button" role="radio" class="chip" data-unit="8">8</button>
-          <button type="button" role="radio" class="chip" data-unit="16">16</button>
+          <button type="button" role="radio" class="chip" data-unit="2" aria-checked="false">2</button>
+          <button type="button" role="radio" class="chip" data-unit="4" aria-checked="false">4</button>
+          <button type="button" role="radio" class="chip" data-unit="8" aria-checked="false">8</button>
+          <button type="button" role="radio" class="chip" data-unit="16" aria-checked="false">16</button>
         </div>
       </div>
       <h3 class="sheet-sub">Presets</h3>
@@ -110,7 +110,7 @@
     <dialog id="settingsDialog" class="sheet" aria-labelledby="setTitle">
       <form method="dialog" class="sheet-head">
         <h2 id="setTitle">Settings</h2>
-        <button class="icon-btn" aria-label="Close">✕</button>
+        <button type="button" class="icon-btn" aria-label="Close">✕</button>
       </form>
       <label class="field">
         <span>Volume <output id="volumeValue">80%</output></span>
@@ -128,7 +128,7 @@
     <dialog id="soundDialog" class="sheet" aria-labelledby="soundTitle">
       <form method="dialog" class="sheet-head">
         <h2 id="soundTitle">Sounds</h2>
-        <button class="icon-btn" aria-label="Close">✕</button>
+        <button type="button" class="icon-btn" aria-label="Close">✕</button>
       </form>
       <div class="slot">
         <label for="accentSelect">Accent (beat 1)</label>
