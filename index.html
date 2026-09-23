@@ -2,10 +2,152 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#141416" />
+    <meta name="description" content="A precise metronome with custom sounds and synced visualisers." />
     <title>Metronome</title>
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <p>Metronome is under construction.</p>
+    <main class="app">
+      <header class="topbar">
+        <h1 class="title">Metronome</h1>
+        <div class="seg" role="radiogroup" aria-label="Visualiser">
+          <button type="button" role="radio" class="seg-btn" data-viz="circular" aria-checked="true">Circle</button>
+          <button type="button" role="radio" class="seg-btn" data-viz="linear" aria-checked="false">Line</button>
+        </div>
+      </header>
+
+      <section id="stage" class="stage" data-viz="circular">
+        <canvas id="viz" class="viz" aria-hidden="true"></canvas>
+        <button type="button" id="playBtn" class="play-btn" aria-pressed="false" aria-label="Start">
+          <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+          <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+        </button>
+      </section>
+
+      <div class="side">
+        <section class="panel beats" aria-label="Beat accents">
+          <span class="label">Beats</span>
+          <div id="beatRow" class="beat-row"></div>
+        </section>
+
+        <section class="panel controls" aria-label="Tempo controls">
+          <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
+          <div class="col">
+            <button type="button" id="signatureBtn" class="square-btn" aria-label="Time signature">
+              <span class="sig"><span id="sigTop">4</span><span id="sigBottom">4</span></span>
+            </button>
+            <span class="label">Signature</span>
+            <button type="button" id="soundBtn" class="square-btn" aria-label="Sounds">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z" /></svg>
+            </button>
+            <span class="label">Sound</span>
+          </div>
+
+          <div class="dial-col">
+            <div id="dial" class="dial" role="slider" tabindex="0" aria-label="Tempo in BPM" aria-valuemin="20" aria-valuemax="400" aria-valuenow="120">
+              <div id="dialRing" class="dial-ring"></div>
+              <div class="dial-face">
+                <output id="bpmValue" class="bpm-value">120</output>
+                <span class="bpm-unit">BPM</span>
+              </div>
+            </div>
+            <div class="nudges">
+              <button type="button" id="bpmDown" class="nudge" aria-label="Slower">−</button>
+              <button type="button" id="bpmUp" class="nudge" aria-label="Faster">+</button>
+            </div>
+          </div>
+
+          <div class="col">
+            <button type="button" id="tapBtn" class="square-btn tap" aria-label="Tap tempo">TAP</button>
+            <span class="label">Tap</span>
+            <button type="button" id="settingsBtn" class="square-btn" aria-label="Settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>
+            </button>
+            <span class="label">Settings</span>
+          </div>
+        </section>
+      </div>
+
+      <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
+      <pre id="debug" class="debug" hidden></pre>
+    </main>
+
+    <dialog id="signatureDialog" class="sheet" aria-labelledby="sigTitle">
+      <form method="dialog" class="sheet-head">
+        <h2 id="sigTitle">Time signature</h2>
+        <button class="icon-btn" aria-label="Close">✕</button>
+      </form>
+      <div class="sig-editor">
+        <div class="stepper">
+          <button type="button" id="beatsDown" class="nudge" aria-label="Fewer beats">−</button>
+          <output id="beatsValue" class="stepper-value">4</output>
+          <button type="button" id="beatsUp" class="nudge" aria-label="More beats">+</button>
+        </div>
+        <div class="unit-row" role="radiogroup" aria-label="Beat unit">
+          <button type="button" role="radio" class="chip" data-unit="2">2</button>
+          <button type="button" role="radio" class="chip" data-unit="4">4</button>
+          <button type="button" role="radio" class="chip" data-unit="8">8</button>
+          <button type="button" role="radio" class="chip" data-unit="16">16</button>
+        </div>
+      </div>
+      <h3 class="sheet-sub">Presets</h3>
+      <div class="preset-row">
+        <button type="button" class="chip" data-preset="2/4">2/4</button>
+        <button type="button" class="chip" data-preset="3/4">3/4</button>
+        <button type="button" class="chip" data-preset="4/4">4/4</button>
+        <button type="button" class="chip" data-preset="5/4">5/4</button>
+        <button type="button" class="chip" data-preset="6/8">6/8</button>
+        <button type="button" class="chip" data-preset="7/8">7/8</button>
+        <button type="button" class="chip" data-preset="12/8">12/8</button>
+      </div>
+    </dialog>
+
+    <dialog id="settingsDialog" class="sheet" aria-labelledby="setTitle">
+      <form method="dialog" class="sheet-head">
+        <h2 id="setTitle">Settings</h2>
+        <button class="icon-btn" aria-label="Close">✕</button>
+      </form>
+      <label class="field">
+        <span>Volume <output id="volumeValue">80%</output></span>
+        <input id="volumeInput" type="range" min="0" max="100" step="1" />
+      </label>
+      <label class="field">
+        <span>Visual sync offset <output id="offsetValue">0 ms</output></span>
+        <input id="offsetInput" type="range" min="-200" max="200" step="1" />
+        <small class="hint">If the flash comes before you hear the click (common with Bluetooth headphones), move this right to delay the visuals.</small>
+      </label>
+      <button type="button" id="resetBtn" class="wide-btn danger">Reset all settings</button>
+      <p class="hint">Keys: Space start/stop · ↑↓ tempo (Shift ×5) · PgUp/PgDn ±10 · T tap · V visualiser</p>
+    </dialog>
+
+    <dialog id="soundDialog" class="sheet" aria-labelledby="soundTitle">
+      <form method="dialog" class="sheet-head">
+        <h2 id="soundTitle">Sounds</h2>
+        <button class="icon-btn" aria-label="Close">✕</button>
+      </form>
+      <div class="slot">
+        <label for="accentSelect">Accent (beat 1)</label>
+        <div class="slot-row">
+          <select id="accentSelect"></select>
+          <button type="button" class="small-btn" data-preview="accentSoundId" aria-label="Preview accent sound">▶</button>
+        </div>
+      </div>
+      <div class="slot">
+        <label for="normalSelect">Other beats</label>
+        <div class="slot-row">
+          <select id="normalSelect"></select>
+          <button type="button" class="small-btn" data-preview="normalSoundId" aria-label="Preview beat sound">▶</button>
+        </div>
+      </div>
+      <div id="dropZone" class="drop-zone">
+        <p>Drop audio files here, or</p>
+        <label class="small-btn">Choose files<input id="soundFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.oga,.flac,.m4a,.aac,.webm,.opus" multiple hidden /></label>
+        <p class="hint">WAV, MP3, OGG, FLAC · up to 2 MB and 2 s each</p>
+      </div>
+      <h3 class="sheet-sub">Your sounds</h3>
+      <ul id="userSounds" class="sound-list"></ul>
+    </dialog>
   </body>
 </html>
