@@ -4121,11 +4121,11 @@ git commit -m "feat: sound sheet with upload, drag-and-drop, preview and delete"
 **Interfaces:**
 - Produces: a service worker and manifest in `dist/`, plus the icons that Task 15 reuses (`public/pwa-512x512.png`).
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 Run: `npm i -D vite-plugin-pwa @vite-pwa/assets-generator`
 
-- [ ] **Step 2: Icon source** — `public/icon.svg`
+- [x] **Step 2: Icon source** — `public/icon.svg`
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -4140,7 +4140,7 @@ Run: `npm i -D vite-plugin-pwa @vite-pwa/assets-generator`
 </svg>
 ```
 
-- [ ] **Step 3: Generate icons**
+- [x] **Step 3: Generate icons**
 
 `pwa-assets.config.ts`:
 ```ts
@@ -4154,7 +4154,7 @@ export default defineConfig({
 Add the script `"generate-pwa-assets": "pwa-assets-generator"` to `package.json`, then run `npm run generate-pwa-assets`.
 Expected in `public/`: `pwa-64x64.png`, `pwa-192x192.png`, `pwa-512x512.png`, `maskable-icon-512x512.png`, `apple-touch-icon-180x180.png` and `favicon.ico`.
 
-- [ ] **Step 4: Configure the plugin** — replace `vite.config.ts`
+- [x] **Step 4: Configure the plugin** — replace `vite.config.ts`
 
 ```ts
 import { VitePWA } from 'vite-plugin-pwa';
@@ -4201,7 +4201,7 @@ In `index.html` add inside `<head>`, after the `<title>`:
 ```
 (Vite rewrites these absolute paths for the `/metronome/` base at build time.)
 
-- [ ] **Step 5: Register the service worker (not inside Tauri)** — append to the end of `src/main.ts`
+- [x] **Step 5: Register the service worker (not inside Tauri)** — append to the end of `src/main.ts`
 
 ```ts
 if (!('__TAURI_INTERNALS__' in window)) {
@@ -4213,7 +4213,7 @@ if (!('__TAURI_INTERNALS__' in window)) {
 }
 ```
 
-- [ ] **Step 6: Build and test**
+- [x] **Step 6: Build and test**
 
 Run: `npm test && npm run build`
 Expected: pass. `dist/` contains `sw.js`, `manifest.webmanifest` and the icons.
@@ -4226,7 +4226,7 @@ Expected:
 - DevTools → Network → "Offline", then reload: the app still loads and clicks, including user sounds, which are in IndexedDB.
 - Also run `GITHUB_PAGES=true npm run build && npx vite preview --base /metronome/` and open `http://localhost:4173/metronome/`: the app loads and the worker, icons and sounds work under the sub-path. (In PowerShell: `$env:GITHUB_PAGES='true'; npm run build; npx vite preview --base /metronome/`, then remove the variable.)
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add package.json package-lock.json vite.config.ts tsconfig.json index.html pwa-assets.config.ts public src/main.ts
