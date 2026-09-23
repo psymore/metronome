@@ -8,6 +8,8 @@ import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
 import { createToast } from './ui/toast';
 import { mountTransport } from './ui/transport';
+import { mountVizSwitch } from './ui/vizSwitch';
+import { VizController } from './viz/vizController';
 
 function safeLocalStorage(): Storage | undefined {
   try {
@@ -59,7 +61,19 @@ store.subscribe((s, prev) => {
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
 });
 
-mountTransport({ engine, toast, onToggle: () => {} });
+const viz = new VizController(
+  byId<HTMLCanvasElement>('viz'),
+  {
+    running: () => engine.running,
+    heardTime: () => engine.heardTime(store.get().syncOffsetMs),
+    beatAt: (time) => engine.timeline.beatAt(time),
+  },
+  () => store.get(),
+);
+store.subscribe(() => viz.invalidate());
+
+const transport = mountTransport({ engine, toast, onToggle: () => viz.invalidate() });
+mountVizSwitch({ store });
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);
