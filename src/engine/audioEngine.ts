@@ -22,7 +22,10 @@ export class AudioEngine {
     this.ctx = new AudioContext({ latencyHint: 'interactive' });
     this.master = this.ctx.createGain();
     this.master.connect(this.ctx.destination);
-    this.scheduler = new Scheduler({ getPattern: opts.getPattern, onBeat: (b) => this.playBeat(b) });
+    this.scheduler = new Scheduler({
+      getPattern: opts.getPattern,
+      onBeat: (b) => this.playBeat(b),
+    });
     this.worker = new Worker(new URL('./timerWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = () => this.scheduler.tick(this.ctx.currentTime);
     this.ctx.addEventListener('statechange', () => {

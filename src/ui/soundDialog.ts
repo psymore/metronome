@@ -42,7 +42,8 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
   function fillSelect(select: HTMLSelectElement, current: string): void {
     const builtin = document.createElement('optgroup');
     builtin.label = 'Built-in';
-    for (const [id, sound] of Object.entries(BUILTIN_SOUNDS)) builtin.append(new Option(sound.name, id));
+    for (const [id, sound] of Object.entries(BUILTIN_SOUNDS))
+      builtin.append(new Option(sound.name, id));
     const groups: HTMLElement[] = [builtin];
     if (userSounds.length > 0) {
       const mine = document.createElement('optgroup');
