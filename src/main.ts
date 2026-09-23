@@ -7,6 +7,8 @@ import { createStore } from './state/store';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
+import { mountSettingsDialog } from './ui/settingsDialog';
+import { mountSignatureDialog } from './ui/signatureDialog';
 import { createToast } from './ui/toast';
 import { mountTransport } from './ui/transport';
 import { mountVizSwitch } from './ui/vizSwitch';
@@ -76,6 +78,8 @@ store.subscribe(() => viz.invalidate());
 const transport = mountTransport({ engine, toast, onToggle: () => viz.invalidate() });
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
+mountSignatureDialog({ store });
+mountSettingsDialog({ store });
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);
