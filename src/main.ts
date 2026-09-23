@@ -86,3 +86,11 @@ mountSoundDialog({ store, engine, sounds, library, toast });
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);
 }
+
+if (!('__TAURI_INTERNALS__' in window)) {
+  import('virtual:pwa-register')
+    .then(({ registerSW }) => registerSW({ immediate: true }))
+    .catch(() => {
+      // Offline support is a bonus; the app works without it.
+    });
+}
