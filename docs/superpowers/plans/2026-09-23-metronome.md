@@ -2998,7 +2998,7 @@ git commit -m "feat: visualiser geometry and audio-synced frame computation"
   - `class VizController { constructor(canvas: HTMLCanvasElement, source: VizSource, getSettings: () => Settings); invalidate(): void }`
   - `mountVizSwitch(deps: { store: Store<Settings> }): void`
 
-- [ ] **Step 1: Types and the shared sphere** — `src/viz/types.ts`, `src/viz/drawNode.ts`
+- [x] **Step 1: Types and the shared sphere** — `src/viz/types.ts`, `src/viz/drawNode.ts`
 
 ```ts
 // src/viz/types.ts
@@ -3084,7 +3084,7 @@ export function drawNode(
 }
 ```
 
-- [ ] **Step 2: Circular renderer** — `src/viz/circular.ts`
+- [x] **Step 2: Circular renderer** — `src/viz/circular.ts`
 
 ```ts
 import type { BeatLevel } from '../state/settings';
@@ -3150,7 +3150,7 @@ export const circularVisualizer: Visualizer = {
 };
 ```
 
-- [ ] **Step 3: Linear renderer** — `src/viz/linear.ts`
+- [x] **Step 3: Linear renderer** — `src/viz/linear.ts`
 
 ```ts
 import type { BeatLevel } from '../state/settings';
@@ -3214,7 +3214,7 @@ export const linearVisualizer: Visualizer = {
 };
 ```
 
-- [ ] **Step 4: Controller** — `src/viz/vizController.ts`
+- [x] **Step 4: Controller** — `src/viz/vizController.ts`
 
 ```ts
 import type { BeatEvent } from '../engine/scheduler';
@@ -3312,7 +3312,7 @@ export class VizController {
 }
 ```
 
-- [ ] **Step 5: Switch** — `src/ui/vizSwitch.ts`
+- [x] **Step 5: Switch** — `src/ui/vizSwitch.ts`
 
 ```ts
 import type { Settings } from '../state/settings';
@@ -3338,7 +3338,7 @@ export function mountVizSwitch({ store }: { store: Store<Settings> }): void {
 }
 ```
 
-- [ ] **Step 6: Wire into `src/main.ts`**
+- [x] **Step 6: Wire into `src/main.ts`**
 
 Add these imports next to the other `./ui/...` imports:
 ```ts
@@ -3364,7 +3364,7 @@ mountVizSwitch({ store });
 ```
 (`transport` is used in Task 11. If Biome flags it as unused before then, that's expected. Leave it.)
 
-- [ ] **Step 7: Build and test**
+- [x] **Step 7: Build and test**
 
 Run: `npm test && npm run build`
 Expected: pass.
@@ -3379,7 +3379,7 @@ Expected:
 - The page reloads with the chosen view persisted.
 - Pause: the hand disappears and the spheres return to rest.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src
