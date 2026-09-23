@@ -4,6 +4,7 @@ import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
 import { DEFAULT_SETTINGS, loadSettings, type Settings, saveSettings } from './state/settings';
 import { createStore } from './state/store';
+import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
 import { createToast } from './ui/toast';
@@ -74,6 +75,7 @@ store.subscribe(() => viz.invalidate());
 
 const transport = mountTransport({ engine, toast, onToggle: () => viz.invalidate() });
 mountVizSwitch({ store });
+mountControls({ store, toggle: transport.toggle });
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);
