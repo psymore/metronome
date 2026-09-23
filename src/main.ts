@@ -9,6 +9,7 @@ import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
+import { mountSoundDialog } from './ui/soundDialog';
 import { createToast } from './ui/toast';
 import { mountTransport } from './ui/transport';
 import { mountVizSwitch } from './ui/vizSwitch';
@@ -80,6 +81,7 @@ mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
 mountSettingsDialog({ store });
+mountSoundDialog({ store, engine, sounds, library, toast });
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);
