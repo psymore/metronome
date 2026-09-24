@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.psymore.metronome",
+      "sha256_cert_fingerprints": ["6F:13:77:4F:F5:A0:15:F3:AA:4B:5A:75:6A:5F:BA:29:E4:09:9B:A4:73:C7:FA:C0:52:42:9B:70:1E:96:46:E6"]
+    }
+  }
+]
