@@ -119,6 +119,7 @@ svg.stroke {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
+  text-align: center;
 }
 
 .app {
@@ -422,7 +423,7 @@ svg.stroke {
 }
 .col {
   display: grid;
-  justify-items: center;
+  justify-items: stretch;
   gap: 6px;
   width: 64px;
 }
