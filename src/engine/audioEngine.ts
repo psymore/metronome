@@ -70,6 +70,11 @@ export class AudioEngine {
     }
     this.active.clear();
     this.timeline.clear();
+    // A running context holds the audio hardware clock open and drains battery in silence.
+    // start() and preview() both resume it, so suspending here is self-healing.
+    this.ctx.suspend().catch(() => {
+      // Nothing to do: the context is already closed or the browser refused.
+    });
   }
 
   setVolume(volume: number): void {
