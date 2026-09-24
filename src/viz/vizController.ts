@@ -5,6 +5,7 @@ import { computeFrame } from './frame';
 import { circularLayout } from './geometry';
 import { circularBeatAt, linearBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
+import { shouldAnimate } from './renderPolicy';
 import type { VizTheme } from './types';
 
 export interface VizSource {
@@ -54,6 +55,10 @@ export class VizController {
     this.theme = readTheme(canvas);
     new ResizeObserver(() => this.resize()).observe(canvas);
     this.reducedMotion.addEventListener('change', () => this.invalidate());
+    document.addEventListener('visibilitychange', () => {
+      // The loop stopped re-arming itself while hidden; restart it on the way back.
+      if (!document.hidden) this.invalidate();
+    });
     canvas.addEventListener('pointerdown', this.onPointerDown);
     this.resize();
   }
@@ -79,7 +84,9 @@ export class VizController {
   private readonly onFrame = (): void => {
     this.raf = 0;
     this.render();
-    if (this.source.running()) this.invalidate();
+    if (shouldAnimate({ running: this.source.running(), hidden: document.hidden })) {
+      this.invalidate();
+    }
   };
 
   private resize(): void {
