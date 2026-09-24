@@ -2,81 +2,61 @@
 
 If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step" immediately.
 
-## Where things stand (2026-09-24)
+## Where things stand (2026-09-25)
 
-The v1 metronome and its v2 additions are **built and committed**. A later session audited the app for battery/CPU cost, wrote a performance-and-release plan, **implemented and shipped Phase A of it**, then revised Phase B's packaging approach before executing it. Recent history:
+Phase A (performance) and most of Phase B (Android Play Store release) are done. Work happened in an isolated worktree (`worktree-phase-b-play-store`, at `.claude/worktrees/phase-b-play-store` under the main repo) with commits pushed straight to `master` mid-plan — the user explicitly asked for this (twice) so Vercel's GitHub-integration production deploys would pick up each change for live verification, rather than waiting for one big merge at the end.
 
-- `535c766` docs: retire the Capacitor plan, add v2 with a Vercel + TWA Phase B
-- `866e3ae` fix: prevent overlapping wake-lock requests from leaking a lock (final-review fix)
-- `dae3d93` feat: keep the screen awake while the metronome plays
-- `e184bdb` perf: suspend the AudioContext while the metronome is stopped
-- `54766c3` perf: blit idle beat nodes from cached sprites
-- `e928731` perf: stop the visualiser render loop while the page is hidden
-- `f1d9837` docs: add mobile performance and Play Store release plan
-- `df5c49d` fix: UI/UX improvements and practice timer redesign (last v2 commit before this work)
+**Active plan: `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`.** Its own checkboxes are ticked for everything done — check it directly rather than trusting a stale summary. As of this handoff:
 
-**Active plan: `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`.** The original plan at the same date without `-v2` is **retired** — its header says so and points here; don't execute Phase B from it.
+- **Tasks 1-7 and 10: done, verified, committed, pushed to `master`.**
+- **Task 8 (signed AAB): Steps 1-3 done** (AAB built, signed, `jarsigner -verify` confirms `jar verified.` with the real cert, SDK levels re-confirmed 36/36). **Step 4 (real-device unplugged 10-minute soak test) is NOT done** — the user chose to run this themselves later, on their own phone, rather than connect one to this session.
+- **Task 9 (Play Console): Step 2 done** (privacy policy written and live). **Everything else is open**: Step 1 (personal-vs-org account type — user needs to check), Step 3 (draft store copy exists but hasn't been shown to the user for approval; screenshots not taken — need Task 8 Step 4's device), Steps 4-7 (create the app listing, upload the AAB, recruit testers, apply for production) are pure Play Console UI actions this agent has no access to (no browser tool was enabled this session) and cannot perform.
 
-- **Phase A (Tasks 1-4, performance) is done, reviewed, and pushed to `master`.** Nothing left to do there except the deferred minors listed below.
-- **Phase B (Tasks 5-10, Android release) has not been executed at all.** It was rewritten from Capacitor to **Vercel + Trusted Web Activity (Bubblewrap)** before any of it ran — see "Packaging decision" below for why. The v2 plan's Phase B section is the *only* version of Phase B that has ever run or should ever run.
-- The original v1 plan (`docs/superpowers/plans/2026-09-23-metronome.md`) is done except its final docs task, which the v2 plan's Task 10 absorbs — it writes `docs/architecture/platforms.md`, which `CLAUDE.md` already links to but which does not exist yet.
+### What's live right now
 
-### What the audit found (Phase A motivation)
+- Production: `https://metronome-delta-gold.vercel.app/` (Vercel project `metronome`, team "psymore's projects", GitHub integration deploys from `master` automatically — **no CLI token/`vercel login` was ever set up**, so there is no local `vercel` CLI access; any future CLI use starts from scratch).
+- `https://metronome-delta-gold.vercel.app/.well-known/assetlinks.json` — live, validated against Google's Digital Asset Links API.
+- `https://metronome-delta-gold.vercel.app/privacy-policy.html` — live (source: `docs/privacy-policy.md`, published copy: `public/privacy-policy.html`).
+- `android/app-release-bundle.aab` — signed, verified, **not committed** (gitignored build output, machine-local only — see below).
 
-1. **`drawNode` ran a `shadowBlur` pass for every beat node on every frame** — fixed by Task 2's sprite cache (`src/viz/nodeSprite.ts`); idle nodes now blit from a pre-rendered canvas, only the currently-glowing node still draws live.
-2. **The rAF loop never checked visibility** — fixed by Task 1 (`src/viz/renderPolicy.ts`, `shouldAnimate()`).
-3. **`AudioEngine.stop()` left the `AudioContext` running forever** — fixed by Task 3 (`ctx.suspend()` in `stop()`).
+### The keystore — read this before touching anything Android
 
-RAM was fine before and after: `BeatTimeline` is capped at 64 entries, source nodes disconnect in `onended`, only two decoded buffers are ever held.
+The signing keystore is **not inside the repo**, by the user's explicit choice: `C:\Users\4D\Keystores\metronome\release.keystore`, alias `metronome`. Its password lives in `C:\Users\4D\Keystores\metronome\PASSWORD-BACKUP-THEN-DELETE.txt` on the same machine — **the user has not yet moved it to a password manager and deleted that file; nudge them if it's still there.** PKCS12 keystore, so store password = key password (keytool enforces this, ignores a distinct key password silently). SHA-256 fingerprint: `6F:13:77:4F:F5:A0:15:F3:AA:4B:5A:75:6A:5F:BA:29:E4:09:9B:A4:73:C7:FA:C0:52:42:9B:70:1E:96:46:E6` (also in `public/.well-known/assetlinks.json`). Losing this file or its password permanently ends the ability to publish updates to the Play listing.
 
-### Packaging decision — read this before touching Phase B
+There is a second, **dead** keystore file at `C:\Users\4D\Keystores\metronome\android.keystore` — its own password was lost by an agent mistake before ever being recorded anywhere (generated it, then deleted the password file before saving the value elsewhere). It's inert, not referenced by anything, safe to ignore or delete whenever; the real keystore is `release.keystore`, not that one.
 
-The plan originally chose **Capacitor** because the PWA lives on `*.github.io` (a shared origin whose root can't serve `/.well-known/assetlinks.json`, which a Trusted Web Activity requires) and there was no custom domain. Mid-session the user asked to compare Vercel + TWA against Capacitor. Key fact that changed the decision: **a Vercel project gets its own dedicated `<project>.vercel.app` origin** — unlike a GitHub Pages user/org site, nothing else is hosted at that origin's root, so `assetlinks.json` just works there without buying a domain. The user confirmed switching to **Vercel + TWA** via an explicit choice (not assumed).
+### Bubblewrap CLI doesn't work in this dev environment — read before running it
 
-Consequences worth knowing before executing:
-- **No app code changes are needed for Android at all.** A TWA is Chrome genuinely loading the live Vercel-hosted site — no `platform.ts`/`isNativeShell()` guard, no `main.ts` changes, service-worker registration behaves exactly as it does for any browser visitor.
-- **Smaller APK, instant content updates** (a normal `vercel --prod` deploy, no new AAB/Play review) for anything that isn't a native-shell change (icon, package id, signing).
-- **Trade-off accepted:** Play's "minimum functionality" policy scrutinizes wrapped-website apps more than a Capacitor app; the TWA also depends on Vercel staying up (mitigated by the existing offline service worker).
-- Runtime/perf note from earlier discussion: TWA and Capacitor render through the **same** Chromium/Blink/V8 engine on-device, so there is no steady-state performance difference between them — the choice is about install size, update cadence, and hosting, not battery or FPS.
+`npx @bubblewrap/cli@1.25.0 init` and `build` both fail here:
+- `init`'s wizard uses arrow-key list prompts that don't work over non-interactive/piped stdin.
+- `build` corrupts its own `Path` env var on Windows (`JdkHelper.getEnv()` hardcodes the key `'Path'`; this shell's env only carried `'PATH'`), which makes even `cwd`-relative `gradlew.bat` invisible to `cmd.exe`.
 
-## Design decisions already settled — do not re-open
+Both were worked around by driving the underlying tools directly instead — this is fully documented as the standing approach in `docs/architecture/platforms.md` ("A note on Bubblewrap's `build`/`init` commands in this environment"), with the exact command sequence for both the APK and AAB paths. Use that runbook, not the plan's literal `npx @bubblewrap/cli build` steps, when building a new release. If a future environment doesn't hit the `Path` bug, the plain CLI commands should work as documented upstream — worth a quick try before assuming the workaround is still needed.
 
-Recorded with reasoning in the v2 plan's "Design Decisions" section:
-
-- **Foreground-only playback.** The click is *not* required to keep sounding with the screen off or the app backgrounded. Screen wake lock (Task 4, done) covers the real need.
-- **Trusted Web Activity on Vercel, not Capacitor.** See "Packaging decision" above.
-- **Bubblewrap, not Tauri 2 Android.** Tauri's Android target needs the Rust + NDK toolchain and has no documented Play signing path. Windows keeps shipping through Tauri, unchanged.
-- **No new runtime dependency at all for Phase B.** `@bubblewrap/cli` is a dev-time generator, not a `package.json` dependency.
+Also: Bubblewrap's global config now points at the existing JDK 17.0.1 (`C:\Program Files\Java\jdk-17.0.1`) and Android SDK (`D:\Android\Sdk`) via `~/.bubblewrap/config.json`, and `D:\Android\Sdk\bin` is a directory junction to `cmdline-tools\latest\bin` (Bubblewrap's SDK-path check expects a legacy `tools/`or `bin/` folder that modern SDK installs don't have). `build-tools;36.1.0` is installed (Bubblewrap requires that exact version, not just `36.0.0`). All machine-local setup, nothing committed.
 
 ## Next step
 
-Execute Phase B of `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md` (Tasks 5-10) in order, using `superpowers:executing-plans` (inline) or `superpowers:subagent-driven-development`. Tick each `- [ ]` as steps complete — Phase A's boxes in that same document are already checked, for reference only; do not redo them.
+1. **Nudge the user about the keystore password file** if you haven't heard it's been moved to a password manager yet (see above).
+2. **Task 8 Step 4** — once the user has run the real-device soak test themselves, ask them how it went (any heat/battery issue is a regression in Phase A's work, worth investigating) and tick that checkbox.
+3. **Task 9 Step 1** — ask again if the user has checked their Play Console account type/creation date; this sets the earliest possible production launch date.
+4. **Task 9 Step 3** — once there's a real device to screenshot from, take screenshots of both visualisers and show the user the draft store copy (already written in the plan) for approval/edits.
+5. **Task 9 Steps 4-7** are Play Console UI clicks the user has to do by hand (this agent has no browser/console access this session) — the AAB and privacy policy are both ready whenever they want to start.
+6. Once Task 8 Step 4 and Task 9 are far enough along (or the user decides to stop waiting on them), run the plan's **Final Review** per `superpowers:executing-plans` — dispatch a fresh-context reviewer against the whole branch's diff before merging the worktree branch fully, then `superpowers:finishing-a-development-branch`. Note: most commits are *already* on `master` (pushed mid-plan per the user's request), so "finishing" here mostly means cleaning up the worktree and its SDD ledger (`.claude/worktrees/phase-b-play-store/.superpowers/sdd/2026-09-24-mobile-performance-and-play-store-v2/progress.md` — full task-by-task record with every ruling made, read it for detail beyond this summary) rather than a normal feature-branch merge.
 
-Task 5 (Vercel deploy) must complete before Task 6 (Bubblewrap init) can run — Bubblewrap reads the deployed manifest.
+## Design decisions already settled — do not re-open
 
-## Things that need the user
+Unchanged from before this session — see the plan's own "Design Decisions" section: foreground-only playback, TWA on Vercel not Capacitor, Bubblewrap not Tauri Android, no new runtime dependency for Phase B.
 
-- **Vercel account + CLI login** before Task 5: `npm install -g vercel`, `vercel login`.
-- **Android toolchain** before Task 6: JDK 17+, Android Studio **Otter 2025.2.1+**, SDK Platform 36, `ANDROID_HOME` set. Verify with `java -version` and `adb --version`.
-- **Keystore generation (Task 6, Step 1): stop and ask first.** The user picks the passwords and storage location, and must back the file up — losing it ends the ability to update the app's native shell forever. Never commit the keystore or `keystore.properties`.
-- **Play Console account type (Task 9, Step 1)**: ask whether it is personal or organisation, and when created. A personal account created after 2023-11-13 needs **12 testers opted in continuously for 14 days** before production access — sets the earliest possible launch date.
-- **Publishing anything to Play (Task 9, Steps 4, 5, 7): confirm before each.** Irreversible and public.
-- **Pushing to GitHub / deploying to Vercel production**: ask first, same as any push.
-- Manual verification in Tasks 5-8 needs someone to hold a phone. Task 8, Step 4 in particular — 10 minutes of unplugged playback, then feel the back of the phone.
+## Things that still need the user
 
-## Deferred from Phase A's final review — not fixed, not forgotten
+- Move the keystore password out of the plaintext backup file (see above).
+- Run Task 8 Step 4's real-device soak test.
+- Check and report the Play Console account type/creation date (Task 9 Step 1).
+- Approve/edit the draft store listing copy and supply screenshots (Task 9 Step 3).
+- Everything in the Play Console itself: create the app listing, complete App content, upload the AAB, recruit closed-testing testers, apply for production (Task 9 Steps 4-7) — each needs explicit confirmation before it happens, per the plan.
+- Decide whether/when to do the final whole-branch review and formally close out the plan.
 
-Four Minor findings from the whole-branch review were deliberately left unfixed (Critical/Important got fixed in that same session; see ledger discipline in `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`'s Task 4 post-implementation note for the one Important fix that *did* land — the wake-lock race):
+## Deferred from Phase A's final review — still not fixed, still not forgotten
 
-1. `src/viz/nodeSprite.ts` — sprite cache is unbounded across window resizes in linear mode (fractional radius per distinct width, never evicted). Bytes-scale, not a crash.
-2. `src/viz/circular.ts:80`, `src/viz/linear.ts:76` — blitting sprites at fractional CSS positions/DPR can soften idle-node edges slightly vs. the old live-drawn pixels.
-3. `src/viz/nodeSprite.ts:3` — `SPRITE_PAD = 8` is marginally less than the idle shadow's ~9px reach at DPR 1; likely invisible.
-4. `src/engine/audioEngine.ts:97-99` — `preview()` while stopped leaves the `AudioContext` running until the next real stop/start cycle.
-
-Also still open from Phase A: the plan's manual/visual verification steps (theme-switch sprite parity, DevTools frame-cost comparison) were never run against a real browser/device in-session — someone should do this before calling Phase A fully closed, though the logic is unit-tested and the final review read the code and found it correct.
-
-## Open questions
-
-- The user has the Play Console account and the icon plus store graphics, but the **privacy policy URL** is not published yet (Task 9, Step 2 writes `docs/privacy-policy.md`; publish it via the same Vercel deploy or GitHub Pages, confirm the exact URL with the user).
-- Whether the app ships free or paid is not decided (Task 9, Step 4).
-- The Vercel project name / final production URL is not chosen yet — Task 5 picks it.
+Unchanged from before this session (see the plan's Task 4 history for detail): sprite-cache growth across window resizes in linear mode, sub-pixel sprite blit softening, `SPRITE_PAD` marginally tight for the idle shadow at DPR 1, `AudioEngine.preview()` leaving the context running until the next stop/start. All Minor, all still just noted, not acted on.
