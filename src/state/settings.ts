@@ -10,6 +10,7 @@ export type ThemeName = (typeof THEMES)[number];
 export const MIN_BEATS = 1;
 export const MAX_BEATS = 16;
 export const SYNC_OFFSET_LIMIT_MS = 200;
+export const MAX_TARGET_BARS = 999;
 export const SETTINGS_KEY = 'metronome.settings.v1';
 
 export interface Settings {
@@ -26,6 +27,10 @@ export interface Settings {
   theme: ThemeName;
   /** Whether tapping a beat node directly on the circular/linear visualizer cycles its level. */
   beatsClickable: boolean;
+  /** Whether to vibrate briefly on each beat, on devices that support it. */
+  haptics: boolean;
+  /** Song length in bars, set up before playing; 0 means no target (just count up). */
+  targetBars: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -40,6 +45,8 @@ export const DEFAULT_SETTINGS: Settings = {
   normalSoundId: 'builtin:click',
   theme: 'teal',
   beatsClickable: true,
+  haptics: false,
+  targetBars: 0,
 };
 
 export function defaultSettings(): Settings {
@@ -99,6 +106,11 @@ export function withBeatsPerBar(s: Settings, n: number): Pick<Settings, 'beatsPe
   return { beatsPerBar, levels: resizeLevels(s.levels, beatsPerBar) };
 }
 
+/** Clamps a song-length-in-bars value; 0 means no target. */
+export function clampTargetBars(n: number): number {
+  return Math.min(MAX_TARGET_BARS, Math.max(0, Math.round(n)));
+}
+
 function isIntInRange(v: unknown, min: number, max: number): v is number {
   return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 }
@@ -135,6 +147,8 @@ export function sanitizeSettings(raw: unknown): Settings {
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
     theme: isThemeName(r.theme) ? r.theme : d.theme,
     beatsClickable: typeof r.beatsClickable === 'boolean' ? r.beatsClickable : d.beatsClickable,
+    haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
+    targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,
   };
 }
 

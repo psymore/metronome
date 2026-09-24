@@ -22,6 +22,8 @@
         </div>
       </header>
 
+      <span id="barCounter" class="bar-counter" hidden></span>
+
       <section id="stage" class="stage" data-viz="circular">
         <canvas id="viz" class="viz" aria-hidden="true"></canvas>
         <button type="button" id="playBtn" class="play-btn" aria-pressed="false" aria-label="Start">
@@ -52,8 +54,10 @@
               <div class="dial-face">
                 <output id="bpmValue" class="bpm-value">120</output>
                 <span class="bpm-unit">BPM</span>
+                <span id="dialSignature" class="dial-signature">4/4</span>
               </div>
             </div>
+            <span id="tempoMarking" class="tempo-marking"></span>
             <div class="nudges">
               <button type="button" id="bpmDown" class="nudge" aria-label="Slower">−</button>
               <button type="button" id="bpmUp" class="nudge" aria-label="Faster">+</button>
@@ -104,6 +108,13 @@
         <button type="button" class="chip" data-preset="9/8">9/8</button>
         <button type="button" class="chip" data-preset="12/8">12/8</button>
       </div>
+      <h3 class="sheet-sub">Song length</h3>
+      <div class="stepper">
+        <button type="button" id="targetBarsDown" class="nudge" aria-label="Fewer bars">−</button>
+        <output id="targetBarsValue" class="stepper-value">Off</output>
+        <button type="button" id="targetBarsUp" class="nudge" aria-label="More bars">+</button>
+      </div>
+      <p class="hint">Set the number of bars in the piece to see your position in it while playing. 0 turns it off.</p>
     </dialog>
 
     <dialog id="settingsDialog" class="sheet" aria-labelledby="setTitle">
@@ -128,6 +139,15 @@
         </span>
         <div id="beatRow" class="beat-row"></div>
         <p class="hint">Tap a beat to cycle accent → normal → mute — works here, on the circle or line, and on the main screen. The switch shows or hides the beat row on the main screen.</p>
+      </div>
+      <div class="field">
+        <span>
+          Vibrate on beat
+          <button type="button" id="hapticsToggle" class="switch" role="switch" aria-checked="false" aria-label="Vibrate on each beat">
+            <span class="switch-knob"></span>
+          </button>
+        </span>
+        <p class="hint">Feel the beat on devices that support vibration — useful when practicing with sound off.</p>
       </div>
       <label class="field">
         <span>Volume <output id="volumeValue">80%</output></span>

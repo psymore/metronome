@@ -77,6 +77,8 @@ store.subscribe((s, prev) => {
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
 });
 
+const playBtn = byId('playBtn');
+const barCounter = byId('barCounter');
 const viz = new VizController(
   byId<HTMLCanvasElement>('viz'),
   {
@@ -86,10 +88,30 @@ const viz = new VizController(
   },
   () => store.get(),
   (index) => store.set({ levels: cycleBeatLevel(store.get().levels, index) }),
+  (level, barIndex) => {
+    if (level === 'accent') {
+      playBtn.classList.remove('pulse');
+      void playBtn.offsetWidth; // restart the animation even if it's already mid-pulse
+      playBtn.classList.add('pulse');
+    }
+    if (store.get().haptics && level !== 'mute' && navigator.vibrate) {
+      navigator.vibrate(level === 'accent' ? 30 : 12);
+    }
+    const target = store.get().targetBars;
+    barCounter.hidden = false;
+    barCounter.textContent = target > 0 ? `Bar ${barIndex + 1} / ${target}` : `Bar ${barIndex + 1}`;
+  },
 );
 store.subscribe(() => viz.invalidate());
 
-const transport = mountTransport({ engine, toast, onToggle: () => viz.invalidate() });
+const transport = mountTransport({
+  engine,
+  toast,
+  onToggle: () => {
+    viz.invalidate();
+    if (!engine.running) barCounter.hidden = true;
+  },
+});
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });

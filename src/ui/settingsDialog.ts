@@ -11,6 +11,7 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
   const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
   const beatRow = byId('beatRow');
+  const hapticsToggle = byId<HTMLButtonElement>('hapticsToggle');
   const themeButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
   );
@@ -32,6 +33,9 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
   }
   beatsClickableToggle.addEventListener('click', () => {
     store.set({ beatsClickable: !store.get().beatsClickable });
+  });
+  hapticsToggle.addEventListener('click', () => {
+    store.set({ haptics: !store.get().haptics });
   });
 
   // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
@@ -62,6 +66,7 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
     }
     beatsClickableToggle.setAttribute('aria-checked', String(s.beatsClickable));
     beatRow.classList.toggle('dim', !s.beatsClickable);
+    hapticsToggle.setAttribute('aria-checked', String(s.haptics));
   };
   render(store.get());
   store.subscribe(render);

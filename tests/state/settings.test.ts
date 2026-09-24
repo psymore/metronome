@@ -98,6 +98,8 @@ describe('sanitizeSettings', () => {
       normalSoundId: 'builtin:click',
       theme: 'teal',
       beatsClickable: true,
+      haptics: false,
+      targetBars: 0,
     });
   });
 

@@ -2,6 +2,7 @@ import { clampBpm } from '../engine/timing';
 import { cycleBeatLevel, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
+import { tempoMarking } from '../state/tempoMarking';
 import { angleDelta, bpmAfterRotation, DEGREES_PER_BPM } from './dialMath';
 import { byId } from './dom';
 
@@ -14,6 +15,8 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   const dial = byId('dial');
   const dialRing = byId('dialRing');
   const bpmValue = byId('bpmValue');
+  const tempoMarkingEl = byId('tempoMarking');
+  const dialSignature = byId('dialSignature');
   const beatRow = byId('beatRow');
   const mainBeatRow = byId('mainBeatRow');
   const sigTop = byId('sigTop');
@@ -116,10 +119,12 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
 
   function render(s: Settings): void {
     bpmValue.textContent = String(s.bpm);
+    tempoMarkingEl.textContent = tempoMarking(s.bpm);
     dial.setAttribute('aria-valuenow', String(s.bpm));
     dialRing.style.setProperty('--rotation', `${s.bpm * DEGREES_PER_BPM}deg`);
     sigTop.textContent = String(s.beatsPerBar);
     sigBottom.textContent = String(s.beatUnit);
+    dialSignature.textContent = `${s.beatsPerBar}/${s.beatUnit}`;
     renderBeats(s);
   }
   render(store.get());

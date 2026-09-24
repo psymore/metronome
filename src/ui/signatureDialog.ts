@@ -1,4 +1,5 @@
 import {
+  clampTargetBars,
   compoundAccentLevels,
   isBeatUnit,
   isCompoundMeter,
@@ -11,6 +12,7 @@ import { byId, closeOnBackdropClick } from './dom';
 export function mountSignatureDialog({ store }: { store: Store<Settings> }): void {
   const dialog = byId<HTMLDialogElement>('signatureDialog');
   const beatsValue = byId('beatsValue');
+  const targetBarsValue = byId('targetBarsValue');
   const unitButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-unit]'));
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
 
@@ -20,6 +22,10 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   const setBeats = (n: number) => store.set(withBeatsPerBar(store.get(), n));
   byId('beatsDown').addEventListener('click', () => setBeats(store.get().beatsPerBar - 1));
   byId('beatsUp').addEventListener('click', () => setBeats(store.get().beatsPerBar + 1));
+
+  const setTargetBars = (n: number) => store.set({ targetBars: clampTargetBars(n) });
+  byId('targetBarsDown').addEventListener('click', () => setTargetBars(store.get().targetBars - 1));
+  byId('targetBarsUp').addEventListener('click', () => setTargetBars(store.get().targetBars + 1));
 
   for (const button of unitButtons) {
     button.addEventListener('click', () => {
@@ -42,6 +48,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
 
   const render = (s: Settings) => {
     beatsValue.textContent = String(s.beatsPerBar);
+    targetBarsValue.textContent = s.targetBars > 0 ? String(s.targetBars) : 'Off';
     for (const button of unitButtons) {
       button.setAttribute('aria-checked', String(Number(button.dataset.unit) === s.beatUnit));
     }

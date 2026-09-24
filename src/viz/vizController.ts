@@ -1,5 +1,5 @@
 import type { BeatEvent } from '../engine/scheduler';
-import type { Settings } from '../state/settings';
+import type { BeatLevel, Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
 import { computeFrame } from './frame';
 import { circularLayout } from './geometry';
@@ -38,12 +38,15 @@ export class VizController {
   private size = { width: 0, height: 0 };
   private themeName: string | undefined;
   private theme: VizTheme;
+  private lastGlow = 0;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly source: VizSource,
     private readonly getSettings: () => Settings,
     private readonly onBeatTap?: (index: number) => void,
+    /** Fires once at the onset of each heard beat (glow rising from its prior decay). */
+    private readonly onBeatStart?: (level: BeatLevel, barIndex: number) => void,
   ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not supported in this browser.');
@@ -99,9 +102,10 @@ export class VizController {
       this.theme = readTheme(this.canvas);
     }
     const heard = this.source.heardTime();
+    const beat = this.source.beatAt(heard);
     const frame = computeFrame({
       running: this.source.running(),
-      beat: this.source.beatAt(heard),
+      beat,
       heardTime: heard,
       beatsPerBar: s.beatsPerBar,
       levels: s.levels,
@@ -110,5 +114,11 @@ export class VizController {
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
     visualizer.draw(this.ctx, this.size, frame, this.theme);
+    if (frame.glow > this.lastGlow) {
+      const level =
+        frame.levels[frame.activeBeat] ?? (frame.activeBeat === 0 ? 'accent' : 'normal');
+      this.onBeatStart?.(level, beat?.barIndex ?? 0);
+    }
+    this.lastGlow = frame.glow;
   }
 }
