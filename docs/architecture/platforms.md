@@ -91,9 +91,11 @@ first step):
 7. Test the release APK unplugged on a real device — install, run at a high
    BPM/beat-count for several minutes, and confirm the phone doesn't get hot
    (this is the actual test of the Phase A performance work). Confirm the
-   wake lock holds past the display timeout, that backgrounding stops the
-   click cleanly (foreground-only is the intended design), and that the app
-   still loads and plays in airplane mode (the offline service worker).
+   wake lock holds past the display timeout, that backgrounding leaves the
+   click still sounding (confirmed, intended behavior — nothing stops audio
+   on `visibilitychange`; only the visualiser's render loop pauses), and that
+   the app still loads and plays in airplane mode (the offline service
+   worker).
 8. Upload `app-release-bundle.aab` to the Play Console only if this is a
    native-shell change.
 

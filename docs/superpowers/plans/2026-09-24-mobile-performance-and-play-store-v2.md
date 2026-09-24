@@ -1279,7 +1279,7 @@ Verify on the device, with the phone **unplugged from the computer**:
 - **Leave it playing for 10 minutes and then feel the back of the phone.** This is the actual test of everything Phase A did — it should be warm at most, not hot.
 - Check the app's battery usage in Android Settings after that run.
 - **Wake lock:** set the display timeout to 30 seconds in Android Settings, leave the metronome playing, and don't touch the screen. The screen must stay on and the click must keep sounding.
-- **Backgrounding:** press Home while playing. The click is expected to stop — foreground-only was the explicit design decision (Design Decision 1). Reopening the app must return to a clean stopped state.
+- **Backgrounding:** press Home while playing. The click keeps sounding — this is correct, confirmed behavior, not a bug (see ledger). Nothing in `AudioEngine`/the scheduler reacts to visibility, and Chrome doesn't suspend a tab that's actively playing audio; only the visualiser's `requestAnimationFrame` loop pauses on `document.hidden` (Task 1, Phase A). Design Decision 1's "not *required* to keep sounding" was correct as written — it never meant "must stop." Reopening the app afterward should still show the visualiser back in sync with the (never-stopped) audio.
 - **Offline:** enable airplane mode, then reopen the app. It should still load and play, since the service worker cached it on first visit exactly as it does for the plain PWA — the TWA gets this for free by genuinely being Chrome loading the real site.
 
 - [ ] **Step 5: No commit — this task only verifies existing artifacts**
