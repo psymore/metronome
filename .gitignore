@@ -5,3 +5,13 @@ dev-dist/
 .DS_Store
 src-tauri/target/
 src-tauri/gen/schemas/
+
+android/.gradle/
+android/build/
+android/app/build/
+android/*.keystore
+android/keystore.properties
+*.jks
+android/*.apk
+android/*.apk.idsig
+android/*.aab
