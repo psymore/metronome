@@ -52,28 +52,29 @@
   --viz-core: #fff6e8;
 }
 
-/* Theme: Yellow — bright gold accent */
-:root[data-theme="yellow"] {
-  --pink: #e8c445;
-  --pink-soft: rgb(232 196 69 / 0.32);
-  --select: #e8c445;
-  --select-soft: rgb(232 196 69 / 0.3);
-  --brass: #f5dc7a;
-  --brass-soft: rgb(245 220 122 / 0.35);
-  --copper: #9c7a1f;
-  --viz-ring: #706a48;
-  --viz-spoke: #4c472e;
-  --viz-node: #9c7a1f;
-  --viz-accent: #f5dc7a;
-  --viz-node-idle: #4c472e;
-  --viz-hand: #e8c445;
-  --viz-label: #b1a678;
-  --viz-glow: #f5dc7a;
-  --viz-core: #fffbe8;
+/* Theme: Blue — GitHub accent blue */
+:root[data-theme="blue"] {
+  --pink: #58a6ff;
+  --pink-soft: rgb(88 166 255 / 0.3);
+  --select: #58a6ff;
+  --select-soft: rgb(88 166 255 / 0.28);
+  --brass: #91cbff;
+  --brass-soft: rgb(145 203 255 / 0.35);
+  --copper: #1f6feb;
+  --viz-ring: #47536b;
+  --viz-spoke: #313a4d;
+  --viz-node: #1f6feb;
+  --viz-accent: #91cbff;
+  --viz-node-idle: #313a4d;
+  --viz-hand: #58a6ff;
+  --viz-label: #8fa3c2;
+  --viz-glow: #91cbff;
+  --viz-core: #eef6ff;
 }
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 [hidden] {
   display: none !important;
@@ -93,6 +94,7 @@ button {
   font: inherit;
   color: inherit;
   cursor: pointer;
+  touch-action: manipulation;
 }
 button:focus-visible,
 [tabindex]:focus-visible,
@@ -140,24 +142,44 @@ svg.stroke {
   letter-spacing: 0.01em;
 }
 .seg {
+  position: relative;
   display: inline-flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--panel-lo);
+  padding: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #100f0c, #1a1812);
   border: 1px solid var(--line);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+}
+.seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 0 0 1px var(--select),
+    0 1px 2px rgb(0 0 0 / 0.5);
+  transition: transform 220ms cubic-bezier(0.34, 1.3, 0.4, 1);
+}
+.seg:has(.seg-btn[data-viz="linear"][aria-checked="true"]) .seg-thumb {
+  transform: translateX(100%);
 }
 .seg-btn {
+  position: relative;
+  z-index: 1;
   border: 0;
   background: transparent;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 13px;
   color: var(--muted);
+  transition: color 160ms ease;
 }
 .seg-btn[aria-checked="true"] {
-  background: var(--panel);
   color: var(--select);
-  box-shadow: inset 0 0 0 1px var(--select);
 }
 
 .stage {
@@ -181,7 +203,9 @@ svg.stroke {
   border-radius: 50%;
   border: 2px solid var(--pink);
   background: var(--panel);
-  box-shadow: 0 0 0 6px var(--bg);
+  box-shadow:
+    0 0 0 4px var(--edge),
+    0 0 0 6px var(--copper);
   color: var(--pink);
   display: grid;
   place-items: center;
@@ -211,22 +235,59 @@ svg.stroke {
 }
 .panel {
   position: relative;
-  background: var(--panel);
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 90% at 50% -10%, rgb(255 255 255 / 0.05), transparent 55%), var(--panel);
   border: 1px solid var(--line);
   border-top: 1px solid var(--pink-soft);
   border-radius: var(--radius);
-  box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+  box-shadow:
+    0 10px 24px rgb(0 0 0 / 0.35),
+    inset 0 1px 0 rgb(255 255 255 / 0.04);
   padding: 14px 16px;
 }
-.beats {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.bolt {
+  display: block;
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7a7061, #2a271e 70%);
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.6),
+    inset 0 0 0 1px rgb(0 0 0 / 0.5);
+}
+.bolt.tl {
+  top: 8px;
+  left: 8px;
+}
+.bolt.tr {
+  top: 8px;
+  right: 8px;
+}
+.bolt.bl {
+  bottom: 8px;
+  left: 8px;
+}
+.bolt.br {
+  bottom: 8px;
+  right: 8px;
 }
 .beat-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.main-beat-row {
+  justify-content: center;
+  gap: 14px;
+  margin: -6px 0 14px;
+}
+.main-beat-row[hidden] {
+  display: none;
+}
+.beat-row.dim {
+  opacity: 0.4;
 }
 .beat {
   width: 34px;
@@ -281,12 +342,19 @@ svg.stroke {
   height: 64px;
   border-radius: 6px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4),
+    0 1px 2px rgb(0 0 0 / 0.5);
   display: grid;
   place-items: center;
 }
 .square-btn:active {
   transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.5),
+    0 1px 1px rgb(0 0 0 / 0.4);
 }
 .sig {
   display: grid;
@@ -327,8 +395,8 @@ svg.stroke {
   user-select: none;
   background: conic-gradient(#8d8d93, #ececf1, #9a9aa0, #f6f6f9, #8d8d93, #dcdce1, #8d8d93);
   box-shadow:
-    0 0 0 7px #17171a,
-    0 0 0 8px #000,
+    0 0 0 7px var(--edge),
+    0 0 0 8px var(--copper),
     0 12px 30px rgb(0 0 0 / 0.6);
 }
 .dial:active {
@@ -389,15 +457,24 @@ svg.stroke {
 .nudges {
   display: flex;
   gap: 12px;
+  margin-top: 8px;
 }
 .nudge {
   width: 44px;
   height: 40px;
   border-radius: 6px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4),
+    0 1px 2px rgb(0 0 0 / 0.5);
   font-size: 18px;
   line-height: 1;
+}
+.nudge:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
 }
 
 .toast {
@@ -436,13 +513,17 @@ svg.stroke {
   width: min(92vw, 420px);
   max-height: 86vh;
   overflow: auto;
-  background: var(--panel);
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 90% at 50% -10%, rgb(255 255 255 / 0.05), transparent 55%), var(--panel);
   color: var(--text);
   border: 1px solid var(--line);
   border-top: 1px solid var(--pink-soft);
   border-radius: 8px;
   padding: 18px 20px 22px;
-  box-shadow: 0 20px 60px rgb(0 0 0 / 0.6);
+  box-shadow:
+    0 20px 60px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 .sheet::backdrop {
   background: rgb(0 0 0 / 0.6);
@@ -470,21 +551,30 @@ svg.stroke {
   height: 34px;
   border-radius: 50%;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
 }
 .chip {
   min-width: 44px;
   padding: 7px 12px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
   font-size: 14px;
 }
 .chip[aria-checked="true"],
 .chip.active {
   border-color: var(--select);
   color: var(--select);
-  box-shadow: 0 0 10px var(--select-soft);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4),
+    0 0 10px var(--select-soft);
 }
 .sig-editor {
   display: grid;
@@ -525,6 +615,36 @@ svg.stroke {
   width: 100%;
   accent-color: var(--pink);
 }
+.switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-lo);
+  flex-shrink: 0;
+}
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+.switch[aria-checked="true"] {
+  border-color: var(--select);
+  background: var(--select-soft);
+}
+.switch[aria-checked="true"] .switch-knob {
+  background: var(--select);
+  transform: translateX(18px);
+}
 .hint {
   color: var(--muted);
   font-size: 12px;
@@ -535,7 +655,10 @@ svg.stroke {
   padding: 10px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
 }
 .wide-btn.danger {
   color: #ff8a8a;
@@ -567,7 +690,10 @@ svg.stroke {
   padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
   font-size: 14px;
   display: inline-grid;
   place-items: center;

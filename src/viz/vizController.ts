@@ -3,6 +3,7 @@ import type { Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
 import { computeFrame } from './frame';
 import { circularLayout } from './geometry';
+import { circularBeatAt, linearBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
 import type { VizTheme } from './types';
 
@@ -31,16 +32,18 @@ export function readTheme(el: Element): VizTheme {
 
 export class VizController {
   private readonly ctx: CanvasRenderingContext2D;
-  private readonly theme: VizTheme;
   private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private raf = 0;
   private dpr = 1;
   private size = { width: 0, height: 0 };
+  private themeName: string | undefined;
+  private theme: VizTheme;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly source: VizSource,
     private readonly getSettings: () => Settings,
+    private readonly onBeatTap?: (index: number) => void,
   ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not supported in this browser.');
@@ -48,8 +51,22 @@ export class VizController {
     this.theme = readTheme(canvas);
     new ResizeObserver(() => this.resize()).observe(canvas);
     this.reducedMotion.addEventListener('change', () => this.invalidate());
+    canvas.addEventListener('pointerdown', this.onPointerDown);
     this.resize();
   }
+
+  private readonly onPointerDown = (e: PointerEvent): void => {
+    if (!this.onBeatTap) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const s = this.getSettings();
+    const index =
+      s.visualizer === 'linear'
+        ? linearBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar)
+        : circularBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar);
+    if (index >= 0) this.onBeatTap(index);
+  };
 
   /** Draw on the next frame. While the metronome runs, keeps drawing every frame. */
   invalidate(): void {
@@ -77,6 +94,10 @@ export class VizController {
   private render(): void {
     if (this.size.width === 0) return;
     const s = this.getSettings();
+    if (s.theme !== this.themeName) {
+      this.themeName = s.theme;
+      this.theme = readTheme(this.canvas);
+    }
     const heard = this.source.heardTime();
     const frame = computeFrame({
       running: this.source.running(),

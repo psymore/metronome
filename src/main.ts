@@ -2,7 +2,13 @@ import './styles.css';
 import { AudioEngine, type SoundSlot } from './engine/audioEngine';
 import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
-import { DEFAULT_SETTINGS, loadSettings, type Settings, saveSettings } from './state/settings';
+import {
+  cycleBeatLevel,
+  DEFAULT_SETTINGS,
+  loadSettings,
+  type Settings,
+  saveSettings,
+} from './state/settings';
 import { createStore } from './state/store';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
@@ -79,6 +85,7 @@ const viz = new VizController(
     beatAt: (time) => engine.timeline.beatAt(time),
   },
   () => store.get(),
+  (index) => store.set({ levels: cycleBeatLevel(store.get().levels, index) }),
 );
 store.subscribe(() => viz.invalidate());
 

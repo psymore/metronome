@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   circularLayout,
+  circularNodeSpacing,
   glowIntensity,
   handAngle,
+  linearNodeSpacing,
   linearNodeX,
   linearStickX,
   nodeAngle,
@@ -70,10 +72,12 @@ describe('glowIntensity and nodeRadius', () => {
     expect(glowIntensity(-0.01)).toBe(0);
   });
 
-  it('shrinks nodes for busy bars and clamps to 5–16 px', () => {
-    expect(nodeRadius(4, 200)).toBeCloseTo(14);
-    expect(nodeRadius(16, 200)).toBeCloseTo(9);
-    expect(nodeRadius(4, 10)).toBe(5);
-    expect(nodeRadius(4, 1000)).toBe(16);
+  it('stays fixed at 17px when beats are spaced out, shrinking for a tiny span or crowding', () => {
+    expect(nodeRadius(200, circularNodeSpacing(4, 200))).toBe(17);
+    expect(nodeRadius(200, circularNodeSpacing(40, 200))).toBeLessThan(17);
+    expect(nodeRadius(10, circularNodeSpacing(4, 10))).toBe(5);
+    expect(nodeRadius(1000, circularNodeSpacing(4, 1000))).toBe(17);
+    expect(nodeRadius(200, linearNodeSpacing(4, 400))).toBe(17);
+    expect(nodeRadius(200, linearNodeSpacing(20, 400))).toBeLessThan(17);
   });
 });

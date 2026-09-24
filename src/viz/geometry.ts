@@ -48,8 +48,22 @@ export function linearLayout(width: number, height: number) {
   return { left: pad, width: Math.max(10, width - pad * 2), y: height * 0.36 };
 }
 
-/** `span`: circle radius (circular) or half the track width (linear). */
-export function nodeRadius(count: number, span: number): number {
-  const perNode = count > 8 ? 0.045 : 0.07;
-  return Math.max(5, Math.min(16, span * perNode));
+/** Straight-line distance between adjacent node centers on a circle of radius `r`. */
+export function circularNodeSpacing(count: number, r: number): number {
+  return count > 1 ? 2 * r * Math.sin(Math.PI / count) : Number.POSITIVE_INFINITY;
+}
+
+/** Distance between adjacent node centers on a track of the given width. */
+export function linearNodeSpacing(count: number, width: number): number {
+  return count > 1 ? width / count : Number.POSITIVE_INFINITY;
+}
+
+/**
+ * `span`: circle radius (circular) or half the track width (linear).
+ * `spacing`: distance between adjacent node centers (see the helpers above).
+ * Fixed at 17 (the settings beat-row dot radius) to match it, only shrinking
+ * below that when the span is too small to fit it or beats are packed too tight.
+ */
+export function nodeRadius(span: number, spacing: number): number {
+  return Math.max(5, Math.min(17, span * 0.14, spacing * 0.42));
 }

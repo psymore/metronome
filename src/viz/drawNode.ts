@@ -13,10 +13,12 @@ export function drawNode(
 ): void {
   ctx.save();
   if (level === 'mute') {
+    ctx.shadowColor = theme.glow;
+    ctx.shadowBlur = 4 + 8 * glow;
     ctx.lineWidth = 2;
     ctx.strokeStyle = theme.nodeIdle;
     ctx.beginPath();
-    ctx.arc(x, y, radius * 0.8, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.stroke();
     if (glow > 0) {
       ctx.globalAlpha = glow;
@@ -26,7 +28,9 @@ export function drawNode(
     ctx.restore();
     return;
   }
-  const r = (level === 'accent' ? radius * 1.25 : radius) * (1 + 0.3 * glow);
+  // Same size for every level (matches the settings beat row) — accent is distinguished
+  // by color/glow only, so a bigger accent ball never crowds its neighbors.
+  const r = radius * (1 + 0.3 * glow);
   ctx.shadowColor = theme.glow;
   ctx.shadowBlur = 6 + 34 * glow;
   ctx.fillStyle = level === 'accent' ? theme.accent : theme.node;

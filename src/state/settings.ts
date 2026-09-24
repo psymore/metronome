@@ -4,7 +4,7 @@ export type BeatLevel = 'accent' | 'normal' | 'mute';
 export type VisualizerKind = 'circular' | 'linear';
 export const BEAT_UNITS = [2, 4, 8, 16] as const;
 export type BeatUnit = (typeof BEAT_UNITS)[number];
-export const THEMES = ['teal', 'amber', 'yellow'] as const;
+export const THEMES = ['teal', 'amber', 'blue'] as const;
 export type ThemeName = (typeof THEMES)[number];
 
 export const MIN_BEATS = 1;
@@ -24,6 +24,8 @@ export interface Settings {
   accentSoundId: string;
   normalSoundId: string;
   theme: ThemeName;
+  /** Whether tapping a beat node directly on the circular/linear visualizer cycles its level. */
+  beatsClickable: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accentSoundId: 'builtin:click-high',
   normalSoundId: 'builtin:click',
   theme: 'teal',
+  beatsClickable: true,
 };
 
 export function defaultSettings(): Settings {
@@ -82,6 +85,15 @@ export function nextLevel(level: BeatLevel): BeatLevel {
   return 'accent';
 }
 
+/** Cycles a single beat's level, leaving the array untouched if the index is out of range. */
+export function cycleBeatLevel(levels: readonly BeatLevel[], index: number): BeatLevel[] {
+  const current = levels[index];
+  if (current === undefined) return [...levels];
+  const next = [...levels];
+  next[index] = nextLevel(current);
+  return next;
+}
+
 export function withBeatsPerBar(s: Settings, n: number): Pick<Settings, 'beatsPerBar' | 'levels'> {
   const beatsPerBar = Math.min(MAX_BEATS, Math.max(MIN_BEATS, Math.round(n)));
   return { beatsPerBar, levels: resizeLevels(s.levels, beatsPerBar) };
@@ -122,6 +134,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     accentSoundId: isSoundId(r.accentSoundId) ? r.accentSoundId : d.accentSoundId,
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
     theme: isThemeName(r.theme) ? r.theme : d.theme,
+    beatsClickable: typeof r.beatsClickable === 'boolean' ? r.beatsClickable : d.beatsClickable,
   };
 }
 

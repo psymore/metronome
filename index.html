@@ -16,6 +16,7 @@
       <header class="topbar">
         <h1 class="title">Metronome</h1>
         <div class="seg" role="radiogroup" aria-label="Visualiser">
+          <span class="seg-thumb" aria-hidden="true"></span>
           <button type="button" role="radio" class="seg-btn" data-viz="circular" aria-checked="true">Circle</button>
           <button type="button" role="radio" class="seg-btn" data-viz="linear" aria-checked="false">Line</button>
         </div>
@@ -29,12 +30,9 @@
         </button>
       </section>
 
-      <div class="side">
-        <section class="panel beats" aria-label="Beat accents">
-          <span class="label">Beats</span>
-          <div id="beatRow" class="beat-row"></div>
-        </section>
+      <div id="mainBeatRow" class="beat-row main-beat-row" role="group" aria-label="Beats" hidden></div>
 
+      <div class="side">
         <section class="panel controls" aria-label="Tempo controls">
           <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
           <div class="col">
@@ -118,8 +116,18 @@
         <div class="unit-row" role="radiogroup" aria-label="Color theme">
           <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false">Teal</button>
           <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false">Amber</button>
-          <button type="button" role="radio" class="chip" data-theme-option="yellow" aria-checked="false">Yellow</button>
+          <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false">Blue</button>
         </div>
+      </div>
+      <div class="field">
+        <span>
+          Beats
+          <button type="button" id="beatsClickableToggle" class="switch" role="switch" aria-checked="true" aria-label="Tap beats directly on the visualiser">
+            <span class="switch-knob"></span>
+          </button>
+        </span>
+        <div id="beatRow" class="beat-row"></div>
+        <p class="hint">Tap a beat to cycle accent → normal → mute — works here, on the circle or line, and on the main screen. The switch shows or hides the beat row on the main screen.</p>
       </div>
       <label class="field">
         <span>Volume <output id="volumeValue">80%</output></span>

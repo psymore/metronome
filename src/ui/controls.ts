@@ -1,5 +1,5 @@
 import { clampBpm } from '../engine/timing';
-import { nextLevel, type Settings } from '../state/settings';
+import { cycleBeatLevel, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
 import { angleDelta, bpmAfterRotation, DEGREES_PER_BPM } from './dialMath';
@@ -15,6 +15,7 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   const dialRing = byId('dialRing');
   const bpmValue = byId('bpmValue');
   const beatRow = byId('beatRow');
+  const mainBeatRow = byId('mainBeatRow');
   const sigTop = byId('sigTop');
   const sigBottom = byId('sigBottom');
   const tapBtn = byId<HTMLButtonElement>('tapBtn');
@@ -78,20 +79,18 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
     if (e.detail === 0) tap(); // keyboard activation (Enter)
   });
 
-  beatRow.addEventListener('click', (e) => {
+  const onBeatRowClick = (e: Event) => {
     const button = (e.target as HTMLElement).closest<HTMLButtonElement>('.beat');
     if (!button) return;
     const index = Number(button.dataset.index);
-    const levels = [...store.get().levels];
-    const current = levels[index];
-    if (current === undefined) return;
-    levels[index] = nextLevel(current);
-    store.set({ levels });
-  });
+    store.set({ levels: cycleBeatLevel(store.get().levels, index) });
+  };
+  beatRow.addEventListener('click', onBeatRowClick);
+  mainBeatRow.addEventListener('click', onBeatRowClick);
 
-  function renderBeats(s: Settings): void {
-    if (beatRow.childElementCount !== s.beatsPerBar) {
-      beatRow.replaceChildren(
+  function renderBeatsInto(container: HTMLElement, s: Settings): void {
+    if (container.childElementCount !== s.beatsPerBar) {
+      container.replaceChildren(
         ...Array.from({ length: s.beatsPerBar }, (_, i) => {
           const b = document.createElement('button');
           b.type = 'button';
@@ -102,11 +101,17 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
       );
     }
     s.levels.forEach((level, i) => {
-      const b = beatRow.children[i];
+      const b = container.children[i];
       if (!(b instanceof HTMLButtonElement)) return;
       b.className = `beat level-${level}`;
       b.setAttribute('aria-label', `Beat ${i + 1}: ${level}. Click to change.`);
     });
+  }
+
+  function renderBeats(s: Settings): void {
+    renderBeatsInto(beatRow, s);
+    renderBeatsInto(mainBeatRow, s);
+    mainBeatRow.hidden = !s.beatsClickable;
   }
 
   function render(s: Settings): void {

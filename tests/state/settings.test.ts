@@ -97,6 +97,7 @@ describe('sanitizeSettings', () => {
       accentSoundId: 'builtin:click-high',
       normalSoundId: 'builtin:click',
       theme: 'teal',
+      beatsClickable: true,
     });
   });
 
@@ -118,7 +119,7 @@ describe('sanitizeSettings', () => {
       syncOffsetMs: -35,
       volume: 0.3,
       accentSoundId: 'user:abc',
-      theme: 'yellow' as const,
+      theme: 'blue' as const,
     };
     expect(sanitizeSettings(JSON.parse(JSON.stringify(s)))).toEqual(s);
   });
