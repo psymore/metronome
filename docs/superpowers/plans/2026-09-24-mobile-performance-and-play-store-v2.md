@@ -963,7 +963,7 @@ Bubblewrap needs a live, public URL to point at before it can generate anything 
 - Consumes: nothing from earlier tasks.
 - Produces: a live Vercel production URL, needed by Task 6. No code interfaces.
 
-- [ ] **Step 1: Add the Vercel config**
+- [x] **Step 1: Add the Vercel config**
 
 Create `vercel.json` at the repo root:
 
@@ -977,7 +977,7 @@ Create `vercel.json` at the repo root:
 
 No SPA rewrite rule is needed: this app has a single `index.html` and no client-side router, so there is nothing to fall back to. `vercel.json` only pins the build command and output directory explicitly, so a change to `package.json`'s scripts can't silently change what gets deployed.
 
-- [ ] **Step 2: Deploy and confirm the Vite base is correct**
+- [x] **Step 2: Deploy and confirm the Vite base is correct** (via Vercel's GitHub-integration dashboard import, not the CLI — see ledger)
 
 ```bash
 vercel login
@@ -989,7 +989,7 @@ vercel --prod
 
 `vercel --prod` prints the production URL, of the form `https://metronome-<hash>.vercel.app` or `https://metronome.vercel.app` if the name was free. **Record this URL** — every later task in Phase B refers to it as `<vercel-domain>`.
 
-- [ ] **Step 3: Verify the deployed site in a browser**
+- [x] **Step 3: Verify the deployed site in a browser**
 
 Open `<vercel-domain>` in a browser. Verify:
 - The app loads with no console errors and no missing assets (a broken asset path here means the `base` config leaked in — check Step 2).
@@ -997,7 +997,7 @@ Open `<vercel-domain>` in a browser. Verify:
 - DevTools → Application → Service Workers shows the worker registered and activated.
 - The metronome works: start it, hear the click, watch the visualiser.
 
-- [ ] **Step 4: Pad the bottom for the Android gesture bar**
+- [x] **Step 4: Pad the bottom for the Android gesture bar**
 
 In `src/styles.css`, replace the `.app` rule:
 
@@ -1026,7 +1026,7 @@ with:
 
 `index.html` already carries `viewport-fit=cover`, so the `env()` values resolve on both the live Vercel site and the eventual TWA (Chrome supplies the same inset values either way, since it's the same rendering engine — see the earlier discussion in this plan's history about TWA vs. Capacitor performance parity).
 
-- [ ] **Step 5: Redeploy and verify on the desktop browser**
+- [x] **Step 5: Redeploy and verify on the desktop browser**
 
 ```bash
 vercel --prod
@@ -1034,7 +1034,7 @@ vercel --prod
 
 In a desktop browser this change is inert (`env(safe-area-inset-bottom)` is `0px` there, so `max()` resolves to the original `24px`) — confirm the layout looks unchanged at `<vercel-domain>`. The real check happens on a phone once the TWA exists (Task 9).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add vercel.json src/styles.css
@@ -1058,11 +1058,11 @@ Bubblewrap reads the deployed manifest and interactively builds an Android Studi
 - Consumes: `<vercel-domain>` from Task 5.
 - Produces: a signable Android project at `android/`, and a keystore file whose path Task 8 needs.
 
-- [ ] **Step 1: Ask the user before generating the keystore**
+- [x] **Step 1: Ask the user before generating the keystore**
 
 Stop and confirm with the user before running `bubblewrap init`. They need to choose a keystore password and a key password, and decide where the keystore file will live and be backed up. Do not invent passwords for them. Tell them explicitly: **back this file up somewhere safe — if it is lost, no future update can be published to this listing**, exactly as for the retired Capacitor plan's keystore.
 
-- [ ] **Step 2: Ignore Bubblewrap's build outputs before generating anything**
+- [x] **Step 2: Ignore Bubblewrap's build outputs before generating anything**
 
 Append to `.gitignore`:
 
@@ -1077,7 +1077,7 @@ android/keystore.properties
 
 The `android/` project itself **is** committed once generated — only its build outputs and anything key-bearing are ignored.
 
-- [ ] **Step 3: Run the Bubblewrap init wizard**
+- [x] **Step 3: Run the Bubblewrap init wizard** (via direct `@bubblewrap/core` calls, not the interactive wizard — see ledger)
 
 ```bash
 mkdir android
@@ -1103,7 +1103,7 @@ If the wizard asks to install/accept an Android SDK license, accept only license
 
 Expected output: a generated project inside `android/` (Gradle files, an `app/` module, `twa-manifest.json` recording the config just entered) and the keystore file at the path chosen in Step 1.
 
-- [ ] **Step 4: Verify and correct the SDK levels**
+- [x] **Step 4: Verify and correct the SDK levels** (already 36/36, no correction needed)
 
 Read `android/app/build.gradle`. Google Play requires `targetSdk = 36` for new submissions (Global Constraints) — Bubblewrap 1.25.0's default may or may not already match this. Check `compileSdkVersion` and `targetSdkVersion`:
 
@@ -1112,7 +1112,7 @@ Read `android/app/build.gradle`. Google Play requires `targetSdk = 36` for new s
 
 Do not proceed to Task 7 until this reads `36` in both places.
 
-- [ ] **Step 5: Run the app on a device or emulator**
+- [x] **Step 5: Run the app on a device or emulator** (API 35 emulator, user's explicit choice — see ledger)
 
 Connect a phone with USB debugging on (`adb devices` lists it), or start an emulator running API 36.
 
@@ -1134,7 +1134,7 @@ Verify on the device:
 - The metronome works: tempo, signature, sounds, uploads.
 - Killing and reopening the app restores saved settings (`localStorage` inside the WebView-rendered Chrome tab is the site's real storage, shared with any browser visit to the same origin).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add android/ .gitignore package.json
@@ -1158,7 +1158,7 @@ The app still shows Chrome's address bar (Task 6, Step 5) because Android has no
 - Consumes: the keystore from Task 6.
 - Produces: a verifiable Digital Asset Links statement at `https://<vercel-domain>/.well-known/assetlinks.json`.
 
-- [ ] **Step 1: Get the signing certificate's SHA-256 fingerprint**
+- [x] **Step 1: Get the signing certificate's SHA-256 fingerprint** (reused the fingerprint already captured in Task 6)
 
 ```bash
 keytool -list -v -keystore <path-to-keystore-from-task-6> -alias <alias-chosen-in-task-6>
@@ -1174,7 +1174,7 @@ cat android/assetlinks.json 2>/dev/null
 
 If that file exists and contains a `sha256_cert_fingerprints` array, use its value directly instead of re-deriving it with `keytool`.
 
-- [ ] **Step 2: Write the asset links file**
+- [x] **Step 2: Write the asset links file**
 
 Create `public/.well-known/assetlinks.json`:
 
@@ -1193,14 +1193,14 @@ Create `public/.well-known/assetlinks.json`:
 
 Vite's `public/` directory is copied verbatim into `dist/`, so this becomes `dist/.well-known/assetlinks.json`, served by Vercel at exactly the path Android checks.
 
-- [ ] **Step 3: Redeploy**
+- [x] **Step 3: Redeploy** (pushed to `master`; Vercel's GitHub integration auto-deployed)
 
 ```bash
 npm run build
 vercel --prod
 ```
 
-- [ ] **Step 4: Verify the file is live and correctly formed**
+- [x] **Step 4: Verify the file is live and correctly formed**
 
 ```bash
 curl -s https://<vercel-domain>/.well-known/assetlinks.json
@@ -1216,7 +1216,7 @@ curl -s "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.
 
 Expected: a JSON response listing a matching statement for `com.psymore.metronome` with the fingerprint from Step 1. An empty `{}` response means the fingerprint, package name, or URL has a typo — recheck Step 2 character-for-character.
 
-- [ ] **Step 5: Reinstall the app and confirm the address bar disappears**
+- [x] **Step 5: Reinstall the app and confirm the address bar disappears**
 
 ```bash
 cd android
@@ -1226,7 +1226,7 @@ adb install -r app-release-signed.apk
 
 Open the app on the device. Expected: it now launches genuinely full-screen — no Chrome address bar, no "Open in Chrome" affordance. This is the concrete proof that Digital Asset Links verified correctly. If the address bar is still visible, wait a minute (Android caches verification results briefly) and reopen; if it persists, recheck Step 4's validator output.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add public/.well-known/assetlinks.json
@@ -1247,7 +1247,7 @@ Bubblewrap's `build` command (already used in Tasks 6-7 to produce the local tes
 - Consumes: the Android project and keystore from Task 6, the verified asset links from Task 7.
 - Produces: `android/app-release-bundle.aab` (or whatever path Bubblewrap's `build` output reports).
 
-- [ ] **Step 1: Build the release bundle**
+- [x] **Step 1: Build the release bundle** (drove `gradlew bundleRelease` + `jarsigner` directly, not `npx bubblewrap build` — see ledger)
 
 ```bash
 cd android
@@ -1256,7 +1256,7 @@ npx @bubblewrap/cli@1.25.0 build
 
 Expected: the command completes without error and reports the AAB's output path (typically `android/app-release-bundle.aab`).
 
-- [ ] **Step 2: Verify the AAB is signed with the intended key, not a debug key**
+- [x] **Step 2: Verify the AAB is signed with the intended key, not a debug key**
 
 ```bash
 jarsigner -verify -verbose -certs android/app-release-bundle.aab
@@ -1264,7 +1264,7 @@ jarsigner -verify -verbose -certs android/app-release-bundle.aab
 
 Expected: `jar verified`, and the certificate details shown match the keystore created in Task 6 (same alias, same distinguished name), not an auto-generated debug certificate.
 
-- [ ] **Step 3: Confirm the target SDK one more time**
+- [x] **Step 3: Confirm the target SDK one more time**
 
 Re-check `android/app/build.gradle` for `compileSdkVersion 36` / `targetSdkVersion 36` (Task 6, Step 4). An AAB below API 36 is rejected at Play upload as of 2026-08-31 — confirm this before spending a review cycle finding out the hard way.
 
@@ -1309,7 +1309,7 @@ Ask the user: is the Play Console account a **personal** account or an **organis
 
 This sets the earliest possible production date if the 12-tester rule applies — say so plainly.
 
-- [ ] **Step 2: Write the privacy policy**
+- [x] **Step 2: Write the privacy policy**
 
 Create `docs/privacy-policy.md`:
 
@@ -1420,7 +1420,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: everything from Tasks 5-9.
 - Produces: no code interfaces.
 
-- [ ] **Step 1: Write the runbook**
+- [x] **Step 1: Write the runbook**
 
 Create `docs/architecture/platforms.md` covering, as a runbook someone can follow without reading this plan:
 
@@ -1434,7 +1434,7 @@ Create `docs/architecture/platforms.md` covering, as a runbook someone can follo
 - **The 12-testers/14-days rule** and who it applies to.
 - **Performance invariants from Phase A**, so they are not undone: the render loop must stay gated on `document.hidden`; idle nodes must stay sprite-cached and the cache must be invalidated on theme and DPR change; the `AudioContext` must stay suspended while stopped; the wake lock must guard against overlapping `request()` calls (see the Task 4 post-implementation note in this document's history).
 
-- [ ] **Step 2: Update CLAUDE.md**
+- [x] **Step 2: Update CLAUDE.md**
 
 In the architecture table in `CLAUDE.md`, change the platforms row:
 
@@ -1453,11 +1453,11 @@ In the "Rules that are easy to break" list, add:
 
 Also update the **Status** line if the metronome plan's final task is now done.
 
-- [ ] **Step 3: Verify the docs match reality**
+- [x] **Step 3: Verify the docs match reality** (also found and fixed Biome linting `android/`'s build output — see ledger)
 
 Re-read `docs/architecture/platforms.md` against the repo. Every command must be one that was actually run in Tasks 5-9. Every version number must match `android/app/build.gradle` and `package.json`. Fix any drift.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/architecture/platforms.md CLAUDE.md
