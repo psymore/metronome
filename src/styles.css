@@ -424,6 +424,7 @@ svg.stroke {
   display: grid;
   justify-items: center;
   gap: 6px;
+  width: 64px;
 }
 .col .label + .square-btn {
   margin-top: 10px;
