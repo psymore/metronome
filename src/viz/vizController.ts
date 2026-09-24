@@ -1,10 +1,12 @@
 import type { BeatEvent } from '../engine/scheduler';
 import type { BeatLevel, Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
+import { drawNode } from './drawNode';
 import { computeFrame } from './frame';
 import { circularLayout } from './geometry';
 import { circularBeatAt, linearBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
+import { NodeSpriteCache, spriteSize } from './nodeSprite';
 import { shouldAnimate } from './renderPolicy';
 import type { VizTheme } from './types';
 
@@ -40,6 +42,9 @@ export class VizController {
   private themeName: string | undefined;
   private theme: VizTheme;
   private lastGlow = 0;
+  private readonly sprites = new NodeSpriteCache((level, label, radius, dpr) =>
+    this.paintSprite(level, label, radius, dpr),
+  );
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -89,6 +94,32 @@ export class VizController {
     }
   };
 
+  /** Paints one idle node, label and all, into its own canvas so frames can blit it. */
+  private paintSprite(
+    level: BeatLevel,
+    label: string,
+    radius: number,
+    dpr: number,
+  ): CanvasImageSource | null {
+    const size = spriteSize(radius);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(size * dpr));
+    canvas.height = canvas.width;
+    const c = canvas.getContext('2d');
+    if (!c) return null;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const mid = size / 2;
+    drawNode(c, mid, mid, radius, level, 0, this.theme);
+    c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.shadowBlur = 3;
+    c.shadowColor = 'rgba(0,0,0,0.6)';
+    c.fillStyle = level === 'mute' ? this.theme.accent : '#fff';
+    c.fillText(label, mid, mid);
+    return canvas;
+  }
+
   private resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -108,6 +139,7 @@ export class VizController {
       this.themeName = s.theme;
       this.theme = readTheme(this.canvas);
     }
+    this.sprites.setContext(s.theme, this.dpr);
     const heard = this.source.heardTime();
     const beat = this.source.beatAt(heard);
     const frame = computeFrame({
@@ -120,7 +152,7 @@ export class VizController {
     });
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
-    visualizer.draw(this.ctx, this.size, frame, this.theme);
+    visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites);
     if (frame.glow > this.lastGlow) {
       const level =
         frame.levels[frame.activeBeat] ?? (frame.activeBeat === 0 ? 'accent' : 'normal');

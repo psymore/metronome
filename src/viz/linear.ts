@@ -1,10 +1,11 @@
 import type { BeatLevel } from '../state/settings';
 import { drawNode } from './drawNode';
 import { linearLayout, linearNodeSpacing, linearNodeX, linearStickX, nodeRadius } from './geometry';
+import { spriteSize } from './nodeSprite';
 import type { Visualizer } from './types';
 
 export const linearVisualizer: Visualizer = {
-  draw(ctx, { width, height }, frame, theme) {
+  draw(ctx, { width, height }, frame, theme, sprites) {
     ctx.clearRect(0, 0, width, height);
     const n = frame.beatsPerBar;
     const track = linearLayout(width, height);
@@ -63,14 +64,26 @@ export const linearVisualizer: Visualizer = {
     ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 3;
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    const size = spriteSize(nodeR);
     for (let i = 0; i < n; i++) {
       const x = linearNodeX(i, n, track.left, track.width);
       const level: BeatLevel = frame.levels[i] ?? (i === 0 ? 'accent' : 'normal');
-      drawNode(ctx, x, track.y, nodeR, level, i === frame.activeBeat ? frame.glow : 0, theme);
+      const label = String(i + 1);
+      const glow = i === frame.activeBeat ? frame.glow : 0;
+      if (glow === 0) {
+        const sprite = sprites.get(level, label, nodeR);
+        if (sprite) {
+          ctx.drawImage(sprite, x - size / 2, track.y - size / 2, size, size);
+          continue;
+        }
+      }
+      drawNode(ctx, x, track.y, nodeR, level, glow, theme);
+      ctx.save();
+      ctx.shadowBlur = 3;
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
       ctx.fillStyle = level === 'mute' ? theme.accent : '#fff';
-      ctx.fillText(String(i + 1), x, track.y);
+      ctx.fillText(label, x, track.y);
+      ctx.restore();
     }
   },
 };

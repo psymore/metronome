@@ -8,10 +8,11 @@ import {
   nodeRadius,
   polar,
 } from './geometry';
+import { spriteSize } from './nodeSprite';
 import type { Visualizer } from './types';
 
 export const circularVisualizer: Visualizer = {
-  draw(ctx, { width, height }, frame, theme) {
+  draw(ctx, { width, height }, frame, theme, sprites) {
     ctx.clearRect(0, 0, width, height);
     const n = frame.beatsPerBar;
     const { cx, cy, r, hub } = circularLayout(width, height);
@@ -66,15 +67,27 @@ export const circularVisualizer: Visualizer = {
     ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 3;
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    const size = spriteSize(nodeR);
     for (let i = 0; i < n; i++) {
       const a = nodeAngle(i, n);
       const p = polar(cx, cy, r, a);
       const level: BeatLevel = frame.levels[i] ?? (i === 0 ? 'accent' : 'normal');
-      drawNode(ctx, p.x, p.y, nodeR, level, i === frame.activeBeat ? frame.glow : 0, theme);
+      const label = String(i + 1);
+      const glow = i === frame.activeBeat ? frame.glow : 0;
+      if (glow === 0) {
+        const sprite = sprites.get(level, label, nodeR);
+        if (sprite) {
+          ctx.drawImage(sprite, p.x - size / 2, p.y - size / 2, size, size);
+          continue;
+        }
+      }
+      drawNode(ctx, p.x, p.y, nodeR, level, glow, theme);
+      ctx.save();
+      ctx.shadowBlur = 3;
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
       ctx.fillStyle = level === 'mute' ? theme.accent : '#fff';
-      ctx.fillText(String(i + 1), p.x, p.y);
+      ctx.fillText(label, p.x, p.y);
+      ctx.restore();
     }
   },
 };

@@ -1,4 +1,5 @@
 import type { VizFrame } from './frame';
+import type { NodeSprites } from './nodeSprite';
 
 export interface VizTheme {
   ring: string;
@@ -18,5 +19,6 @@ export interface Visualizer {
     size: { width: number; height: number },
     frame: VizFrame,
     theme: VizTheme,
+    sprites: NodeSprites,
   ): void;
 }
