@@ -14,11 +14,22 @@
   <body>
     <main class="app">
       <header class="topbar">
-        <h1 class="title">Metronome</h1>
-        <div class="seg" role="radiogroup" aria-label="Visualiser">
+        <div class="title-row">
+          <h1 class="title" data-i18n="app.title">Metronome</h1>
+          <div class="lang-switch">
+            <button type="button" id="langBtn" class="lang-btn" aria-haspopup="true" aria-expanded="false" data-i18n-aria-label="language.ariaLabel" aria-label="Change language">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" /></svg>
+            </button>
+            <div id="langMenu" class="lang-menu" role="menu" hidden>
+              <button type="button" role="menuitemradio" class="lang-option" data-lang="en" aria-checked="true" data-i18n="language.english">English</button>
+              <button type="button" role="menuitemradio" class="lang-option" data-lang="tr" aria-checked="false" data-i18n="language.turkish">Türkçe</button>
+            </div>
+          </div>
+        </div>
+        <div class="seg" role="radiogroup" data-i18n-aria-label="viz.ariaLabel" aria-label="Visualiser">
           <span class="seg-thumb" aria-hidden="true"></span>
-          <button type="button" role="radio" class="seg-btn" data-viz="circular" aria-checked="true">Circle</button>
-          <button type="button" role="radio" class="seg-btn" data-viz="linear" aria-checked="false">Line</button>
+          <button type="button" role="radio" class="seg-btn" data-viz="circular" aria-checked="true" data-i18n="viz.circle">Circle</button>
+          <button type="button" role="radio" class="seg-btn" data-viz="linear" aria-checked="false" data-i18n="viz.line">Line</button>
         </div>
       </header>
 
@@ -32,45 +43,45 @@
         </button>
       </section>
 
-      <div id="mainBeatRow" class="beat-row main-beat-row" role="group" aria-label="Beats" hidden></div>
+      <div id="mainBeatRow" class="beat-row main-beat-row" role="group" data-i18n-aria-label="mainBeatRow.ariaLabel" aria-label="Beats" hidden></div>
 
       <div class="side">
-        <section class="panel controls" aria-label="Tempo controls">
+        <section class="panel controls" data-i18n-aria-label="controls.ariaLabel" aria-label="Tempo controls">
           <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
           <div class="col">
-            <button type="button" id="signatureBtn" class="square-btn" aria-label="Time signature">
+            <button type="button" id="signatureBtn" class="square-btn" data-i18n-aria-label="signature.ariaLabel" aria-label="Time signature">
               <span class="sig"><span id="sigTop">4</span><span id="sigBottom">4</span></span>
             </button>
-            <span class="label">Signature</span>
-            <button type="button" id="soundBtn" class="square-btn" aria-label="Sounds">
+            <span class="label" data-i18n="label.signature">Signature</span>
+            <button type="button" id="soundBtn" class="square-btn" data-i18n-aria-label="sound.ariaLabel" aria-label="Sounds">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z" /></svg>
             </button>
-            <span class="label">Sound</span>
+            <span class="label" data-i18n="label.sound">Sound</span>
           </div>
 
           <div class="dial-col">
-            <div id="dial" class="dial" role="slider" tabindex="0" aria-label="Tempo in BPM" aria-valuemin="20" aria-valuemax="400" aria-valuenow="120">
+            <div id="dial" class="dial" role="slider" tabindex="0" data-i18n-aria-label="dial.ariaLabel" aria-label="Tempo in BPM" aria-valuemin="20" aria-valuemax="400" aria-valuenow="120">
               <div id="dialRing" class="dial-ring"></div>
               <div class="dial-face">
                 <output id="bpmValue" class="bpm-value">120</output>
-                <span class="bpm-unit">BPM</span>
+                <span class="bpm-unit" data-i18n="bpm.unit">BPM</span>
                 <span id="dialSignature" class="dial-signature">4/4</span>
               </div>
             </div>
             <span id="tempoMarking" class="tempo-marking"></span>
             <div class="nudges">
-              <button type="button" id="bpmDown" class="nudge" aria-label="Slower">−</button>
-              <button type="button" id="bpmUp" class="nudge" aria-label="Faster">+</button>
+              <button type="button" id="bpmDown" class="nudge" data-i18n-aria-label="nudge.slower" aria-label="Slower">−</button>
+              <button type="button" id="bpmUp" class="nudge" data-i18n-aria-label="nudge.faster" aria-label="Faster">+</button>
             </div>
           </div>
 
           <div class="col">
-            <button type="button" id="tapBtn" class="square-btn tap" aria-label="Tap tempo">TAP</button>
-            <span class="label">Tap</span>
-            <button type="button" id="settingsBtn" class="square-btn" aria-label="Settings">
+            <button type="button" id="tapBtn" class="square-btn tap" data-i18n-aria-label="tap.ariaLabel" aria-label="Tap tempo" data-i18n="tap.label">TAP</button>
+            <span class="label" data-i18n="label.tap">Tap</span>
+            <button type="button" id="settingsBtn" class="square-btn" data-i18n-aria-label="settings.ariaLabel" aria-label="Settings">
               <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>
             </button>
-            <span class="label">Settings</span>
+            <span class="label" data-i18n="label.settings">Settings</span>
           </div>
         </section>
       </div>
@@ -81,23 +92,30 @@
 
     <dialog id="signatureDialog" class="sheet" aria-labelledby="sigTitle">
       <form method="dialog" class="sheet-head">
-        <h2 id="sigTitle">Time signature</h2>
-        <button type="submit" class="icon-btn" aria-label="Close">✕</button>
+        <h2 id="sigTitle" data-i18n="sigDialog.title">Time signature</h2>
+        <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
       <div class="sig-editor">
         <div class="stepper">
-          <button type="button" id="beatsDown" class="nudge" aria-label="Fewer beats">−</button>
+          <button type="button" id="beatsDown" class="nudge" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
           <output id="beatsValue" class="stepper-value">4</output>
-          <button type="button" id="beatsUp" class="nudge" aria-label="More beats">+</button>
+          <button type="button" id="beatsUp" class="nudge" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
         </div>
-        <div class="unit-row" role="radiogroup" aria-label="Beat unit">
+        <div class="unit-row" role="radiogroup" data-i18n-aria-label="unit.ariaLabel" aria-label="Beat unit">
           <button type="button" role="radio" class="chip" data-unit="2" aria-checked="false">2</button>
           <button type="button" role="radio" class="chip" data-unit="4" aria-checked="false">4</button>
           <button type="button" role="radio" class="chip" data-unit="8" aria-checked="false">8</button>
           <button type="button" role="radio" class="chip" data-unit="16" aria-checked="false">16</button>
         </div>
       </div>
-      <h3 class="sheet-sub">Presets</h3>
+      <h3 class="sheet-sub" data-i18n="subdivision.title">Subdivision</h3>
+      <div class="unit-row" role="radiogroup" data-i18n-aria-label="subdivision.ariaLabel" aria-label="Click subdivision">
+        <button type="button" role="radio" class="chip" data-subdivision="1" aria-checked="true" data-i18n="subdivision.off">Off</button>
+        <button type="button" role="radio" class="chip" data-subdivision="2" aria-checked="false" data-i18n="subdivision.eighths">8ths</button>
+        <button type="button" role="radio" class="chip" data-subdivision="3" aria-checked="false" data-i18n="subdivision.triplets">Triplets</button>
+        <button type="button" role="radio" class="chip" data-subdivision="4" aria-checked="false" data-i18n="subdivision.sixteenths">16ths</button>
+      </div>
+      <h3 class="sheet-sub" data-i18n="presets.title">Presets</h3>
       <div class="preset-row">
         <button type="button" class="chip" data-preset="2/4">2/4</button>
         <button type="button" class="chip" data-preset="3/4">3/4</button>
@@ -108,85 +126,90 @@
         <button type="button" class="chip" data-preset="9/8">9/8</button>
         <button type="button" class="chip" data-preset="12/8">12/8</button>
       </div>
-      <h3 class="sheet-sub">Song length</h3>
+      <h3 class="sheet-sub" data-i18n="songLength.title">Song length</h3>
       <div class="stepper">
-        <button type="button" id="targetBarsDown" class="nudge" aria-label="Fewer bars">−</button>
+        <button type="button" id="targetBarsDown" class="nudge" data-i18n-aria-label="nudge.fewerBars" aria-label="Fewer bars">−</button>
         <output id="targetBarsValue" class="stepper-value">Off</output>
-        <button type="button" id="targetBarsUp" class="nudge" aria-label="More bars">+</button>
+        <button type="button" id="targetBarsUp" class="nudge" data-i18n-aria-label="nudge.moreBars" aria-label="More bars">+</button>
       </div>
-      <p class="hint">Set the number of bars in the piece to see your position in it while playing. 0 turns it off.</p>
+      <p class="hint" data-i18n="songLength.hint">Set the number of bars in the piece to see your position in it while playing. 0 turns it off.</p>
     </dialog>
 
     <dialog id="settingsDialog" class="sheet" aria-labelledby="setTitle">
       <form method="dialog" class="sheet-head">
-        <h2 id="setTitle">Settings</h2>
-        <button type="submit" class="icon-btn" aria-label="Close">✕</button>
+        <h2 id="setTitle" data-i18n="settingsDialog.title">Settings</h2>
+        <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
       <div class="field">
-        <span>Theme</span>
+        <span data-i18n="theme.label">Theme</span>
         <div class="unit-row" role="radiogroup" aria-label="Color theme">
-          <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false">Teal</button>
-          <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false">Amber</button>
-          <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false">Blue</button>
+          <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false" data-i18n="theme.teal">Teal</button>
+          <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false" data-i18n="theme.amber">Amber</button>
+          <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false" data-i18n="theme.blue">Blue</button>
         </div>
       </div>
       <div class="field">
         <span>
-          Beats
-          <button type="button" id="beatsClickableToggle" class="switch" role="switch" aria-checked="true" aria-label="Tap beats directly on the visualiser">
+          <span data-i18n="beats.label">Beats</span>
+          <button type="button" id="beatsClickableToggle" class="switch" role="switch" aria-checked="true" data-i18n-aria-label="beats.switchAriaLabel" aria-label="Tap beats directly on the visualiser">
             <span class="switch-knob"></span>
           </button>
         </span>
         <div id="beatRow" class="beat-row"></div>
-        <p class="hint">Tap a beat to cycle accent → normal → mute — works here, on the circle or line, and on the main screen. The switch shows or hides the beat row on the main screen.</p>
+        <p class="hint" data-i18n="beats.hint">Tap a beat to cycle accent → normal → mute — works here, on the circle or line, and on the main screen. The switch shows or hides the beat row on the main screen.</p>
       </div>
       <div class="field">
         <span>
-          Vibrate on beat
-          <button type="button" id="hapticsToggle" class="switch" role="switch" aria-checked="false" aria-label="Vibrate on each beat">
+          <span data-i18n="haptics.label">Vibrate on beat</span>
+          <button type="button" id="hapticsToggle" class="switch" role="switch" aria-checked="false" data-i18n-aria-label="haptics.switchAriaLabel" aria-label="Vibrate on each beat">
             <span class="switch-knob"></span>
           </button>
         </span>
-        <p class="hint">Feel the beat on devices that support vibration — useful when practicing with sound off.</p>
+        <p class="hint" data-i18n="haptics.hint">Feel the beat on devices that support vibration — useful when practicing with sound off.</p>
       </div>
       <label class="field">
-        <span>Volume <output id="volumeValue">80%</output></span>
+        <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceMinutesValue">Off</output></span>
+        <input id="practiceMinutesInput" type="range" min="0" max="60" step="1" />
+        <small class="hint" data-i18n="practiceTimer.hint">Stops the metronome automatically after this many minutes. 0 turns it off.</small>
+      </label>
+      <label class="field">
+        <span><span data-i18n="volume.label">Volume</span> <output id="volumeValue">80%</output></span>
         <input id="volumeInput" type="range" min="0" max="100" step="1" />
       </label>
       <label class="field">
-        <span>Visual sync offset <output id="offsetValue">0 ms</output></span>
+        <span><span data-i18n="syncOffset.label">Visual sync offset</span> <output id="offsetValue">0 ms</output></span>
         <input id="offsetInput" type="range" min="-200" max="200" step="1" />
-        <small class="hint">If the flash comes before you hear the click (common with Bluetooth headphones), move this right to delay the visuals.</small>
+        <small class="hint" data-i18n="syncOffset.hint">If the flash comes before you hear the click (common with Bluetooth headphones), move this right to delay the visuals.</small>
       </label>
-      <button type="button" id="resetBtn" class="wide-btn danger">Reset all settings</button>
-      <p class="hint">Keys: Space start/stop · ↑↓ tempo (Shift ×5) · PgUp/PgDn ±10 · T tap · V visualiser</p>
+      <button type="button" id="resetBtn" class="wide-btn danger" data-i18n="reset.button">Reset all settings</button>
+      <p class="hint" data-i18n="shortcuts.hint">Keys: Space start/stop · ↑↓ tempo (Shift ×5) · PgUp/PgDn ±10 · T tap · V visualiser</p>
     </dialog>
 
     <dialog id="soundDialog" class="sheet" aria-labelledby="soundTitle">
       <form method="dialog" class="sheet-head">
-        <h2 id="soundTitle">Sounds</h2>
-        <button type="submit" class="icon-btn" aria-label="Close">✕</button>
+        <h2 id="soundTitle" data-i18n="soundDialog.title">Sounds</h2>
+        <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
       <div class="slot">
-        <label for="accentSelect">Accent (beat 1)</label>
+        <label for="accentSelect" data-i18n="accent.label">Accent (beat 1)</label>
         <div class="slot-row">
           <select id="accentSelect"></select>
-          <button type="button" class="small-btn" data-preview="accentSoundId" aria-label="Preview accent sound">▶</button>
+          <button type="button" class="small-btn" data-preview="accentSoundId" data-i18n-aria-label="accent.previewAriaLabel" aria-label="Preview accent sound">▶</button>
         </div>
       </div>
       <div class="slot">
-        <label for="normalSelect">Other beats</label>
+        <label for="normalSelect" data-i18n="otherBeats.label">Other beats</label>
         <div class="slot-row">
           <select id="normalSelect"></select>
-          <button type="button" class="small-btn" data-preview="normalSoundId" aria-label="Preview beat sound">▶</button>
+          <button type="button" class="small-btn" data-preview="normalSoundId" data-i18n-aria-label="otherBeats.previewAriaLabel" aria-label="Preview beat sound">▶</button>
         </div>
       </div>
       <div id="dropZone" class="drop-zone">
-        <p>Drop audio files here, or</p>
-        <label class="small-btn">Choose files<input id="soundFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.oga,.flac,.m4a,.aac,.webm,.opus" multiple hidden /></label>
-        <p class="hint">WAV, MP3, OGG, FLAC · up to 2 MB and 2 s each</p>
+        <p data-i18n="dropZone.text">Drop audio files here, or</p>
+        <label class="small-btn"><span data-i18n="dropZone.chooseFiles">Choose files</span><input id="soundFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.oga,.flac,.m4a,.aac,.webm,.opus" multiple hidden /></label>
+        <p class="hint" data-i18n="dropZone.hint">WAV, MP3, OGG, FLAC · up to 2 MB and 2 s each</p>
       </div>
-      <h3 class="sheet-sub">Your sounds</h3>
+      <h3 class="sheet-sub" data-i18n="yourSounds.title">Your sounds</h3>
       <ul id="userSounds" class="sound-list"></ul>
     </dialog>
   </body>

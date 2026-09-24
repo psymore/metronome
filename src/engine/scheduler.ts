@@ -18,11 +18,15 @@ export interface Pattern {
   bpm: number;
   beatsPerBar: number;
   levels: readonly BeatLevel[];
+  /** Clicks per beat interval: 1 = just the beat, 2/3/4 = 8th/triplet/16th subdivision clicks. */
+  subdivision: 1 | 2 | 3 | 4;
 }
 
 export interface SchedulerOptions {
   getPattern: () => Pattern;
   onBeat: (beat: BeatEvent) => void;
+  /** Fires for each subdivision click strictly between two beats (not the beat itself). */
+  onSubdivision?: (time: number) => void;
   /** How far ahead of `now` to schedule, in seconds. */
   lookahead?: number;
   /** Gap between start() and the first beat, in seconds. */
@@ -103,6 +107,10 @@ export class Scheduler {
       this.stats.scheduled++;
       this.stats.minLead = Math.min(this.stats.minLead, beat.time - now);
       this.opts.onBeat(beat);
+      const subdivision = Math.max(1, pattern.subdivision);
+      for (let k = 1; k < subdivision; k++) {
+        this.opts.onSubdivision?.(this.nextTime + (duration * k) / subdivision);
+      }
       this.nextTime += duration;
       this.beatInBar++;
       if (this.beatInBar >= beatsPerBar) {

@@ -1,5 +1,6 @@
 import './styles.css';
 import { AudioEngine, type SoundSlot } from './engine/audioEngine';
+import { applyLanguage, applyTranslations, format } from './i18n/i18n';
 import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
 import {
@@ -13,6 +14,7 @@ import { createStore } from './state/store';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
+import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
 import { mountSoundDialog } from './ui/soundDialog';
@@ -38,6 +40,16 @@ const applyTheme = (s: Settings) => {
 };
 applyTheme(store.get());
 store.subscribe(applyTheme);
+
+applyLanguage(store.get().language);
+document.documentElement.lang = store.get().language;
+store.subscribe((s, prev) => {
+  if (s.language !== prev.language) {
+    applyLanguage(s.language);
+    document.documentElement.lang = s.language;
+    transport.refreshLabel();
+  }
+});
 
 const toast = createToast(byId('toast'));
 const engine = new AudioEngine({ getPattern: () => store.get() });
@@ -65,7 +77,7 @@ async function applySound(slot: SoundSlot): Promise<void> {
   if (request !== slotRequest[slot]) return; // a newer selection finished first
   engine.setSound(slot, result.pcm);
   if (result.error) {
-    toast(`Couldn't load that sound (${result.error}). Using the default.`);
+    toast(format('toast.soundLoadError', { error: result.error }));
     store.set(slot === 'accent' ? { accentSoundId: fallback } : { normalSoundId: fallback });
   }
 }
@@ -99,17 +111,34 @@ const viz = new VizController(
     }
     const target = store.get().targetBars;
     barCounter.hidden = false;
-    barCounter.textContent = target > 0 ? `Bar ${barIndex + 1} / ${target}` : `Bar ${barIndex + 1}`;
+    barCounter.textContent =
+      target > 0
+        ? format('barCounter.withTarget', { n: barIndex + 1, total: target })
+        : format('barCounter.plain', { n: barIndex + 1 });
   },
 );
 store.subscribe(() => viz.invalidate());
 
+let practiceTimer: ReturnType<typeof setTimeout> | undefined;
 const transport = mountTransport({
   engine,
   toast,
   onToggle: () => {
     viz.invalidate();
-    if (!engine.running) barCounter.hidden = true;
+    clearTimeout(practiceTimer);
+    practiceTimer = undefined;
+    if (!engine.running) {
+      barCounter.hidden = true;
+      return;
+    }
+    const minutes = store.get().practiceMinutes;
+    if (minutes > 0) {
+      practiceTimer = setTimeout(() => {
+        if (!engine.running) return;
+        void transport.toggle();
+        toast(format('toast.practiceTimerEnded', { minutes }));
+      }, minutes * 60_000);
+    }
   },
 });
 mountVizSwitch({ store });
@@ -117,6 +146,8 @@ mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
 mountSettingsDialog({ store });
 mountSoundDialog({ store, engine, sounds, library, toast });
+mountLanguageSwitch({ store });
+applyTranslations();
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);

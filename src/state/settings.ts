@@ -2,15 +2,20 @@ import { clampBpm } from '../engine/timing';
 
 export type BeatLevel = 'accent' | 'normal' | 'mute';
 export type VisualizerKind = 'circular' | 'linear';
+export const SUBDIVISIONS = [1, 2, 3, 4] as const;
+export type Subdivision = (typeof SUBDIVISIONS)[number];
 export const BEAT_UNITS = [2, 4, 8, 16] as const;
 export type BeatUnit = (typeof BEAT_UNITS)[number];
 export const THEMES = ['teal', 'amber', 'blue'] as const;
 export type ThemeName = (typeof THEMES)[number];
+export const LANGUAGES = ['en', 'tr'] as const;
+export type Language = (typeof LANGUAGES)[number];
 
 export const MIN_BEATS = 1;
 export const MAX_BEATS = 16;
 export const SYNC_OFFSET_LIMIT_MS = 200;
 export const MAX_TARGET_BARS = 999;
+export const MAX_PRACTICE_MINUTES = 180;
 export const SETTINGS_KEY = 'metronome.settings.v1';
 
 export interface Settings {
@@ -31,6 +36,11 @@ export interface Settings {
   haptics: boolean;
   /** Song length in bars, set up before playing; 0 means no target (just count up). */
   targetBars: number;
+  /** Minutes to play before auto-stopping; 0 means no limit. */
+  practiceMinutes: number;
+  /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
+  subdivision: Subdivision;
+  language: Language;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -47,6 +57,9 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsClickable: true,
   haptics: false,
   targetBars: 0,
+  practiceMinutes: 0,
+  subdivision: 1,
+  language: 'en',
 };
 
 export function defaultSettings(): Settings {
@@ -63,6 +76,14 @@ export function isBeatUnit(v: unknown): v is BeatUnit {
 
 export function isThemeName(v: unknown): v is ThemeName {
   return (THEMES as readonly unknown[]).includes(v);
+}
+
+export function isSubdivision(v: unknown): v is Subdivision {
+  return (SUBDIVISIONS as readonly unknown[]).includes(v);
+}
+
+export function isLanguage(v: unknown): v is Language {
+  return (LANGUAGES as readonly unknown[]).includes(v);
 }
 
 function defaultLevel(index: number): BeatLevel {
@@ -149,6 +170,11 @@ export function sanitizeSettings(raw: unknown): Settings {
     beatsClickable: typeof r.beatsClickable === 'boolean' ? r.beatsClickable : d.beatsClickable,
     haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
     targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,
+    practiceMinutes: isIntInRange(r.practiceMinutes, 0, MAX_PRACTICE_MINUTES)
+      ? r.practiceMinutes
+      : d.practiceMinutes,
+    subdivision: isSubdivision(r.subdivision) ? r.subdivision : d.subdivision,
+    language: isLanguage(r.language) ? r.language : d.language,
   };
 }
 

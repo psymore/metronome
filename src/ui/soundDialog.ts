@@ -1,4 +1,5 @@
 import type { AudioEngine } from '../engine/audioEngine';
+import { format, t } from '../i18n/i18n';
 import { importSoundFile } from '../sounds/importSound';
 import type { SoundLibrary } from '../sounds/soundLibrary';
 import type { SoundMeta, SoundStore } from '../sounds/soundStore';
@@ -34,20 +35,20 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
       userSounds = await sounds.list();
     } catch {
       userSounds = [];
-      toast('Saved sounds are unavailable: browser storage is blocked.');
+      toast(t('toast.storageUnavailable'));
     }
     render(store.get());
   }
 
   function fillSelect(select: HTMLSelectElement, current: string): void {
     const builtin = document.createElement('optgroup');
-    builtin.label = 'Built-in';
+    builtin.label = t('soundGroup.builtin');
     for (const [id, sound] of Object.entries(BUILTIN_SOUNDS))
       builtin.append(new Option(sound.name, id));
     const groups: HTMLElement[] = [builtin];
     if (userSounds.length > 0) {
       const mine = document.createElement('optgroup');
-      mine.label = 'Your sounds';
+      mine.label = t('soundGroup.yours');
       for (const sound of userSounds) mine.append(new Option(sound.name, sound.id));
       groups.push(mine);
     }
@@ -69,7 +70,7 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
     if (userSounds.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'empty';
-      empty.textContent = 'No sounds added yet.';
+      empty.textContent = t('soundList.empty');
       list.replaceChildren(empty);
       return;
     }
@@ -81,8 +82,16 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
         name.title = sound.name;
         li.append(
           name,
-          smallButton('▶', `Preview ${sound.name}`, () => void preview(sound.id)),
-          smallButton('✕', `Delete ${sound.name}`, () => void remove(sound)),
+          smallButton(
+            '▶',
+            format('sound.previewNamed', { name: sound.name }),
+            () => void preview(sound.id),
+          ),
+          smallButton(
+            '✕',
+            format('sound.deleteNamed', { name: sound.name }),
+            () => void remove(sound),
+          ),
         );
         return li;
       }),
@@ -97,7 +106,7 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
 
   async function preview(id: string): Promise<void> {
     const result = await library.resolve(id, DEFAULT_SETTINGS.normalSoundId);
-    if (result.error) toast(`Couldn't play that sound (${result.error}).`);
+    if (result.error) toast(format('toast.playError', { error: result.error }));
     else await engine.preview(result.pcm);
   }
 
@@ -105,7 +114,7 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
     try {
       await sounds.remove(sound.id);
     } catch {
-      toast(`Could not delete "${sound.name}".`);
+      toast(format('toast.deleteError', { name: sound.name }));
       return;
     }
     library.forget(sound.id);
@@ -132,9 +141,9 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
     if (errors.length > 0) {
       toast(errors.length === 1 ? (errors[0] ?? '') : `${errors[0]} (+${errors.length - 1} more)`);
     } else if (added.length === 1) {
-      toast(`Added "${added[0]}". Choose it for Accent or Other beats.`);
+      toast(format('toast.addedOne', { name: added[0] ?? '' }));
     } else if (added.length > 1) {
-      toast(`Added ${added.length} sounds.`);
+      toast(format('toast.addedMany', { count: added.length }));
     }
   }
 

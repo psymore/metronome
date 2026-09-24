@@ -1,4 +1,5 @@
 import { clampBpm } from '../engine/timing';
+import { format } from '../i18n/i18n';
 import { cycleBeatLevel, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
@@ -107,7 +108,10 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
       const b = container.children[i];
       if (!(b instanceof HTMLButtonElement)) return;
       b.className = `beat level-${level}`;
-      b.setAttribute('aria-label', `Beat ${i + 1}: ${level}. Click to change.`);
+      b.setAttribute(
+        'aria-label',
+        format('beat.ariaLabel', { n: i + 1, level: format(`beatLevel.${level}`, {}) }),
+      );
     });
   }
 

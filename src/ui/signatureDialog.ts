@@ -1,8 +1,10 @@
+import { t } from '../i18n/i18n';
 import {
   clampTargetBars,
   compoundAccentLevels,
   isBeatUnit,
   isCompoundMeter,
+  isSubdivision,
   type Settings,
   withBeatsPerBar,
 } from '../state/settings';
@@ -14,6 +16,9 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   const beatsValue = byId('beatsValue');
   const targetBarsValue = byId('targetBarsValue');
   const unitButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-unit]'));
+  const subdivisionButtons = Array.from(
+    dialog.querySelectorAll<HTMLButtonElement>('[data-subdivision]'),
+  );
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
 
   byId('signatureBtn').addEventListener('click', () => dialog.showModal());
@@ -34,6 +39,13 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
     });
   }
 
+  for (const button of subdivisionButtons) {
+    button.addEventListener('click', () => {
+      const subdivision = Number(button.dataset.subdivision);
+      if (isSubdivision(subdivision)) store.set({ subdivision });
+    });
+  }
+
   for (const button of presetButtons) {
     button.addEventListener('click', () => {
       const [top, bottom] = (button.dataset.preset ?? '').split('/').map(Number);
@@ -48,9 +60,15 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
 
   const render = (s: Settings) => {
     beatsValue.textContent = String(s.beatsPerBar);
-    targetBarsValue.textContent = s.targetBars > 0 ? String(s.targetBars) : 'Off';
+    targetBarsValue.textContent = s.targetBars > 0 ? String(s.targetBars) : t('songLength.off');
     for (const button of unitButtons) {
       button.setAttribute('aria-checked', String(Number(button.dataset.unit) === s.beatUnit));
+    }
+    for (const button of subdivisionButtons) {
+      button.setAttribute(
+        'aria-checked',
+        String(Number(button.dataset.subdivision) === s.subdivision),
+      );
     }
     const current = `${s.beatsPerBar}/${s.beatUnit}`;
     for (const button of presetButtons) {

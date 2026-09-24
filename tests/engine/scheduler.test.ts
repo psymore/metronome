@@ -6,16 +6,19 @@ function setup(pattern: Partial<Pattern> = {}, lookahead = 1) {
     bpm: 120,
     beatsPerBar: 4,
     levels: ['accent', 'normal', 'normal', 'normal'],
+    subdivision: 1,
     ...pattern,
   };
   const beats: BeatEvent[] = [];
+  const subdivisions: number[] = [];
   const s = new Scheduler({
     getPattern: () => p,
     onBeat: (b) => beats.push(b),
+    onSubdivision: (t) => subdivisions.push(t),
     lookahead,
     startDelay: 0.05,
   });
-  return { s, beats, p };
+  return { s, beats, subdivisions, p };
 }
 
 describe('Scheduler', () => {
@@ -139,5 +142,26 @@ describe('Scheduler', () => {
     expect(beats[2]).toMatchObject({ beatInBar: 0, barIndex: 0, level: 'accent' });
     expect(beats[2]?.time).toBeCloseTo(100.05, 9);
     expect(s.stats.skipped).toBe(0);
+  });
+
+  it('emits no subdivision clicks when subdivision is 1', () => {
+    const { s, subdivisions } = setup({ subdivision: 1 });
+    s.start(0);
+    expect(subdivisions).toHaveLength(0);
+  });
+
+  it('places subdivision clicks evenly between beats, never on the beat itself', () => {
+    const { s, beats, subdivisions } = setup({ subdivision: 2 }, 0.3);
+    s.start(0); // beat at 0.05, duration 0.5 at 120bpm; next beat (0.55) is outside lookahead
+    expect(beats).toHaveLength(1);
+    expect(subdivisions).toEqual([0.05 + 0.25]);
+  });
+
+  it('places two extra clicks per beat for a triplet subdivision', () => {
+    const { s, subdivisions } = setup({ subdivision: 3 }, 0.3);
+    s.start(0);
+    expect(subdivisions).toHaveLength(2);
+    expect(subdivisions[0]).toBeCloseTo(0.05 + 0.5 / 3, 9);
+    expect(subdivisions[1]).toBeCloseTo(0.05 + (2 * 0.5) / 3, 9);
   });
 });

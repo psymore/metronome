@@ -25,6 +25,7 @@ export class AudioEngine {
     this.scheduler = new Scheduler({
       getPattern: opts.getPattern,
       onBeat: (b) => this.playBeat(b),
+      onSubdivision: (time) => this.playSubdivision(time),
     });
     this.worker = new Worker(new URL('./timerWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = () => this.scheduler.tick(this.ctx.currentTime);
@@ -122,6 +123,25 @@ export class AudioEngine {
     };
     this.active.add(source);
     source.start(beat.time);
+  }
+
+  /** Quieter click between beats, always the "normal" sound regardless of the surrounding beat's level. */
+  private playSubdivision(time: number): void {
+    const buffer = this.buffers.normal;
+    if (!buffer) return;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = this.ctx.createGain();
+    gain.gain.value = 0.4;
+    source.connect(gain);
+    gain.connect(this.master);
+    source.onended = () => {
+      this.active.delete(source);
+      source.disconnect();
+      gain.disconnect();
+    };
+    this.active.add(source);
+    source.start(time);
   }
 
   private toBuffer(pcm: PcmData): AudioBuffer {
