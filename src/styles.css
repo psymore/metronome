@@ -159,12 +159,15 @@ svg.stroke {
     inset 0 1px 0 rgb(255 255 255 / 0.06),
     inset 0 -2px 3px rgb(0 0 0 / 0.4);
   color: var(--muted);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 .lang-btn svg {
   width: 16px;
   height: 16px;
+  display: block;
 }
 .lang-btn[aria-expanded="true"] {
   color: var(--select);
@@ -374,6 +377,7 @@ svg.stroke {
 }
 .beat-row.dim {
   opacity: 0.4;
+  pointer-events: none;
 }
 .beat {
   width: 34px;
@@ -547,6 +551,8 @@ svg.stroke {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   margin-top: 1px;
+  white-space: nowrap;
+  min-width: max-content;
 }
 .tempo-marking {
   font-family: var(--serif);
@@ -711,9 +717,34 @@ svg.stroke {
   justify-content: space-between;
   font-size: 14px;
 }
-.field input[type="range"] {
+.field input[type="number"] {
   width: 100%;
-  accent-color: var(--pink);
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-lo);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+.practice-timer-row {
+  display: grid;
+  gap: 8px;
+}
+.practice-timer-display {
+  height: 24px;
+  border-radius: 6px;
+  background: var(--panel-lo);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  position: relative;
+}
+.practice-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--select), var(--pink));
+  border-radius: 6px;
+  transition: width 1s linear;
 }
 .switch {
   position: relative;

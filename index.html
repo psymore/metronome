@@ -33,7 +33,7 @@
         </div>
       </header>
 
-      <span id="barCounter" class="bar-counter" hidden></span>
+      <span id="barCounter" class="bar-counter">Bar −</span>
 
       <section id="stage" class="stage" data-viz="circular">
         <canvas id="viz" class="viz" aria-hidden="true"></canvas>
@@ -169,7 +169,12 @@
       </div>
       <label class="field">
         <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceMinutesValue">Off</output></span>
-        <input id="practiceMinutesInput" type="range" min="0" max="60" step="1" />
+        <div class="practice-timer-row">
+          <input id="practiceMinutesInput" type="number" min="0" max="60" step="1" />
+          <div class="practice-timer-display">
+            <div id="practiceTimerFill" class="practice-timer-fill"></div>
+          </div>
+        </div>
         <small class="hint" data-i18n="practiceTimer.hint">Stops the metronome automatically after this many minutes. 0 turns it off.</small>
       </label>
       <label class="field">

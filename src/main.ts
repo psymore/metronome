@@ -91,6 +91,17 @@ store.subscribe((s, prev) => {
 
 const playBtn = byId('playBtn');
 const barCounter = byId('barCounter');
+
+barCounter.addEventListener('click', async () => {
+  const current = store.get().targetBars;
+  const input = prompt(format('barCounter.prompt', {}), String(current || '0'));
+  if (input === null) return;
+  const n = Number(input);
+  if (!Number.isNaN(n) && n >= 0 && n <= 999) {
+    store.set({ targetBars: n });
+  }
+});
+
 const viz = new VizController(
   byId<HTMLCanvasElement>('viz'),
   {
@@ -110,7 +121,6 @@ const viz = new VizController(
       navigator.vibrate(level === 'accent' ? 30 : 12);
     }
     const target = store.get().targetBars;
-    barCounter.hidden = false;
     barCounter.textContent =
       target > 0
         ? format('barCounter.withTarget', { n: barIndex + 1, total: target })
@@ -120,24 +130,40 @@ const viz = new VizController(
 store.subscribe(() => viz.invalidate());
 
 let practiceTimer: ReturnType<typeof setTimeout> | undefined;
+let practiceTimerInterval: ReturnType<typeof setInterval> | undefined;
+const practiceTimerFill = byId('practiceTimerFill');
+
 const transport = mountTransport({
   engine,
   toast,
   onToggle: () => {
     viz.invalidate();
     clearTimeout(practiceTimer);
+    clearInterval(practiceTimerInterval);
     practiceTimer = undefined;
+    practiceTimerInterval = undefined;
+    practiceTimerFill.style.width = '100%';
     if (!engine.running) {
-      barCounter.hidden = true;
+      barCounter.textContent = 'Bar −';
       return;
     }
     const minutes = store.get().practiceMinutes;
     if (minutes > 0) {
+      const startTime = performance.now();
+      const durationMs = minutes * 60_000;
+      practiceTimerInterval = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        const remaining = Math.max(0, durationMs - elapsed);
+        const percent = (remaining / durationMs) * 100;
+        practiceTimerFill.style.width = `${percent}%`;
+      }, 100);
       practiceTimer = setTimeout(() => {
+        clearInterval(practiceTimerInterval);
+        practiceTimerInterval = undefined;
         if (!engine.running) return;
         void transport.toggle();
         toast(format('toast.practiceTimerEnded', { minutes }));
-      }, minutes * 60_000);
+      }, durationMs);
     }
   },
 });
