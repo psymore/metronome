@@ -124,7 +124,8 @@ svg.stroke {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding: max(12px, env(safe-area-inset-top)) 16px 24px;
+  padding: max(12px, env(safe-area-inset-top)) 16px
+    max(24px, calc(env(safe-area-inset-bottom) + 12px));
   display: grid;
   gap: 14px;
 }
