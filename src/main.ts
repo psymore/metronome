@@ -21,6 +21,7 @@ import { mountSoundDialog } from './ui/soundDialog';
 import { createToast } from './ui/toast';
 import { mountTransport } from './ui/transport';
 import { mountVizSwitch } from './ui/vizSwitch';
+import { createWakeLock } from './ui/wakeLock';
 import { VizController } from './viz/vizController';
 
 function safeLocalStorage(): Storage | undefined {
@@ -129,6 +130,7 @@ const viz = new VizController(
 );
 store.subscribe(() => viz.invalidate());
 
+const wakeLock = createWakeLock();
 let practiceTimer: ReturnType<typeof setTimeout> | undefined;
 let practiceTimerInterval: ReturnType<typeof setInterval> | undefined;
 const practiceTimerFill = byId('practiceTimerFill');
@@ -137,6 +139,7 @@ const transport = mountTransport({
   engine,
   toast,
   onToggle: () => {
+    wakeLock.setActive(engine.running);
     viz.invalidate();
     clearTimeout(practiceTimer);
     clearInterval(practiceTimerInterval);
