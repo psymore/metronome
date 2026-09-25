@@ -1190,8 +1190,11 @@ output {
   body {
     min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    /* Plain "center" clips whichever end overflows first and makes it unreachable by
+       scrolling — a well-known flexbox/grid centering trap. "safe" falls back to start
+       alignment instead of doing that once content is taller than the viewport. */
+    align-items: safe center;
+    justify-content: safe center;
   }
   .app {
     /* A flex item's "auto" width shrinks to fit its content by default, so without an explicit
@@ -1219,7 +1222,11 @@ output {
     height: 52px;
   }
   .dial {
-    width: 144px;
+    width: 130px;
+  }
+  .play-btn {
+    width: 76px;
+    height: 76px;
   }
   .nudge {
     width: 38px;
