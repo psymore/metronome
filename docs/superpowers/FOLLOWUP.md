@@ -4,6 +4,31 @@ If you are a fresh session: read `CLAUDE.md` first, then this file, then act on 
 
 ## Where things stand (2026-09-25)
 
+Two separate threads are open right now, on two separate branches. Neither depends on the other.
+
+---
+
+## Thread 1: UI/UX redesign (`feat/ui-ux-redesign`) — this session's work
+
+A 7-item UI/UX redesign brief was implemented across 10 commits on `feat/ui-ux-redesign`, plus one commit (`f19edeb`, "Redesign done.") the user made themselves on top. The 7 original items (time-signature modal redesign, copy cleanup, redundancy cleanup incl. bar-counter/loop, replacing `window.prompt()`, beat-visualisation cleanup, typography upgrade, bigger touch targets) are all done, plus roughly a dozen follow-up rounds of UI polish requested via chat/screenshots (desktop layout, confirm-button "snake border" animation, info-popup centering/outside-click-close, practice-timer pause/resume/stop controls, copy clarity pass in both EN/TR, icon/text drop-shadows, etc.) — all implemented, verified (`tsc`, `biome`, `vitest`, `npm run build`, live Playwright checks), and committed.
+
+**This sandbox session has no push access to `psymore/metronome`** (git proxy rejects it — "not in this session's authorized repository set"). Fetch/read access works fine. The workaround used throughout: `git format-patch` early on, then a `git bundle` (more robust — sidesteps `git am`/`rebase-apply` issues) delivered via `SendUserFile`, with the user applying it locally on their Windows machine (`D:\CodeSpace\metronome`, patches/bundles staged in a `cloud-patches/` folder inside the repo, not gitignored yet).
+
+**Current state, confirmed by fetching `origin` directly from this session:**
+- `origin/feat/ui-ux-redesign` = `f19edeb` — pushed (the user force-pushed after a branch-history-rewrite via the bundle workflow left it without an upstream link; fixed with `git push --force-with-lease -u origin feat/ui-ux-redesign`).
+- `origin/master` = `e3b661f` ("iOS fix tried.") — **the redesign branch is NOT merged into `master`.** User said "we will come to this issue" — merge is intentionally deferred, not forgotten.
+- User confirmed locally testing the branch and said "all good," including the practice-timer pause/resume/stop controls that were previously hard to find (root cause was likely just needing the branch update, not a real bug — never fully confirmed which).
+
+**Next step for this thread:** when the user is ready to merge, either open a PR (`feat/ui-ux-redesign` → `master`) on GitHub for them, or do it locally per the commands already given them:
+```
+git checkout master && git pull origin master && git merge feat/ui-ux-redesign && git push origin master
+```
+No further redesign feedback is queued as of this handoff — the user may still come back with more polish requests before merging.
+
+---
+
+## Thread 2: Mobile performance & Play Store release (Phase A/B)
+
 Phase A (performance) and most of Phase B (Android Play Store release) are done. Work happened in an isolated worktree (`worktree-phase-b-play-store`, at `.claude/worktrees/phase-b-play-store` under the main repo) with commits pushed straight to `master` mid-plan — the user explicitly asked for this (twice) so Vercel's GitHub-integration production deploys would pick up each change for live verification, rather than waiting for one big merge at the end.
 
 **Active plan: `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`.** Its own checkboxes are ticked for everything done — check it directly rather than trusting a stale summary. As of this handoff:
@@ -37,12 +62,13 @@ Also: Bubblewrap's global config now points at the existing JDK 17.0.1 (`C:\Prog
 
 ## Next step
 
-1. **Nudge the user about the keystore password file** if you haven't heard it's been moved to a password manager yet (see above).
-2. **Task 8 Step 4** — once the user has run the real-device soak test themselves, ask them how it went (any heat/battery issue is a regression in Phase A's work, worth investigating) and tick that checkbox.
-3. **Task 9 Step 1** — ask again if the user has checked their Play Console account type/creation date; this sets the earliest possible production launch date.
-4. **Task 9 Step 3** — once there's a real device to screenshot from, take screenshots of both visualisers and show the user the draft store copy (already written in the plan) for approval/edits.
-5. **Task 9 Steps 4-7** are Play Console UI clicks the user has to do by hand (this agent has no browser/console access this session) — the AAB and privacy policy are both ready whenever they want to start.
-6. Once Task 8 Step 4 and Task 9 are far enough along (or the user decides to stop waiting on them), run the plan's **Final Review** per `superpowers:executing-plans` — dispatch a fresh-context reviewer against the whole branch's diff before merging the worktree branch fully, then `superpowers:finishing-a-development-branch`. Note: most commits are *already* on `master` (pushed mid-plan per the user's request), so "finishing" here mostly means cleaning up the worktree and its SDD ledger (`.claude/worktrees/phase-b-play-store/.superpowers/sdd/2026-09-24-mobile-performance-and-play-store-v2/progress.md` — full task-by-task record with every ruling made, read it for detail beyond this summary) rather than a normal feature-branch merge.
+1. **Thread 1**: wait for the user to say they're ready to merge `feat/ui-ux-redesign` into `master` (or for more polish feedback first). No open bugs on this branch as of this handoff.
+2. **Nudge the user about the keystore password file** if you haven't heard it's been moved to a password manager yet (see above).
+3. **Task 8 Step 4** — once the user has run the real-device soak test themselves, ask them how it went (any heat/battery issue is a regression in Phase A's work, worth investigating) and tick that checkbox.
+4. **Task 9 Step 1** — ask again if the user has checked their Play Console account type/creation date; this sets the earliest possible production launch date.
+5. **Task 9 Step 3** — once there's a real device to screenshot from, take screenshots of both visualisers and show the user the draft store copy (already written in the plan) for approval/edits.
+6. **Task 9 Steps 4-7** are Play Console UI clicks the user has to do by hand (this agent has no browser/console access this session) — the AAB and privacy policy are both ready whenever they want to start.
+7. Once Task 8 Step 4 and Task 9 are far enough along (or the user decides to stop waiting on them), run the plan's **Final Review** per `superpowers:executing-plans` — dispatch a fresh-context reviewer against the whole branch's diff before merging the worktree branch fully, then `superpowers:finishing-a-development-branch`. Note: most commits are *already* on `master` (pushed mid-plan per the user's request), so "finishing" here mostly means cleaning up the worktree and its SDD ledger (`.claude/worktrees/phase-b-play-store/.superpowers/sdd/2026-09-24-mobile-performance-and-play-store-v2/progress.md` — full task-by-task record with every ruling made, read it for detail beyond this summary) rather than a normal feature-branch merge.
 
 ## Design decisions already settled — do not re-open
 
@@ -50,6 +76,7 @@ Unchanged from before this session — see the plan's own "Design Decisions" sec
 
 ## Things that still need the user
 
+- Decide when to merge `feat/ui-ux-redesign` into `master` (Thread 1).
 - Move the keystore password out of the plaintext backup file (see above).
 - Run Task 8 Step 4's real-device soak test.
 - Check and report the Play Console account type/creation date (Task 9 Step 1).
