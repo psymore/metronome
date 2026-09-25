@@ -9,6 +9,13 @@ export interface AudioEngineOptions {
   getPattern: () => Pattern;
 }
 
+// 50ms of silence, looped. iOS Safari puts a page in the "Ambient" audio session category
+// (silenced by the Ring/Silent switch) until a real <audio>/<video> element is actively
+// playing on the page; Web Audio alone never triggers that switch. Keeping this looping
+// silently in the background makes Web Audio output audible with the switch engaged.
+const SILENT_LOOP_SRC =
+  'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+
 export class AudioEngine {
   readonly ctx: AudioContext;
   readonly timeline = new BeatTimeline();
@@ -17,6 +24,7 @@ export class AudioEngine {
   private readonly worker: Worker;
   private readonly buffers: Record<SoundSlot, AudioBuffer | null> = { accent: null, normal: null };
   private readonly active = new Set<AudioBufferSourceNode>();
+  private readonly silentUnlock: HTMLAudioElement;
 
   constructor(opts: AudioEngineOptions) {
     this.ctx = new AudioContext({ latencyHint: 'interactive' });
@@ -29,11 +37,14 @@ export class AudioEngine {
     });
     this.worker = new Worker(new URL('./timerWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = () => this.scheduler.tick(this.ctx.currentTime);
+    this.silentUnlock = new Audio(SILENT_LOOP_SRC);
+    this.silentUnlock.loop = true;
+    this.silentUnlock.volume = 0;
     const tryResume = () => {
       // Device change or OS interruption while playing: try to get the clock running again.
-      if (this.scheduler.isRunning && this.ctx.state === 'suspended') {
-        this.ctx.resume().catch(() => {});
-      }
+      if (!this.scheduler.isRunning) return;
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      if (this.silentUnlock.paused) this.silentUnlock.play().catch(() => {});
     };
     this.ctx.addEventListener('statechange', tryResume);
     // `statechange` fires only on the running->suspended transition. If that resume attempt is
@@ -60,7 +71,9 @@ export class AudioEngine {
   /** Must be called from a user gesture (autoplay policy). */
   async start(): Promise<void> {
     if (this.scheduler.isRunning) return;
-    await this.ctx.resume();
+    // Started together, from the same gesture: iOS only exempts Web Audio from the Ring/Silent
+    // switch while a real media element is actively playing on the page.
+    await Promise.all([this.ctx.resume(), this.silentUnlock.play().catch(() => {})]);
     this.timeline.clear();
     this.scheduler.start(this.ctx.currentTime);
     this.worker.postMessage('start');
@@ -78,6 +91,7 @@ export class AudioEngine {
     }
     this.active.clear();
     this.timeline.clear();
+    this.silentUnlock.pause();
     // A running context holds the audio hardware clock open and drains battery in silence.
     // start() and preview() both resume it, so suspending here is self-healing.
     this.ctx.suspend().catch(() => {
