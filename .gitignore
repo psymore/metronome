@@ -15,3 +15,5 @@ android/keystore.properties
 android/*.apk
 android/*.apk.idsig
 android/*.aab
+
+cloud-patches/
