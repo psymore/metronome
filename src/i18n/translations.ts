@@ -44,6 +44,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'songLength.hint': 'Set the bars in the piece to track your position while playing.',
     'songLength.apply': 'Apply',
     'songLength.confirm': 'Start counting from bar 1 to bar {n}? Tap again to confirm.',
+    'songLength.needsLength': 'Select a length greater than 0 to apply.',
     'barCounter.loopTitle': 'Loop',
     'barCounter.loopAriaLabel': 'Number of loops',
     'barCounter.loopSubLabel': 'Repeats once unless set higher',
@@ -157,6 +158,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'songLength.apply': 'Uygula',
     'songLength.confirm':
       '1. ölçüden {n}. ölçüye kadar sayılsın mı? Onaylamak için tekrar dokunun.',
+    'songLength.needsLength': 'Uygulamak için 0’dan büyük bir uzunluk seçin.',
     'barCounter.loopTitle': 'Tekrar',
     'barCounter.loopAriaLabel': 'Tekrar sayısı',
     'barCounter.loopSubLabel': 'Aksi belirtilmedikçe bir kez çalar',

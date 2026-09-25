@@ -216,7 +216,7 @@ output {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.06),
     inset 0 -2px 3px rgb(0 0 0 / 0.4);
-  color: var(--muted);
+  color: var(--pink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -955,7 +955,10 @@ output {
 .field {
   display: grid;
   gap: 6px;
-  margin-bottom: 16px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: var(--panel-lo);
 }
 .field > span {
   display: flex;
@@ -967,7 +970,7 @@ output {
   padding: 8px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background: var(--edge);
   color: var(--text);
   font: inherit;
   font-size: 14px;
@@ -1053,48 +1056,40 @@ output {
   color: #ff8a8a;
   border-color: #5a2a2a;
 }
-/* A colored segment sweeps around the button's border over the same 3s window the "tap again
-   to confirm" buttons (reset, practice timer, song length Apply) stay armed for — like a snake
-   growing back around to its own start, shifting from green to red as it goes, instead of a
-   silent timer. --confirm-progress/-color are registered so the browser can interpolate them
-   smoothly frame-to-frame rather than jumping between keyframe stops. */
-@property --confirm-progress {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
+/* A colored segment traces the button's own rounded-rect border over the same 3s window the
+   "tap again to confirm" buttons (reset, practice timer, song length Apply) stay armed for —
+   like a snake growing back around to its own start, shifting from green to red as it goes,
+   instead of a silent timer. This is an SVG stroke-dashoffset sweep (sized in JS to match the
+   button, see confirmGate.ts), not a conic-gradient: a conic-gradient's constant *angular*
+   speed covers very different physical distances near the corners vs. the long straight edges
+   of a wide, short button, so it visibly speeds up and slows down — an arc-length-based
+   dashoffset sweep moves at one constant speed all the way around regardless of shape. */
 @property --confirm-color {
   syntax: "<color>";
   inherits: false;
   initial-value: #57d38c;
 }
-.confirm-armed::after {
-  content: "";
+.confirm-ring {
   position: absolute;
   inset: 0;
-  padding: 3px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from 0deg,
-    var(--confirm-color) 0%,
-    var(--confirm-color) var(--confirm-progress),
-    transparent var(--confirm-progress)
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: confirmSweep 3000ms linear forwards;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+}
+.confirm-ring-rect {
+  fill: none;
+  stroke: var(--confirm-color);
+  stroke-width: 3px;
+}
+.confirm-ring-rect.confirm-armed {
+  animation: confirmSweep 3000ms linear forwards;
 }
 @keyframes confirmSweep {
   from {
-    --confirm-progress: 0%;
     --confirm-color: var(--confirm-safe);
   }
   to {
-    --confirm-progress: 100%;
+    stroke-dashoffset: 0;
     --confirm-color: var(--confirm-danger);
   }
 }

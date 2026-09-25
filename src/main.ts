@@ -219,7 +219,7 @@ store.subscribe((s, prev) => {
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
-mountBarCounterDialog({ store });
+mountBarCounterDialog({ store, toast });
 mountSettingsDialog({
   store,
   onStartPractice: () => {

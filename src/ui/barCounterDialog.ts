@@ -3,8 +3,15 @@ import { clampTargetBars, isLoopCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick } from './dom';
+import type { Toast } from './toast';
 
-export function mountBarCounterDialog({ store }: { store: Store<Settings> }): void {
+export function mountBarCounterDialog({
+  store,
+  toast,
+}: {
+  store: Store<Settings>;
+  toast: Toast;
+}): void {
   const dialog = byId<HTMLDialogElement>('barCounterDialog');
   const targetBarsValue = byId('targetBarsValue');
   const targetBarsApply = byId<HTMLButtonElement>('targetBarsApply');
@@ -43,7 +50,10 @@ export function mountBarCounterDialog({ store }: { store: Store<Settings> }): vo
 
   targetBarsApply.addEventListener('click', () => {
     if (pendingTargetBars <= 0) {
-      store.set({ targetBars: 0 });
+      // Turning an existing target off is a real action; tapping Apply while it's already
+      // off (and staying off) has nothing to do, so say why instead of silently no-op'ing.
+      if (store.get().targetBars > 0) store.set({ targetBars: 0 });
+      else toast(t('songLength.needsLength'));
       return;
     }
     if (confirmGate.tap()) store.set({ targetBars: pendingTargetBars });
