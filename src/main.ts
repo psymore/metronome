@@ -86,15 +86,19 @@ async function applySound(slot: SoundSlot): Promise<void> {
   }
 }
 
-void applySound('accent');
-void applySound('normal');
+const playBtn = byId<HTMLButtonElement>('playBtn');
+const barCounter = byId('barCounter');
+
+// Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
+// mobile), buffers are null and beats would play silently. Block Play until they're ready.
+playBtn.disabled = true;
+void Promise.all([applySound('accent'), applySound('normal')]).finally(() => {
+  playBtn.disabled = false;
+});
 store.subscribe((s, prev) => {
   if (s.accentSoundId !== prev.accentSoundId) void applySound('accent');
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
 });
-
-const playBtn = byId('playBtn');
-const barCounter = byId('barCounter');
 
 barCounter.addEventListener('click', async () => {
   const current = store.get().targetBars;

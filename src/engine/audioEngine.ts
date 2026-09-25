@@ -29,12 +29,20 @@ export class AudioEngine {
     });
     this.worker = new Worker(new URL('./timerWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = () => this.scheduler.tick(this.ctx.currentTime);
-    this.ctx.addEventListener('statechange', () => {
+    const tryResume = () => {
       // Device change or OS interruption while playing: try to get the clock running again.
       if (this.scheduler.isRunning && this.ctx.state === 'suspended') {
         this.ctx.resume().catch(() => {});
       }
+    };
+    this.ctx.addEventListener('statechange', tryResume);
+    // `statechange` fires only on the running->suspended transition. If that resume attempt is
+    // rejected (iOS can refuse it right after an interruption), the context stays suspended with
+    // no further event to retry on — so also retry whenever the page comes back to the foreground.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) tryResume();
     });
+    window.addEventListener('pageshow', tryResume);
   }
 
   get running(): boolean {
