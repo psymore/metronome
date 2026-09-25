@@ -17,6 +17,9 @@ export const SYNC_OFFSET_LIMIT_MS = 200;
 export const MAX_TARGET_BARS = 999;
 export const MAX_PRACTICE_MINUTES = 180;
 export const SETTINGS_KEY = 'metronome.settings.v1';
+/** Loop count choices for the bar counter: 0 means infinite. */
+export const LOOP_COUNTS = [1, 2, 4, 8, 0] as const;
+export type LoopCount = (typeof LOOP_COUNTS)[number];
 
 export interface Settings {
   bpm: number;
@@ -36,6 +39,8 @@ export interface Settings {
   haptics: boolean;
   /** Song length in bars, set up before playing; 0 means no target (just count up). */
   targetBars: number;
+  /** Times to repeat the targetBars-bar loop; 1 = play once (default), 0 = infinite. Ignored when targetBars is 0. */
+  loopCount: number;
   /** Minutes to play before auto-stopping; 0 means no limit. */
   practiceMinutes: number;
   /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
@@ -57,6 +62,7 @@ export const DEFAULT_SETTINGS: Settings = {
   beatsClickable: true,
   haptics: false,
   targetBars: 0,
+  loopCount: 1,
   practiceMinutes: 0,
   subdivision: 1,
   language: 'en',
@@ -84,6 +90,10 @@ export function isSubdivision(v: unknown): v is Subdivision {
 
 export function isLanguage(v: unknown): v is Language {
   return (LANGUAGES as readonly unknown[]).includes(v);
+}
+
+export function isLoopCount(v: unknown): v is LoopCount {
+  return (LOOP_COUNTS as readonly unknown[]).includes(v);
 }
 
 function defaultLevel(index: number): BeatLevel {
@@ -170,6 +180,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     beatsClickable: typeof r.beatsClickable === 'boolean' ? r.beatsClickable : d.beatsClickable,
     haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
     targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,
+    loopCount: isLoopCount(r.loopCount) ? r.loopCount : d.loopCount,
     practiceMinutes: isIntInRange(r.practiceMinutes, 0, MAX_PRACTICE_MINUTES)
       ? r.practiceMinutes
       : d.practiceMinutes,

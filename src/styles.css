@@ -10,8 +10,9 @@
   --text: #f2ead9;
   --muted: #a2967d;
   --radius: 4px;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-family: var(--font-sans);
 
   /* Accent family (theme: Teal, default) — one hue, three roles */
   --pink: #4fb894;
@@ -151,8 +152,12 @@ svg.stroke {
   stroke-width: 2;
   stroke-linecap: round;
 }
+output {
+  font-variant-numeric: tabular-nums;
+}
 .label {
   font-size: 11px;
+  line-height: 1;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
@@ -162,6 +167,11 @@ svg.stroke {
 }
 .label-sm {
   font-size: 9px;
+}
+/* Invisible placeholder the same height as .label, keeping the tap/settings column's
+   rows aligned with the signature/sound column now that the redundant "Tap" text is gone. */
+.label-spacer {
+  height: 11px;
 }
 
 .app {
@@ -180,9 +190,9 @@ svg.stroke {
 }
 .title {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-sans);
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 .title-row {
@@ -305,18 +315,21 @@ svg.stroke {
   justify-self: center;
   width: max-content;
   max-width: 100%;
-  padding: 4px 16px;
-  border-radius: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.06),
     inset 0 -2px 3px rgb(0 0 0 / 0.4);
-  font-family: var(--serif);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   color: var(--muted);
+}
+.bar-counter:active {
+  transform: scale(0.96);
 }
 .bar-counter[hidden] {
   display: none;
@@ -333,13 +346,33 @@ svg.stroke {
   height: 100%;
   display: block;
 }
-.play-btn {
+/* Static pivot left behind at the canvas center now that the play button lives below the
+   stage — the circular visualiser's spokes still converge on it. Hidden for the linear
+   visualiser, which has no hub. */
+.dial-hub {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: var(--hub, 96px);
-  height: var(--hub, 96px);
+  width: var(--hub, 52px);
+  height: var(--hub, 52px);
   transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--pink);
+  background: var(--panel);
+  box-shadow:
+    0 0 0 4px var(--edge),
+    0 0 0 6px var(--copper);
+  pointer-events: none;
+}
+.stage[data-viz="linear"] .dial-hub {
+  display: none;
+}
+/* Sits in normal flow below the stage instead of pinned to the dial's center: a bigger,
+   easier-to-reach primary control, closer to thumb range than the top of the visualiser. */
+.play-btn {
+  justify-self: center;
+  width: clamp(88px, 24vw, 112px);
+  height: clamp(88px, 24vw, 112px);
   border-radius: 50%;
   border: 2px solid var(--pink);
   background: var(--panel);
@@ -369,7 +402,7 @@ svg.stroke {
   }
 }
 .play-btn:active {
-  transform: translate(-50%, -50%) scale(0.96);
+  transform: scale(0.96);
 }
 .play-btn svg {
   width: 42%;
@@ -381,9 +414,6 @@ svg.stroke {
 }
 .play-btn[aria-pressed="true"] .icon-pause {
   display: block;
-}
-.stage[data-viz="linear"] .play-btn {
-  top: 72%;
 }
 
 .side {
@@ -434,14 +464,6 @@ svg.stroke {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-.main-beat-row {
-  justify-content: center;
-  gap: 14px;
-  margin: -6px 0 14px;
-}
-.main-beat-row[hidden] {
-  display: none;
 }
 .beat-row.dim {
   opacity: 0.4;
@@ -496,7 +518,8 @@ svg.stroke {
   gap: 6px;
   width: 64px;
 }
-.col .label + .square-btn {
+.col .label + .square-btn,
+.col .label-spacer + .square-btn {
   margin-top: 10px;
 }
 .square-btn {
@@ -521,6 +544,7 @@ svg.stroke {
 .sig {
   display: grid;
   justify-items: center;
+  font-family: var(--font-mono);
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
@@ -608,10 +632,9 @@ svg.stroke {
   pointer-events: none;
 }
 .bpm-value {
-  font-family: var(--serif);
+  font-family: var(--font-mono);
   font-size: clamp(28px, 9vw, 40px);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .bpm-unit {
@@ -620,18 +643,8 @@ svg.stroke {
   color: var(--pink);
   margin-top: 2px;
 }
-.dial-signature {
-  display: block;
-  font-family: var(--serif);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  margin-top: 1px;
-  white-space: nowrap;
-  min-width: max-content;
-}
 .tempo-marking {
-  font-family: var(--serif);
+  font-family: var(--font-sans);
   font-size: 13px;
   font-style: italic;
   color: var(--muted);
@@ -780,19 +793,107 @@ svg.stroke {
   margin: 12px 0 14px;
 }
 .stepper-value {
-  font-family: var(--serif);
+  font-family: var(--font-mono);
   font-size: 36px;
   font-weight: 600;
   min-width: 2ch;
   text-align: center;
-  font-variant-numeric: tabular-nums;
 }
-.unit-row,
-.preset-row {
+.unit-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
+}
+/* Clear hierarchy for the two distinct time-signature pickers: each gets its own
+   slightly recessed card instead of running together as one long list of controls. */
+.picker-block {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--panel-lo);
+  margin-bottom: 12px;
+}
+.picker-block .sheet-sub {
+  margin-top: 0;
+}
+.picker-block .stepper {
+  justify-content: center;
+}
+/* A segmented control for presets: unlike free-floating chips, segments sit flush against
+   each other in one continuous pill and scroll horizontally if they overflow. */
+.segmented {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 3px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #100f0c, #1a1812);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+}
+.segmented::-webkit-scrollbar {
+  display: none;
+}
+.segment {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.segment[aria-checked="true"] {
+  color: var(--select);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 0 0 1px var(--select),
+    0 0 10px var(--select-soft);
+}
+.segment:active {
+  transform: scale(0.94);
+}
+/* A heading (or sub-label) paired with a small info button that carries the fuller
+   explanation as a tooltip, replacing a permanent paragraph of copy. */
+.sub-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 18px 0 2px;
+}
+.sub-head .sheet-sub {
+  margin: 0;
+}
+.sub-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.info-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  font-style: italic;
+  display: grid;
+  place-items: center;
+}
+.info-btn:active {
+  transform: scale(0.9);
+  color: var(--select);
+  border-color: var(--select);
 }
 .field {
   display: grid;
@@ -987,6 +1088,9 @@ svg.stroke {
   }
   .stage {
     width: min(100%, 78vh);
+  }
+  .play-btn {
+    grid-column: 2;
   }
 }
 

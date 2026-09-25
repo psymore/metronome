@@ -27,6 +27,9 @@ export function applyTranslations(root: ParentNode = document): void {
   for (const el of root.querySelectorAll<HTMLElement>('[data-i18n-aria-label]')) {
     el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel ?? ''));
   }
+  for (const el of root.querySelectorAll<HTMLElement>('[data-i18n-title]')) {
+    el.title = t(el.dataset.i18nTitle ?? '');
+  }
 }
 
 /** Sets the active language, re-translates the DOM, and returns the new language. */

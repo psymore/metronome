@@ -70,10 +70,11 @@ export class VizController {
 
   private readonly onPointerDown = (e: PointerEvent): void => {
     if (!this.onBeatTap) return;
+    const s = this.getSettings();
+    if (!s.beatsClickable) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const s = this.getSettings();
     const index =
       s.visualizer === 'linear'
         ? linearBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar)

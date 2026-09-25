@@ -100,6 +100,7 @@ describe('sanitizeSettings', () => {
       beatsClickable: true,
       haptics: false,
       targetBars: 0,
+      loopCount: 1,
       practiceMinutes: 0,
       subdivision: 1,
       language: 'en',

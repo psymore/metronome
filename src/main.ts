@@ -1,8 +1,9 @@
 import './styles.css';
 import { AudioEngine, type SoundSlot } from './engine/audioEngine';
-import { applyLanguage, applyTranslations, format } from './i18n/i18n';
+import { applyLanguage, applyTranslations, format, t } from './i18n/i18n';
 import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
+import { barCounterFinished, formatBarCounter } from './state/barCounter';
 import {
   cycleBeatLevel,
   DEFAULT_SETTINGS,
@@ -11,6 +12,7 @@ import {
   saveSettings,
 } from './state/settings';
 import { createStore } from './state/store';
+import { mountBarCounterDialog } from './ui/barCounterDialog';
 import { mountClickFx } from './ui/clickFx';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
@@ -100,16 +102,6 @@ store.subscribe((s, prev) => {
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
 });
 
-barCounter.addEventListener('click', async () => {
-  const current = store.get().targetBars;
-  const input = prompt(format('barCounter.prompt', {}), String(current || '0'));
-  if (input === null) return;
-  const n = Number(input);
-  if (!Number.isNaN(n) && n >= 0 && n <= 999) {
-    store.set({ targetBars: n });
-  }
-});
-
 const viz = new VizController(
   byId<HTMLCanvasElement>('viz'),
   {
@@ -128,15 +120,13 @@ const viz = new VizController(
     if (store.get().haptics && level !== 'mute' && navigator.vibrate) {
       navigator.vibrate(level === 'accent' ? 30 : 12);
     }
-    const target = store.get().targetBars;
-    barCounter.textContent =
-      target > 0
-        ? format('barCounter.withTarget', { n: barIndex + 1, total: target })
-        : format('barCounter.plain', { n: barIndex + 1 });
-    // Reaching the start of the bar past the target means the target bars already played in full.
-    if (target > 0 && barIndex >= target) {
+    const { targetBars, loopCount } = store.get();
+    barCounter.textContent = formatBarCounter(barIndex, targetBars, loopCount);
+    // Reaching the start of the bar past the target (across every loop) means the song
+    // already played in full.
+    if (barCounterFinished(barIndex, targetBars, loopCount)) {
       void transport.toggle();
-      toast(format('toast.songLengthEnded', { n: target }));
+      toast(format('toast.songLengthEnded', { n: targetBars * loopCount }));
     }
   },
 );
@@ -199,7 +189,7 @@ const transport = mountTransport({
     viz.invalidate();
     if (!engine.running) {
       clearPracticeTimer();
-      barCounter.textContent = 'Bar −';
+      barCounter.textContent = t('barCounter.idle');
       return;
     }
     startPracticeTimer(store.get().practiceMinutes);
@@ -215,6 +205,7 @@ store.subscribe((s, prev) => {
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
+mountBarCounterDialog({ store });
 mountSettingsDialog({
   store,
   onStartPractice: () => {

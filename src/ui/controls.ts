@@ -17,9 +17,7 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   const dialRing = byId('dialRing');
   const bpmValue = byId('bpmValue');
   const tempoMarkingEl = byId('tempoMarking');
-  const dialSignature = byId('dialSignature');
   const beatRow = byId('beatRow');
-  const mainBeatRow = byId('mainBeatRow');
   const sigTop = byId('sigTop');
   const sigBottom = byId('sigBottom');
   const tapBtn = byId<HTMLButtonElement>('tapBtn');
@@ -90,7 +88,6 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
     store.set({ levels: cycleBeatLevel(store.get().levels, index) });
   };
   beatRow.addEventListener('click', onBeatRowClick);
-  mainBeatRow.addEventListener('click', onBeatRowClick);
 
   function renderBeatsInto(container: HTMLElement, s: Settings): void {
     if (container.childElementCount !== s.beatsPerBar) {
@@ -115,12 +112,6 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
     });
   }
 
-  function renderBeats(s: Settings): void {
-    renderBeatsInto(beatRow, s);
-    renderBeatsInto(mainBeatRow, s);
-    mainBeatRow.hidden = !s.beatsClickable;
-  }
-
   function render(s: Settings): void {
     bpmValue.textContent = String(s.bpm);
     tempoMarkingEl.textContent = tempoMarking(s.bpm);
@@ -128,8 +119,7 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
     dialRing.style.setProperty('--rotation', `${s.bpm * DEGREES_PER_BPM}deg`);
     sigTop.textContent = String(s.beatsPerBar);
     sigBottom.textContent = String(s.beatUnit);
-    dialSignature.textContent = `${s.beatsPerBar}/${s.beatUnit}`;
-    renderBeats(s);
+    renderBeatsInto(beatRow, s);
   }
   render(store.get());
   store.subscribe((s) => render(s));
