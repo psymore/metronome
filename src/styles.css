@@ -372,11 +372,32 @@ output {
 .stage[data-viz="linear"] .dial-hub {
   display: none;
 }
+/* Fills the whole disc with a radiant flash, not just its rim — a radial-gradient overlay
+   that's invisible at rest and only appears for the 260ms of the pulse itself. */
+.dial-hub::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--pink) 0%, transparent 72%);
+  opacity: 0;
+}
 /* Gives the hub some life on every beat — reuses the play button's own pulse keyframes since
    both share the same resting box-shadow layers. A triggered 260ms animation, not a continuous
    one, so it costs nothing while idle or hidden. */
 .dial-hub.pulse {
   animation: beatPulse 260ms ease-out;
+}
+.dial-hub.pulse::after {
+  animation: hubGlowFill 260ms ease-out;
+}
+@keyframes hubGlowFill {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
 }
 /* Sits in normal flow below the stage instead of pinned to the dial's center: a bigger,
    easier-to-reach primary control, closer to thumb range than the top of the visualiser. */
@@ -698,6 +719,28 @@ output {
   font-size: 14px;
   z-index: 10;
 }
+.info-popup {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(88vw, 360px);
+  margin: 0;
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 3px solid var(--pink);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    0 24px 60px rgb(0 0 0 / 0.6),
+    0 0 0 6px var(--pink-soft);
+  color: var(--text);
+  font-size: 15px;
+  text-align: center;
+  z-index: 12;
+}
+.info-popup[hidden] {
+  display: none;
+}
 .debug {
   position: fixed;
   top: 8px;
@@ -888,14 +931,17 @@ output {
 }
 .info-btn {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   border: 1px solid var(--pink-soft);
-  background: transparent;
-  color: var(--muted);
-  font-family: var(--font-sans);
-  font-size: 11px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+  color: var(--pink);
+  font-family: var(--serif);
+  font-size: 13px;
   font-weight: 700;
   font-style: italic;
   display: grid;
@@ -903,7 +949,7 @@ output {
 }
 .info-btn:active {
   transform: scale(0.9);
-  color: var(--select);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
   border-color: var(--select);
 }
 .field {
@@ -988,6 +1034,11 @@ output {
   font-size: 12px;
   margin: 4px 0 0;
 }
+/* Keyboard shortcuts only mean anything with a physical keyboard — hide on touch-sized
+   screens, restored at the desktop breakpoint below. */
+.shortcuts-hint {
+  display: none;
+}
 .wide-btn {
   width: 100%;
   padding: 10px;
@@ -1002,24 +1053,49 @@ output {
   color: #ff8a8a;
   border-color: #5a2a2a;
 }
-/* A ring that sweeps from green to red over the same 3s window the "tap again to confirm"
-   buttons (reset, practice timer, song length Apply) stay armed for — a visual countdown
-   instead of a silent timer. */
-.confirm-armed {
-  animation: confirmCountdown 3000ms linear forwards;
+/* A colored segment sweeps around the button's border over the same 3s window the "tap again
+   to confirm" buttons (reset, practice timer, song length Apply) stay armed for — like a snake
+   growing back around to its own start, shifting from green to red as it goes, instead of a
+   silent timer. --confirm-progress/-color are registered so the browser can interpolate them
+   smoothly frame-to-frame rather than jumping between keyframe stops. */
+@property --confirm-progress {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
 }
-@keyframes confirmCountdown {
+@property --confirm-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #57d38c;
+}
+.confirm-armed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 3px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    var(--confirm-color) 0%,
+    var(--confirm-color) var(--confirm-progress),
+    transparent var(--confirm-progress)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: confirmSweep 3000ms linear forwards;
+  pointer-events: none;
+}
+@keyframes confirmSweep {
   from {
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.06),
-      inset 0 -2px 3px rgb(0 0 0 / 0.4),
-      0 0 0 2px var(--confirm-safe);
+    --confirm-progress: 0%;
+    --confirm-color: var(--confirm-safe);
   }
   to {
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.06),
-      inset 0 -2px 3px rgb(0 0 0 / 0.4),
-      0 0 0 2px var(--confirm-danger);
+    --confirm-progress: 100%;
+    --confirm-color: var(--confirm-danger);
   }
 }
 .wide-btn:active {
@@ -1108,11 +1184,24 @@ output {
 }
 
 @media (min-width: 900px) {
+  /* Centers the whole compact composition in the viewport instead of letting it hug the top
+     with a lot of dead space below — mobile keeps its natural top-anchored flow. */
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   .app {
-    max-width: 1100px;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    /* Noticeably tighter than before: the two columns sit close together instead of
+       stretching across a wide, mostly-empty container. */
+    max-width: 760px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
-    column-gap: 32px;
+    column-gap: 24px;
+  }
+  .shortcuts-hint {
+    display: block;
   }
   /*
    * Every item's row/column is explicit here — auto-placement scattered bar-counter, the play
@@ -1134,7 +1223,7 @@ output {
   .stage {
     grid-column: 2;
     grid-row: 2;
-    width: min(100%, 78vh);
+    width: min(100%, 52vh, 340px);
   }
   .side {
     grid-column: 1;

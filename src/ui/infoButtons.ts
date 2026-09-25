@@ -1,14 +1,14 @@
-import type { Toast } from './toast';
+import type { InfoPopup } from './infoPopup';
 
 /**
  * Info buttons carry their explanation as a `title` tooltip, which only shows on hover — never
- * on tap. This gives touch users a way to see it too, via the toast.
+ * on tap. This gives touch users a way to see it too, via the centered info popup.
  */
-export function mountInfoButtons(toast: Toast, root: ParentNode = document): void {
+export function mountInfoButtons(showInfo: InfoPopup, root: ParentNode = document): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>('.info-btn')) {
     button.addEventListener('click', () => {
       const message = button.title || button.getAttribute('aria-label');
-      if (message) toast(message);
+      if (message) showInfo(message);
     });
   }
 }

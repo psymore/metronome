@@ -5,10 +5,12 @@ import { byId } from './dom';
 export function mountVizSwitch({ store }: { store: Store<Settings> }): void {
   const stage = byId('stage');
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-viz]'));
+  // The whole pill acts as a single toggle: tapping either side flips the visualizer, even
+  // tapping the side that's already active — no need to aim for the exact other label.
+  const toggle = () =>
+    store.set({ visualizer: store.get().visualizer === 'linear' ? 'circular' : 'linear' });
   for (const button of buttons) {
-    button.addEventListener('click', () => {
-      store.set({ visualizer: button.dataset.viz === 'linear' ? 'linear' : 'circular' });
-    });
+    button.addEventListener('click', toggle);
   }
   const render = (s: Settings) => {
     stage.dataset.viz = s.visualizer;

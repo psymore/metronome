@@ -18,6 +18,7 @@ import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
 import { mountInfoButtons } from './ui/infoButtons';
+import { createInfoPopup } from './ui/infoPopup';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountSettingsDialog } from './ui/settingsDialog';
@@ -66,6 +67,7 @@ store.subscribe((s, prev) => {
 });
 
 const toast = createToast(byId('toast'));
+const showInfo = createInfoPopup(byId('infoPopup'));
 const engine = new AudioEngine({ getPattern: () => store.get() });
 engine.setVolume(store.get().volume);
 store.subscribe((s, prev) => {
@@ -230,7 +232,7 @@ mountSettingsDialog({
 });
 mountSoundDialog({ store, engine, sounds, library, toast });
 mountLanguageSwitch({ store });
-mountInfoButtons(toast);
+mountInfoButtons(showInfo);
 mountClickFx();
 applyTranslations();
 fitColumnLabels();
