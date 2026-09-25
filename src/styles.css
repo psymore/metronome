@@ -1184,8 +1184,9 @@ output {
 }
 
 @media (min-width: 900px) {
-  /* Centers the whole compact composition in the viewport instead of letting it hug the top
-     with a lot of dead space below — mobile keeps its natural top-anchored flow. */
+  /* Desktop keeps the exact same single-column stacked layout as mobile — no side-by-side
+     columns — just centered as a block in the viewport instead of hugging the top of a tall
+     window, with a bit more room than the phone-width cap. */
   body {
     min-height: 100vh;
     display: flex;
@@ -1193,47 +1194,10 @@ output {
     justify-content: center;
   }
   .app {
-    /* Noticeably tighter than before: the two columns sit close together instead of
-       stretching across a wide, mostly-empty container. */
-    max-width: 760px;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    column-gap: 24px;
+    max-width: 560px;
   }
   .shortcuts-hint {
     display: block;
-  }
-  /*
-   * Every item's row/column is explicit here — auto-placement scattered bar-counter, the play
-   * button and the controls panel across four separate rows instead of two (a column-fixed,
-   * row-auto item like the play button interacts with the shared placement cursor in a way
-   * that isn't obvious from source order), leaving large gaps between them. Two rows instead:
-   * "bar-counter | stage" then "controls | play-btn", each column's pair aligned to the edge
-   * where they meet so the two short left-column items sit flush against each other.
-   */
-  .topbar {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-  .bar-counter {
-    grid-column: 1;
-    grid-row: 2;
-    align-self: end;
-  }
-  .stage {
-    grid-column: 2;
-    grid-row: 2;
-    width: min(100%, 52vh, 340px);
-  }
-  .side {
-    grid-column: 1;
-    grid-row: 3;
-    align-self: start;
-  }
-  .play-btn {
-    grid-column: 2;
-    grid-row: 3;
-    align-self: start;
   }
 }
 
