@@ -17,6 +17,7 @@ import { mountClickFx } from './ui/clickFx';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
+import { mountInfoButtons } from './ui/infoButtons';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountSettingsDialog } from './ui/settingsDialog';
@@ -218,6 +219,7 @@ mountSettingsDialog({
 });
 mountSoundDialog({ store, engine, sounds, library, toast });
 mountLanguageSwitch({ store });
+mountInfoButtons(toast);
 mountClickFx();
 applyTranslations();
 fitColumnLabels();
