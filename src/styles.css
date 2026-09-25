@@ -566,6 +566,12 @@ output {
     0 1px 2px rgb(0 0 0 / 0.5);
   display: grid;
   place-items: center;
+  /* Same dark outline the beat-node numbers on the visualiser get, so the icon/text sitting
+     on the button's light gradient background reads clearly instead of blending into it. */
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+.square-btn svg {
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.6));
 }
 .square-btn:active {
   transform: translateY(1px) scale(0.96);
@@ -698,6 +704,7 @@ output {
     0 1px 2px rgb(0 0 0 / 0.5);
   font-size: 18px;
   line-height: 1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
 }
 .nudge:active {
   transform: translateY(1px) scale(0.94);
@@ -977,10 +984,17 @@ output {
 }
 /*
  * Sits in normal flow right under the controls card (the .app grid's own gap gives it its
- * margin). Two layers: the element itself is a dim backdrop left behind by the time already
- * spent, and ::after is the bright remaining-time fill on top of it. A recursive setTimeout in
- * main.ts ticks once a second and steps --gone up by 1/totalSeconds, clipping the bright layer
- * back by one second's worth at a time — a single style write per second, no per-second DOM nodes.
+ * margin), with the numeric countdown and pause/stop controls below the bar itself.
+ */
+.practice-timer-bar {
+  display: grid;
+  gap: 8px;
+}
+/*
+ * Two layers: the element itself is a dim backdrop left behind by the time already spent, and
+ * ::after is the bright remaining-time fill on top of it. A recursive setTimeout in main.ts
+ * ticks once a second and steps --gone up by 1/totalSeconds, clipping the bright layer back by
+ * one second's worth at a time — a single style write per second, no per-second DOM nodes.
  */
 .practice-fade-bar {
   position: relative;
@@ -999,8 +1013,47 @@ output {
   clip-path: inset(0 calc(var(--gone, 0) * 1%) 0 0);
   transition: clip-path 200ms ease;
 }
-.practice-fade-bar[hidden] {
+.practice-timer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.practice-time-left {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 3ch;
+}
+.practice-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+  color: var(--select);
+  display: grid;
+  place-items: center;
+}
+.practice-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.practice-icon-btn .icon-resume-timer {
   display: none;
+}
+.practice-icon-btn.paused .icon-pause-timer {
+  display: none;
+}
+.practice-icon-btn.paused .icon-resume-timer {
+  display: block;
+}
+.practice-icon-btn:active {
+  transform: scale(0.9);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
 }
 .switch {
   position: relative;

@@ -4,6 +4,7 @@ import { applyLanguage, applyTranslations, format, t } from './i18n/i18n';
 import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
 import { barCounterFinished, formatBarCounter } from './state/barCounter';
+import { formatTimeLeft, practiceProgressPercent } from './state/practiceTimer';
 import {
   cycleBeatLevel,
   DEFAULT_SETTINGS,
@@ -63,6 +64,7 @@ store.subscribe((s, prev) => {
     transport.refreshLabel();
     fitColumnLabels();
     if (!engine.running) showIdleBarCounter();
+    if (practiceTotalSeconds > 0) renderPauseButton();
   }
 });
 
@@ -148,52 +150,122 @@ store.subscribe(() => viz.invalidate());
 
 const wakeLock = createWakeLock();
 
-// A bar under the tempo controls that steps down one second at a time over the practice length.
-// A recursive setTimeout ticks once a second — corrected against actual elapsed wall-clock time
-// so per-tick scheduling overhead can't accumulate into drift — and writes a single CSS custom
-// property (--gone) that clip-path reads. No per-second DOM nodes, no work between ticks.
-let practiceTimer: ReturnType<typeof setTimeout> | undefined;
+// A bar under the tempo controls that steps down one second at a time over the practice length,
+// with a countdown readout and its own pause/stop controls (independent of the metronome
+// itself: pausing or stopping the timer doesn't touch playback). A recursive setTimeout ticks
+// once a second — corrected against actual elapsed wall-clock time so per-tick scheduling
+// overhead can't accumulate into drift — and writes a single CSS custom property (--gone) that
+// clip-path reads, plus the countdown text. No per-second DOM nodes, no work between ticks.
 let practiceTick: ReturnType<typeof setTimeout> | undefined;
+let practiceEndTimer: ReturnType<typeof setTimeout> | undefined;
+let practiceTotalSeconds = 0;
+// Seconds already elapsed from runs before the current one (0 unless resuming from a pause).
+let practiceElapsedBeforeRun = 0;
+let practiceRunStartedAt = 0;
+let practicePaused = false;
+const practiceTimerBar = byId('practiceTimerBar');
 const practiceFadeBar = byId('practiceFadeBar');
+const practiceTimeLeft = byId('practiceTimeLeft');
+const practicePauseBtn = byId<HTMLButtonElement>('practicePauseBtn');
 
-function clearPracticeTimer(): void {
-  clearTimeout(practiceTimer);
+function renderPracticeProgress(elapsedSeconds: number): void {
+  practiceFadeBar.style.setProperty(
+    '--gone',
+    String(practiceProgressPercent(elapsedSeconds, practiceTotalSeconds)),
+  );
+  practiceTimeLeft.textContent = formatTimeLeft(elapsedSeconds, practiceTotalSeconds);
+}
+
+function renderPauseButton(): void {
+  practicePauseBtn.classList.toggle('paused', practicePaused);
+  practicePauseBtn.setAttribute(
+    'aria-label',
+    t(practicePaused ? 'practiceTimer.resumeAriaLabel' : 'practiceTimer.pauseAriaLabel'),
+  );
+}
+
+function stopPracticeTimer(): void {
   clearTimeout(practiceTick);
-  practiceTimer = undefined;
+  clearTimeout(practiceEndTimer);
   practiceTick = undefined;
-  practiceFadeBar.hidden = true;
+  practiceEndTimer = undefined;
+  practiceTotalSeconds = 0;
+  practiceElapsedBeforeRun = 0;
+  practicePaused = false;
+  practiceTimerBar.hidden = true;
   practiceFadeBar.style.setProperty('--gone', '0');
 }
 
-function startPracticeTimer(minutes: number): void {
-  clearTimeout(practiceTimer);
-  clearTimeout(practiceTick);
-  if (minutes <= 0) {
-    practiceFadeBar.hidden = true;
-    return;
-  }
-  practiceFadeBar.hidden = false;
-  practiceFadeBar.style.setProperty('--gone', '0');
-  const totalSeconds = minutes * 60;
-  const startedAt = performance.now();
+/** (Re)starts the running countdown from practiceElapsedBeforeRun, whether this is a fresh
+ *  session or a resume after a pause. */
+function runPracticeCountdown(): void {
+  practiceRunStartedAt = performance.now();
+  const remainingSeconds = practiceTotalSeconds - practiceElapsedBeforeRun;
 
   const tick = (): void => {
-    const elapsedMs = performance.now() - startedAt;
-    const elapsedSeconds = Math.min(totalSeconds, Math.round(elapsedMs / 1000));
-    practiceFadeBar.style.setProperty('--gone', String((elapsedSeconds / totalSeconds) * 100));
-    if (elapsedSeconds < totalSeconds) {
+    const elapsedMs = performance.now() - practiceRunStartedAt;
+    const elapsedSeconds = Math.min(
+      practiceTotalSeconds,
+      practiceElapsedBeforeRun + Math.round(elapsedMs / 1000),
+    );
+    renderPracticeProgress(elapsedSeconds);
+    if (elapsedSeconds < practiceTotalSeconds) {
       practiceTick = setTimeout(tick, 1000 - (elapsedMs % 1000));
     }
   };
   tick();
 
-  practiceTimer = setTimeout(() => {
-    practiceTimer = undefined;
+  practiceEndTimer = setTimeout(() => {
+    const minutes = Math.round(practiceTotalSeconds / 60);
+    stopPracticeTimer();
     if (!engine.running) return;
     void transport.toggle();
     toast(format('toast.practiceTimerEnded', { minutes }));
-  }, totalSeconds * 1000);
+  }, remainingSeconds * 1000);
 }
+
+function startPracticeTimer(minutes: number): void {
+  clearTimeout(practiceTick);
+  clearTimeout(practiceEndTimer);
+  if (minutes <= 0) {
+    stopPracticeTimer();
+    return;
+  }
+  practiceTotalSeconds = minutes * 60;
+  practiceElapsedBeforeRun = 0;
+  practicePaused = false;
+  practiceTimerBar.hidden = false;
+  renderPauseButton();
+  renderPracticeProgress(0);
+  runPracticeCountdown();
+}
+
+function pausePracticeTimer(): void {
+  if (practicePaused || practiceTotalSeconds <= 0) return;
+  clearTimeout(practiceTick);
+  clearTimeout(practiceEndTimer);
+  const elapsedMs = performance.now() - practiceRunStartedAt;
+  practiceElapsedBeforeRun = Math.min(
+    practiceTotalSeconds,
+    practiceElapsedBeforeRun + Math.round(elapsedMs / 1000),
+  );
+  practicePaused = true;
+  renderPracticeProgress(practiceElapsedBeforeRun);
+  renderPauseButton();
+}
+
+function resumePracticeTimer(): void {
+  if (!practicePaused) return;
+  practicePaused = false;
+  renderPauseButton();
+  runPracticeCountdown();
+}
+
+practicePauseBtn.addEventListener('click', () => {
+  if (practicePaused) resumePracticeTimer();
+  else pausePracticeTimer();
+});
+byId('practiceStopBtn').addEventListener('click', stopPracticeTimer);
 
 const transport = mountTransport({
   engine,
@@ -202,7 +274,7 @@ const transport = mountTransport({
     wakeLock.setActive(engine.running);
     viz.invalidate();
     if (!engine.running) {
-      clearPracticeTimer();
+      stopPracticeTimer();
       showIdleBarCounter();
       return;
     }
@@ -236,6 +308,12 @@ mountInfoButtons(showInfo);
 mountClickFx();
 applyTranslations();
 fitColumnLabels();
+// Inter loads asynchronously (font-display: swap): labels get measured against the fallback
+// font first, and its metrics can be narrower, so a label that fit at startup can overflow
+// once Inter actually swaps in. Re-check once web fonts have finished loading, and again on
+// any resize that might cross the desktop breakpoint (the column width itself changes there).
+document.fonts?.ready.then(() => fitColumnLabels());
+window.addEventListener('resize', () => fitColumnLabels());
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);
