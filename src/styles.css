@@ -1194,10 +1194,36 @@ output {
     justify-content: center;
   }
   .app {
+    /* A flex item's "auto" width shrinks to fit its content by default, so without an explicit
+       width the stage's own min(100%, ...) had nothing to actually grow into. */
+    width: 100%;
     max-width: 560px;
   }
   .shortcuts-hint {
     display: block;
+  }
+  /* Shift the balance toward the visualiser: a bigger circle/line stage, a visibly smaller
+     controls panel underneath it instead of the two competing for similar prominence. */
+  .stage {
+    width: min(100%, 60vh, 460px);
+  }
+  .controls {
+    gap: 8px;
+    padding: 16px 14px;
+  }
+  .col {
+    width: 52px;
+  }
+  .square-btn {
+    width: 52px;
+    height: 52px;
+  }
+  .dial {
+    width: 144px;
+  }
+  .nudge {
+    width: 38px;
+    height: 38px;
   }
 }
 
