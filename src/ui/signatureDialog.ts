@@ -1,4 +1,4 @@
-import { t } from '../i18n/i18n';
+import { format, t } from '../i18n/i18n';
 import {
   clampTargetBars,
   compoundAccentLevels,
@@ -15,22 +15,65 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   const dialog = byId<HTMLDialogElement>('signatureDialog');
   const beatsValue = byId('beatsValue');
   const targetBarsValue = byId('targetBarsValue');
+  const targetBarsApply = byId<HTMLButtonElement>('targetBarsApply');
   const unitButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-unit]'));
   const subdivisionButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-subdivision]'),
   );
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
 
-  byId('signatureBtn').addEventListener('click', () => dialog.showModal());
+  byId('signatureBtn').addEventListener('click', () => {
+    pendingTargetBars = store.get().targetBars;
+    disarmApply();
+    renderTargetBars();
+    dialog.showModal();
+  });
   closeOnBackdropClick(dialog);
 
   const setBeats = (n: number) => store.set(withBeatsPerBar(store.get(), n));
   byId('beatsDown').addEventListener('click', () => setBeats(store.get().beatsPerBar - 1));
   byId('beatsUp').addEventListener('click', () => setBeats(store.get().beatsPerBar + 1));
 
-  const setTargetBars = (n: number) => store.set({ targetBars: clampTargetBars(n) });
-  byId('targetBarsDown').addEventListener('click', () => setTargetBars(store.get().targetBars - 1));
-  byId('targetBarsUp').addEventListener('click', () => setTargetBars(store.get().targetBars + 1));
+  // Song length needs an explicit Apply (+ a confirm tap for a nonzero target) before it commits:
+  // the stepper only adjusts a local pending value until then.
+  let pendingTargetBars = store.get().targetBars;
+  let lastCommittedTargetBars = pendingTargetBars;
+  let armed: ReturnType<typeof setTimeout> | undefined;
+
+  const disarmApply = () => {
+    clearTimeout(armed);
+    armed = undefined;
+    targetBarsApply.textContent = t('songLength.apply');
+  };
+
+  const renderTargetBars = () => {
+    targetBarsValue.textContent =
+      pendingTargetBars > 0 ? String(pendingTargetBars) : t('songLength.off');
+  };
+
+  const setPendingTargetBars = (n: number) => {
+    pendingTargetBars = clampTargetBars(n);
+    disarmApply();
+    renderTargetBars();
+  };
+  byId('targetBarsDown').addEventListener('click', () =>
+    setPendingTargetBars(pendingTargetBars - 1),
+  );
+  byId('targetBarsUp').addEventListener('click', () => setPendingTargetBars(pendingTargetBars + 1));
+
+  targetBarsApply.addEventListener('click', () => {
+    if (pendingTargetBars <= 0) {
+      store.set({ targetBars: 0 });
+      return;
+    }
+    if (armed === undefined) {
+      targetBarsApply.textContent = format('songLength.confirm', { n: pendingTargetBars });
+      armed = setTimeout(disarmApply, 3000);
+      return;
+    }
+    disarmApply();
+    store.set({ targetBars: pendingTargetBars });
+  });
 
   for (const button of unitButtons) {
     button.addEventListener('click', () => {
@@ -60,7 +103,12 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
 
   const render = (s: Settings) => {
     beatsValue.textContent = String(s.beatsPerBar);
-    targetBarsValue.textContent = s.targetBars > 0 ? String(s.targetBars) : t('songLength.off');
+    if (s.targetBars !== lastCommittedTargetBars) {
+      lastCommittedTargetBars = s.targetBars;
+      pendingTargetBars = s.targetBars;
+      disarmApply();
+    }
+    renderTargetBars();
     for (const button of unitButtons) {
       button.setAttribute('aria-checked', String(Number(button.dataset.unit) === s.beatUnit));
     }

@@ -33,7 +33,7 @@
         </div>
       </header>
 
-      <span id="barCounter" class="bar-counter">Bar −</span>
+      <button type="button" id="barCounter" class="bar-counter">Bar −</button>
 
       <section id="stage" class="stage" data-viz="circular">
         <canvas id="viz" class="viz" aria-hidden="true"></canvas>
@@ -86,6 +86,8 @@
         </section>
       </div>
 
+      <div id="practiceFadeBar" class="practice-fade-bar" hidden aria-hidden="true"></div>
+
       <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
       <pre id="debug" class="debug" hidden></pre>
     </main>
@@ -132,6 +134,7 @@
         <output id="targetBarsValue" class="stepper-value">Off</output>
         <button type="button" id="targetBarsUp" class="nudge" data-i18n-aria-label="nudge.moreBars" aria-label="More bars">+</button>
       </div>
+      <button type="button" id="targetBarsApply" class="wide-btn" data-i18n="songLength.apply">Apply</button>
       <p class="hint" data-i18n="songLength.hint">Set the number of bars in the piece to see your position in it while playing. 0 turns it off.</p>
     </dialog>
 
@@ -169,13 +172,9 @@
       </div>
       <label class="field">
         <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceMinutesValue">Off</output></span>
-        <div class="practice-timer-row">
-          <input id="practiceMinutesInput" type="number" min="0" max="60" step="1" />
-          <div class="practice-timer-display">
-            <div id="practiceTimerFill" class="practice-timer-fill"></div>
-          </div>
-        </div>
-        <small class="hint" data-i18n="practiceTimer.hint">Stops the metronome automatically after this many minutes. 0 turns it off.</small>
+        <input id="practiceMinutesInput" type="number" min="0" max="60" step="1" />
+        <button type="button" id="practiceTimerApply" class="wide-btn" data-i18n="practiceTimer.apply">Start</button>
+        <small class="hint" data-i18n="practiceTimer.hint">Stops the metronome automatically after this many minutes. 0 turns it off. While running, a fading bar at the bottom of the screen shows the time left.</small>
       </label>
       <label class="field">
         <span><span data-i18n="volume.label">Volume</span> <output id="volumeValue">80%</output></span>

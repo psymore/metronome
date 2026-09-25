@@ -95,6 +95,43 @@ button {
   color: inherit;
   cursor: pointer;
   touch-action: manipulation;
+  position: relative;
+  overflow: hidden;
+  transition: transform 160ms cubic-bezier(0.34, 1.5, 0.62, 1);
+}
+button:active {
+  transition: transform 55ms ease-out;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* Solid for exactly as long as the button is held — plain :active, no JS, no timer to outrun. */
+button:active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--select);
+  pointer-events: none;
+}
+/* Fired by clickFx on release: fades the same border out over 260ms instead of snapping off. */
+.btn-flash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--select);
+  pointer-events: none;
+  animation: btnFlash 260ms ease-out;
+}
+@keyframes btnFlash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 button:focus-visible,
 [tabindex]:focus-visible,
@@ -120,6 +157,11 @@ svg.stroke {
   text-transform: uppercase;
   color: var(--muted);
   text-align: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.label-sm {
+  font-size: 9px;
 }
 
 .app {
@@ -150,10 +192,11 @@ svg.stroke {
 }
 .lang-switch {
   position: relative;
+  margin-left: 4px;
 }
 .lang-btn {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
@@ -174,6 +217,10 @@ svg.stroke {
 .lang-btn[aria-expanded="true"] {
   color: var(--select);
   box-shadow: inset 0 0 0 1px var(--select);
+}
+.lang-btn:active {
+  transform: scale(0.92);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
 .lang-menu {
   position: absolute;
@@ -204,7 +251,8 @@ svg.stroke {
 }
 .seg {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  width: 168px;
   padding: 3px;
   border-radius: 999px;
   background: linear-gradient(180deg, #100f0c, #1a1812);
@@ -223,7 +271,7 @@ svg.stroke {
     inset 0 1px 0 rgb(255 255 255 / 0.08),
     inset 0 0 0 1px var(--select),
     0 1px 2px rgb(0 0 0 / 0.5);
-  transition: transform 220ms cubic-bezier(0.34, 1.3, 0.4, 1);
+  transition: transform 360ms cubic-bezier(0.3, 1.15, 0.36, 1);
 }
 .seg:has(.seg-btn[data-viz="linear"][aria-checked="true"]) .seg-thumb {
   transform: translateX(100%);
@@ -231,21 +279,39 @@ svg.stroke {
 .seg-btn {
   position: relative;
   z-index: 1;
+  flex: 1;
   border: 0;
   background: transparent;
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 13px;
+  text-align: center;
   color: var(--muted);
   transition: color 160ms ease;
 }
 .seg-btn[aria-checked="true"] {
   color: var(--select);
 }
+/* Switching tabs is shown by the sliding thumb alone — no extra press effects on these two. */
+.seg-btn:active {
+  transform: none;
+}
+.seg-btn:active::after,
+.seg-btn.btn-flash::after {
+  content: none;
+}
 
 .bar-counter {
-  display: block;
-  text-align: center;
+  justify-self: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
   font-family: var(--serif);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -410,6 +476,9 @@ svg.stroke {
   color: var(--muted);
   text-decoration: line-through;
 }
+.beat:active {
+  transform: scale(0.88);
+}
 
 .controls {
   display: grid;
@@ -444,9 +513,9 @@ svg.stroke {
   place-items: center;
 }
 .square-btn:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.96);
   box-shadow:
-    inset 0 1px 3px rgb(0 0 0 / 0.5),
+    inset 0 2px 5px rgb(0 0 0 / 0.65),
     0 1px 1px rgb(0 0 0 / 0.4);
 }
 .sig {
@@ -518,8 +587,12 @@ svg.stroke {
   height: 12%;
   margin-left: -3px;
   border-radius: 3px;
-  background: var(--pink);
-  box-shadow: 0 0 10px var(--pink);
+  background: linear-gradient(180deg, var(--brass), var(--pink) 50%, var(--brass));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.35),
+    inset 0 1px 1px rgb(0 0 0 / 0.25),
+    0 0 6px var(--pink),
+    0 0 12px var(--pink-soft);
 }
 .dial-face {
   position: absolute;
@@ -570,7 +643,7 @@ svg.stroke {
 }
 .nudge {
   width: 44px;
-  height: 40px;
+  height: 44px;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
@@ -582,8 +655,8 @@ svg.stroke {
   line-height: 1;
 }
 .nudge:active {
-  transform: translateY(1px);
-  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+  transform: translateY(1px) scale(0.94);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.65);
 }
 
 .toast {
@@ -665,6 +738,10 @@ svg.stroke {
     inset 0 1px 0 rgb(255 255 255 / 0.06),
     inset 0 -2px 3px rgb(0 0 0 / 0.4);
 }
+.icon-btn:active {
+  transform: scale(0.9);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+}
 .chip {
   min-width: 44px;
   padding: 7px 12px;
@@ -685,6 +762,10 @@ svg.stroke {
     inset 0 -2px 3px rgb(0 0 0 / 0.4),
     0 0 10px var(--select-soft);
 }
+.chip:active {
+  transform: scale(0.94);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
+}
 .sig-editor {
   display: grid;
   gap: 14px;
@@ -694,6 +775,9 @@ svg.stroke {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+.stepper + .wide-btn {
+  margin: 12px 0 14px;
 }
 .stepper-value {
   font-family: var(--serif);
@@ -730,24 +814,32 @@ svg.stroke {
   font: inherit;
   font-size: 14px;
 }
-.practice-timer-row {
-  display: grid;
-  gap: 8px;
-}
-.practice-timer-display {
-  height: 24px;
-  border-radius: 6px;
-  background: var(--panel-lo);
-  border: 1px solid var(--line);
-  overflow: hidden;
+/*
+ * Sits in normal flow right under the controls card (the .app grid's own gap gives it its
+ * margin). Two layers: the element itself is a dim backdrop left behind by the time already
+ * spent, and ::after is the bright remaining-time fill on top of it. A recursive setTimeout in
+ * main.ts ticks once a second and steps --gone up by 1/totalSeconds, clipping the bright layer
+ * back by one second's worth at a time — a single style write per second, no per-second DOM nodes.
+ */
+.practice-fade-bar {
   position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--select-soft);
+  pointer-events: none;
 }
-.practice-timer-fill {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, var(--select), var(--pink));
-  border-radius: 6px;
-  transition: width 1s linear;
+.practice-fade-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--select);
+  box-shadow: 0 0 12px var(--select-soft);
+  clip-path: inset(0 calc(var(--gone, 0) * 1%) 0 0);
+  transition: clip-path 200ms ease;
+}
+.practice-fade-bar[hidden] {
+  display: none;
 }
 .switch {
   position: relative;
@@ -798,6 +890,10 @@ svg.stroke {
   color: #ff8a8a;
   border-color: #5a2a2a;
 }
+.wide-btn:active {
+  transform: scale(0.98);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
+}
 .slot {
   display: grid;
   gap: 6px;
@@ -832,6 +928,10 @@ svg.stroke {
   display: inline-grid;
   place-items: center;
   cursor: pointer;
+}
+.small-btn:active {
+  transform: scale(0.92);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
 .drop-zone {
   border: 2px dashed var(--line);

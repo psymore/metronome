@@ -11,9 +11,11 @@ import {
   saveSettings,
 } from './state/settings';
 import { createStore } from './state/store';
+import { mountClickFx } from './ui/clickFx';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
+import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
@@ -49,6 +51,7 @@ store.subscribe((s, prev) => {
     applyLanguage(s.language);
     document.documentElement.lang = s.language;
     transport.refreshLabel();
+    fitColumnLabels();
   }
 });
 
@@ -126,14 +129,63 @@ const viz = new VizController(
       target > 0
         ? format('barCounter.withTarget', { n: barIndex + 1, total: target })
         : format('barCounter.plain', { n: barIndex + 1 });
+    // Reaching the start of the bar past the target means the target bars already played in full.
+    if (target > 0 && barIndex >= target) {
+      void transport.toggle();
+      toast(format('toast.songLengthEnded', { n: target }));
+    }
   },
 );
 store.subscribe(() => viz.invalidate());
 
 const wakeLock = createWakeLock();
+
+// A bar under the tempo controls that steps down one second at a time over the practice length.
+// A recursive setTimeout ticks once a second — corrected against actual elapsed wall-clock time
+// so per-tick scheduling overhead can't accumulate into drift — and writes a single CSS custom
+// property (--gone) that clip-path reads. No per-second DOM nodes, no work between ticks.
 let practiceTimer: ReturnType<typeof setTimeout> | undefined;
-let practiceTimerInterval: ReturnType<typeof setInterval> | undefined;
-const practiceTimerFill = byId('practiceTimerFill');
+let practiceTick: ReturnType<typeof setTimeout> | undefined;
+const practiceFadeBar = byId('practiceFadeBar');
+
+function clearPracticeTimer(): void {
+  clearTimeout(practiceTimer);
+  clearTimeout(practiceTick);
+  practiceTimer = undefined;
+  practiceTick = undefined;
+  practiceFadeBar.hidden = true;
+  practiceFadeBar.style.setProperty('--gone', '0');
+}
+
+function startPracticeTimer(minutes: number): void {
+  clearTimeout(practiceTimer);
+  clearTimeout(practiceTick);
+  if (minutes <= 0) {
+    practiceFadeBar.hidden = true;
+    return;
+  }
+  practiceFadeBar.hidden = false;
+  practiceFadeBar.style.setProperty('--gone', '0');
+  const totalSeconds = minutes * 60;
+  const startedAt = performance.now();
+
+  const tick = (): void => {
+    const elapsedMs = performance.now() - startedAt;
+    const elapsedSeconds = Math.min(totalSeconds, Math.round(elapsedMs / 1000));
+    practiceFadeBar.style.setProperty('--gone', String((elapsedSeconds / totalSeconds) * 100));
+    if (elapsedSeconds < totalSeconds) {
+      practiceTick = setTimeout(tick, 1000 - (elapsedMs % 1000));
+    }
+  };
+  tick();
+
+  practiceTimer = setTimeout(() => {
+    practiceTimer = undefined;
+    if (!engine.running) return;
+    void transport.toggle();
+    toast(format('toast.practiceTimerEnded', { minutes }));
+  }, totalSeconds * 1000);
+}
 
 const transport = mountTransport({
   engine,
@@ -141,42 +193,39 @@ const transport = mountTransport({
   onToggle: () => {
     wakeLock.setActive(engine.running);
     viz.invalidate();
-    clearTimeout(practiceTimer);
-    clearInterval(practiceTimerInterval);
-    practiceTimer = undefined;
-    practiceTimerInterval = undefined;
-    practiceTimerFill.style.width = '100%';
     if (!engine.running) {
+      clearPracticeTimer();
       barCounter.textContent = 'Bar −';
       return;
     }
-    const minutes = store.get().practiceMinutes;
-    if (minutes > 0) {
-      const startTime = performance.now();
-      const durationMs = minutes * 60_000;
-      practiceTimerInterval = setInterval(() => {
-        const elapsed = performance.now() - startTime;
-        const remaining = Math.max(0, durationMs - elapsed);
-        const percent = (remaining / durationMs) * 100;
-        practiceTimerFill.style.width = `${percent}%`;
-      }, 100);
-      practiceTimer = setTimeout(() => {
-        clearInterval(practiceTimerInterval);
-        practiceTimerInterval = undefined;
-        if (!engine.running) return;
-        void transport.toggle();
-        toast(format('toast.practiceTimerEnded', { minutes }));
-      }, durationMs);
-    }
+    startPracticeTimer(store.get().practiceMinutes);
   },
+});
+// Changing the practice length mid-session restarts the countdown (and its fade) from now,
+// instead of waiting for a stop/start to pick up the new value.
+store.subscribe((s, prev) => {
+  if (s.practiceMinutes !== prev.practiceMinutes && engine.running) {
+    startPracticeTimer(s.practiceMinutes);
+  }
 });
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
-mountSettingsDialog({ store });
+mountSettingsDialog({
+  store,
+  onStartPractice: () => {
+    if (engine.running) {
+      startPracticeTimer(store.get().practiceMinutes);
+    } else {
+      void transport.toggle();
+    }
+  },
+});
 mountSoundDialog({ store, engine, sounds, library, toast });
 mountLanguageSwitch({ store });
+mountClickFx();
 applyTranslations();
+fitColumnLabels();
 
 if (new URLSearchParams(location.search).has('debug')) {
   mountDebugOverlay(byId('debug'), engine);

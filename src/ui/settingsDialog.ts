@@ -3,12 +3,19 @@ import { defaultSettings, isThemeName, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
 
-export function mountSettingsDialog({ store }: { store: Store<Settings> }): void {
+export interface SettingsDialogDeps {
+  store: Store<Settings>;
+  /** Called after the user confirms starting a practice session from the dialog. */
+  onStartPractice: () => void;
+}
+
+export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('settingsDialog');
   const volumeInput = byId<HTMLInputElement>('volumeInput');
   const volumeValue = byId('volumeValue');
   const practiceMinutesInput = byId<HTMLInputElement>('practiceMinutesInput');
   const practiceMinutesValue = byId('practiceMinutesValue');
+  const practiceTimerApply = byId<HTMLButtonElement>('practiceTimerApply');
   const offsetInput = byId<HTMLInputElement>('offsetInput');
   const offsetValue = byId('offsetValue');
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
@@ -19,7 +26,17 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
   );
 
-  byId('settingsBtn').addEventListener('click', () => dialog.showModal());
+  let practiceArmed: ReturnType<typeof setTimeout> | undefined;
+  const disarmPractice = () => {
+    clearTimeout(practiceArmed);
+    practiceArmed = undefined;
+    practiceTimerApply.textContent = t('practiceTimer.apply');
+  };
+
+  byId('settingsBtn').addEventListener('click', () => {
+    disarmPractice();
+    dialog.showModal();
+  });
   closeOnBackdropClick(dialog);
 
   volumeInput.addEventListener('input', () => {
@@ -27,6 +44,19 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
   });
   practiceMinutesInput.addEventListener('input', () => {
     store.set({ practiceMinutes: Number(practiceMinutesInput.value) });
+    disarmPractice();
+  });
+  practiceTimerApply.addEventListener('click', () => {
+    const minutes = store.get().practiceMinutes;
+    if (minutes <= 0) return;
+    if (practiceArmed === undefined) {
+      practiceTimerApply.textContent = format('practiceTimer.confirm', { n: minutes });
+      practiceArmed = setTimeout(disarmPractice, 3000);
+      return;
+    }
+    disarmPractice();
+    dialog.close();
+    onStartPractice();
   });
   offsetInput.addEventListener('input', () => {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
@@ -70,6 +100,7 @@ export function mountSettingsDialog({ store }: { store: Store<Settings> }): void
       s.practiceMinutes > 0
         ? format('practiceTimer.minutes', { n: s.practiceMinutes })
         : t('practiceTimer.off');
+    practiceTimerApply.disabled = s.practiceMinutes <= 0;
     offsetInput.value = String(s.syncOffsetMs);
     offsetValue.textContent = `${s.syncOffsetMs > 0 ? '+' : ''}${s.syncOffsetMs} ms`;
     for (const button of themeButtons) {

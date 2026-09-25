@@ -41,6 +41,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'songLength.off': 'Off',
     'songLength.hint':
       'Set the number of bars in the piece to see your position in it while playing. 0 turns it off.',
+    'songLength.apply': 'Apply',
+    'songLength.confirm': 'Start counting from bar 1 to bar {n}? Tap again to confirm.',
+    'toast.songLengthEnded': 'Stopped after {n} bars.',
     'settingsDialog.title': 'Settings',
     'theme.label': 'Theme',
     'theme.teal': 'Teal',
@@ -61,7 +64,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'practiceTimer.off': 'Off',
     'practiceTimer.minutes': '{n} min',
     'practiceTimer.hint':
-      'Stops the metronome automatically after this many minutes. 0 turns it off.',
+      'Stops the metronome automatically after this many minutes. 0 turns it off. While running, a fading bar under the tempo controls shows the time left.',
+    'practiceTimer.apply': 'Start',
+    'practiceTimer.confirm': 'Start a {n} min practice session now? Tap again to confirm.',
     'volume.label': 'Volume',
     'syncOffset.label': 'Visual sync offset',
     'syncOffset.hint':
@@ -139,6 +144,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'nudge.moreBars': 'Daha fazla ölçü',
     'songLength.off': 'Kapalı',
     'songLength.hint': 'Parçadaki ölçü sayısını girin; çalarken konumunuzu görün. 0 kapatır.',
+    'songLength.apply': 'Uygula',
+    'songLength.confirm':
+      '1. ölçüden {n}. ölçüye kadar sayılsın mı? Onaylamak için tekrar dokunun.',
+    'toast.songLengthEnded': '{n} ölçü sonunda durduruldu.',
     'settingsDialog.title': 'Ayarlar',
     'theme.label': 'Tema',
     'theme.teal': 'Turkuaz',
@@ -158,7 +167,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'practiceTimer.label': 'Çalışma zamanlayıcısı',
     'practiceTimer.off': 'Kapalı',
     'practiceTimer.minutes': '{n} dk',
-    'practiceTimer.hint': 'Metronomu bu kadar dakika sonra otomatik olarak durdurur. 0 kapatır.',
+    'practiceTimer.hint':
+      'Metronomu bu kadar dakika sonra otomatik olarak durdurur. 0 kapatır. Çalışırken tempo kontrollerinin altındaki solan çubuk kalan süreyi gösterir.',
+    'practiceTimer.apply': 'Başlat',
+    'practiceTimer.confirm': '{n} dakikalık çalışma başlasın mı? Onaylamak için tekrar dokunun.',
     'volume.label': 'Ses düzeyi',
     'syncOffset.label': 'Görsel eşitleme kayması',
     'syncOffset.hint':
