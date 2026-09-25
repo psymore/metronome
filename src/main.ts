@@ -41,6 +41,11 @@ const storage = safeLocalStorage();
 const store = createStore<Settings>(loadSettings(storage));
 store.subscribe((s) => saveSettings(storage, s));
 
+const barCounter = byId('barCounter');
+const showIdleBarCounter = (): void => {
+  barCounter.textContent = t('barCounter.idle');
+};
+
 const applyTheme = (s: Settings) => {
   document.documentElement.dataset.theme = s.theme;
 };
@@ -49,12 +54,14 @@ store.subscribe(applyTheme);
 
 applyLanguage(store.get().language);
 document.documentElement.lang = store.get().language;
+showIdleBarCounter();
 store.subscribe((s, prev) => {
   if (s.language !== prev.language) {
     applyLanguage(s.language);
     document.documentElement.lang = s.language;
     transport.refreshLabel();
     fitColumnLabels();
+    if (!engine.running) showIdleBarCounter();
   }
 });
 
@@ -90,7 +97,6 @@ async function applySound(slot: SoundSlot): Promise<void> {
 }
 
 const playBtn = byId<HTMLButtonElement>('playBtn');
-const barCounter = byId('barCounter');
 
 // Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
 // mobile), buffers are null and beats would play silently. Block Play until they're ready.
@@ -103,6 +109,7 @@ store.subscribe((s, prev) => {
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
 });
 
+const dialHub = byId('dialHub');
 const viz = new VizController(
   byId<HTMLCanvasElement>('viz'),
   {
@@ -118,6 +125,10 @@ const viz = new VizController(
       void playBtn.offsetWidth; // restart the animation even if it's already mid-pulse
       playBtn.classList.add('pulse');
     }
+    // Fills the otherwise-empty hub at the dial's center with a pulse on every beat.
+    dialHub.classList.remove('pulse');
+    void dialHub.offsetWidth;
+    dialHub.classList.add('pulse');
     if (store.get().haptics && level !== 'mute' && navigator.vibrate) {
       navigator.vibrate(level === 'accent' ? 30 : 12);
     }
@@ -190,7 +201,7 @@ const transport = mountTransport({
     viz.invalidate();
     if (!engine.running) {
       clearPracticeTimer();
-      barCounter.textContent = t('barCounter.idle');
+      showIdleBarCounter();
       return;
     }
     startPracticeTimer(store.get().practiceMinutes);

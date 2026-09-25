@@ -1,6 +1,7 @@
 import { format, t } from '../i18n/i18n';
 import { defaultSettings, isThemeName, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
+import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick } from './dom';
 
 export interface SettingsDialogDeps {
@@ -26,15 +27,13 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
   );
 
-  let practiceArmed: ReturnType<typeof setTimeout> | undefined;
-  const disarmPractice = () => {
-    clearTimeout(practiceArmed);
-    practiceArmed = undefined;
-    practiceTimerApply.textContent = t('practiceTimer.apply');
-  };
+  const practiceConfirm = createConfirmGate(practiceTimerApply, {
+    idleText: () => t('practiceTimer.apply'),
+    armedText: () => format('practiceTimer.confirm', { n: store.get().practiceMinutes }),
+  });
 
   byId('settingsBtn').addEventListener('click', () => {
-    disarmPractice();
+    practiceConfirm.disarm();
     dialog.showModal();
   });
   closeOnBackdropClick(dialog);
@@ -44,19 +43,14 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   });
   practiceMinutesInput.addEventListener('input', () => {
     store.set({ practiceMinutes: Number(practiceMinutesInput.value) });
-    disarmPractice();
+    practiceConfirm.disarm();
   });
   practiceTimerApply.addEventListener('click', () => {
-    const minutes = store.get().practiceMinutes;
-    if (minutes <= 0) return;
-    if (practiceArmed === undefined) {
-      practiceTimerApply.textContent = format('practiceTimer.confirm', { n: minutes });
-      practiceArmed = setTimeout(disarmPractice, 3000);
-      return;
+    if (store.get().practiceMinutes <= 0) return;
+    if (practiceConfirm.tap()) {
+      dialog.close();
+      onStartPractice();
     }
-    disarmPractice();
-    dialog.close();
-    onStartPractice();
   });
   offsetInput.addEventListener('input', () => {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
@@ -75,20 +69,12 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   });
 
   // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
-  let armed: ReturnType<typeof setTimeout> | undefined;
+  const resetConfirm = createConfirmGate(resetBtn, {
+    idleText: () => t('reset.button'),
+    armedText: () => t('reset.confirm'),
+  });
   resetBtn.addEventListener('click', () => {
-    if (armed === undefined) {
-      resetBtn.textContent = t('reset.confirm');
-      armed = setTimeout(() => {
-        armed = undefined;
-        resetBtn.textContent = t('reset.button');
-      }, 3000);
-      return;
-    }
-    clearTimeout(armed);
-    armed = undefined;
-    resetBtn.textContent = t('reset.button');
-    store.set(defaultSettings());
+    if (resetConfirm.tap()) store.set(defaultSettings());
   });
 
   const render = (s: Settings) => {

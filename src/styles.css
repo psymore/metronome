@@ -12,7 +12,10 @@
   --radius: 4px;
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
   font-family: var(--font-sans);
+  --confirm-safe: #57d38c;
+  --confirm-danger: #ff5c5c;
 
   /* Accent family (theme: Teal, default) — one hue, three roles */
   --pink: #4fb894;
@@ -208,7 +211,7 @@ output {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--pink-soft);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.06),
@@ -303,8 +306,10 @@ output {
   color: var(--select);
 }
 /* Switching tabs is shown by the sliding thumb alone — no extra press effects on these two. */
+/* Pressing the already-active tab moves neither the thumb nor its text color, so it still
+   needs its own tactile feedback — otherwise tapping it feels like the button did nothing. */
 .seg-btn:active {
-  transform: none;
+  transform: scale(0.95);
 }
 .seg-btn:active::after,
 .seg-btn.btn-flash::after {
@@ -366,6 +371,12 @@ output {
 }
 .stage[data-viz="linear"] .dial-hub {
   display: none;
+}
+/* Gives the hub some life on every beat — reuses the play button's own pulse keyframes since
+   both share the same resting box-shadow layers. A triggered 260ms animation, not a continuous
+   one, so it costs nothing while idle or hidden. */
+.dial-hub.pulse {
+  animation: beatPulse 260ms ease-out;
 }
 /* Sits in normal flow below the stage instead of pinned to the dial's center: a bigger,
    easier-to-reach primary control, closer to thumb range than the top of the visualiser. */
@@ -644,7 +655,7 @@ output {
   margin-top: 2px;
 }
 .tempo-marking {
-  font-family: var(--font-sans);
+  font-family: var(--serif);
   font-size: 13px;
   font-style: italic;
   color: var(--muted);
@@ -880,7 +891,7 @@ output {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--pink-soft);
   background: transparent;
   color: var(--muted);
   font-family: var(--font-sans);
@@ -991,6 +1002,26 @@ output {
   color: #ff8a8a;
   border-color: #5a2a2a;
 }
+/* A ring that sweeps from green to red over the same 3s window the "tap again to confirm"
+   buttons (reset, practice timer, song length Apply) stay armed for — a visual countdown
+   instead of a silent timer. */
+.confirm-armed {
+  animation: confirmCountdown 3000ms linear forwards;
+}
+@keyframes confirmCountdown {
+  from {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      inset 0 -2px 3px rgb(0 0 0 / 0.4),
+      0 0 0 2px var(--confirm-safe);
+  }
+  to {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      inset 0 -2px 3px rgb(0 0 0 / 0.4),
+      0 0 0 2px var(--confirm-danger);
+  }
+}
 .wide-btn:active {
   transform: scale(0.98);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
@@ -1080,17 +1111,40 @@ output {
   .app {
     max-width: 1100px;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    align-items: center;
+    align-items: start;
     column-gap: 32px;
   }
+  /*
+   * Every item's row/column is explicit here — auto-placement scattered bar-counter, the play
+   * button and the controls panel across four separate rows instead of two (a column-fixed,
+   * row-auto item like the play button interacts with the shared placement cursor in a way
+   * that isn't obvious from source order), leaving large gaps between them. Two rows instead:
+   * "bar-counter | stage" then "controls | play-btn", each column's pair aligned to the edge
+   * where they meet so the two short left-column items sit flush against each other.
+   */
   .topbar {
     grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .bar-counter {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
   }
   .stage {
+    grid-column: 2;
+    grid-row: 2;
     width: min(100%, 78vh);
+  }
+  .side {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: start;
   }
   .play-btn {
     grid-column: 2;
+    grid-row: 3;
+    align-self: start;
   }
 }
 
