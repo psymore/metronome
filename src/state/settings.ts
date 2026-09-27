@@ -15,7 +15,7 @@ export const MIN_BEATS = 1;
 export const MAX_BEATS = 16;
 export const SYNC_OFFSET_LIMIT_MS = 200;
 export const MAX_TARGET_BARS = 999;
-export const MAX_PRACTICE_MINUTES = 180;
+export const MAX_PRACTICE_SECONDS = 180 * 60;
 export const SETTINGS_KEY = 'metronome.settings.v1';
 /** Loop count choices for the bar counter: 0 means infinite. */
 export const LOOP_COUNTS = [1, 2, 4, 8, 0] as const;
@@ -41,8 +41,8 @@ export interface Settings {
   targetBars: number;
   /** Times to repeat the targetBars-bar loop; 1 = play once (default), 0 = infinite. Ignored when targetBars is 0. */
   loopCount: number;
-  /** Minutes to play before auto-stopping; 0 means no limit. */
-  practiceMinutes: number;
+  /** Seconds to play before auto-stopping; 0 means no limit. */
+  practiceSeconds: number;
   /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
   subdivision: Subdivision;
   language: Language;
@@ -65,7 +65,7 @@ export const DEFAULT_SETTINGS: Settings = {
   haptics: false,
   targetBars: 0,
   loopCount: 1,
-  practiceMinutes: 0,
+  practiceSeconds: 0,
   subdivision: 1,
   language: 'en',
   depth25d: false,
@@ -145,6 +145,12 @@ export function clampTargetBars(n: number): number {
   return Math.min(MAX_TARGET_BARS, Math.max(0, Math.round(n)));
 }
 
+/** Clamps a practice-timer length in seconds; 0 means off. */
+export function clampPracticeSeconds(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(MAX_PRACTICE_SECONDS, Math.max(0, Math.round(n)));
+}
+
 function isIntInRange(v: unknown, min: number, max: number): v is number {
   return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 }
@@ -184,9 +190,13 @@ export function sanitizeSettings(raw: unknown): Settings {
     haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
     targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,
     loopCount: isLoopCount(r.loopCount) ? r.loopCount : d.loopCount,
-    practiceMinutes: isIntInRange(r.practiceMinutes, 0, MAX_PRACTICE_MINUTES)
-      ? r.practiceMinutes
-      : d.practiceMinutes,
+    // practiceMinutes is the pre-MM:SS field name; still read so upgrading doesn't silently
+    // reset an existing saved practice length.
+    practiceSeconds: isIntInRange(r.practiceSeconds, 0, MAX_PRACTICE_SECONDS)
+      ? r.practiceSeconds
+      : isIntInRange(r.practiceMinutes, 0, MAX_PRACTICE_SECONDS / 60)
+        ? r.practiceMinutes * 60
+        : d.practiceSeconds,
     subdivision: isSubdivision(r.subdivision) ? r.subdivision : d.subdivision,
     language: isLanguage(r.language) ? r.language : d.language,
     depth25d: typeof r.depth25d === 'boolean' ? r.depth25d : d.depth25d,

@@ -205,23 +205,23 @@ function runPracticeCountdown(): void {
   tick();
 
   practiceEndTimer = setTimeout(() => {
-    const minutes = Math.round(practiceTotalSeconds / 60);
+    const time = formatTimeLeft(0, practiceTotalSeconds);
     stopPracticeTimer();
     // The practice session ending is a cue about time, not a reason to cut the beat off
     // mid-bar — the metronome keeps playing until the player stops it themselves.
     if (store.get().haptics && navigator.vibrate) navigator.vibrate([20, 40, 20]);
-    toast(format('toast.practiceTimerEnded', { minutes }));
+    toast(format('toast.practiceTimerEnded', { time }));
   }, remainingSeconds * 1000);
 }
 
-function startPracticeTimer(minutes: number): void {
+function startPracticeTimer(seconds: number): void {
   clearTimeout(practiceTick);
   clearTimeout(practiceEndTimer);
-  if (minutes <= 0) {
+  if (seconds <= 0) {
     stopPracticeTimer();
     return;
   }
-  practiceTotalSeconds = minutes * 60;
+  practiceTotalSeconds = seconds;
   practiceElapsedBeforeRun = 0;
   practicePaused = false;
   practiceTimerBar.hidden = false;
@@ -268,14 +268,14 @@ const transport = mountTransport({
       showIdleBarCounter();
       return;
     }
-    startPracticeTimer(store.get().practiceMinutes);
+    startPracticeTimer(store.get().practiceSeconds);
   },
 });
 // Changing the practice length mid-session restarts the countdown (and its fade) from now,
 // instead of waiting for a stop/start to pick up the new value.
 store.subscribe((s, prev) => {
-  if (s.practiceMinutes !== prev.practiceMinutes && engine.running) {
-    startPracticeTimer(s.practiceMinutes);
+  if (s.practiceSeconds !== prev.practiceSeconds && engine.running) {
+    startPracticeTimer(s.practiceSeconds);
   }
 });
 
@@ -300,7 +300,7 @@ mountSettingsDialog({
   store,
   onStartPractice: () => {
     if (engine.running) {
-      startPracticeTimer(store.get().practiceMinutes);
+      startPracticeTimer(store.get().practiceSeconds);
     } else {
       void transport.toggle();
     }

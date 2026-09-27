@@ -34,6 +34,11 @@
   --viz-label: #9db0a7;
   --viz-glow: #7fe0bb;
   --viz-core: #f0fff8;
+
+  /* Generic aliases for "the current theme's accent" — sliders, focus rings and press glows
+     read these instead of a hardcoded color, so they recolor with every theme automatically. */
+  --accent-color: var(--select);
+  --accent-glow: var(--select-soft);
 }
 
 /* Theme: Amber — brass/copper accent (matches a real metronome's pendulum) */
@@ -111,22 +116,28 @@ button:disabled {
   opacity: 0.45;
   cursor: default;
 }
-/* Solid for exactly as long as the button is held — plain :active, no JS, no timer to outrun. */
+/* Soft themed glow for exactly as long as the button is held — plain :active, no JS, no timer
+   to outrun — instead of a hard inset border. A thin 1px hint plus an outer blur read as "glow",
+   not "default browser outline". */
 button:active::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 2px var(--select);
+  box-shadow:
+    inset 0 0 0 1px var(--accent-glow),
+    0 0 14px var(--accent-glow);
   pointer-events: none;
 }
-/* Fired by clickFx on release: fades the same border out over 260ms instead of snapping off. */
+/* Fired by clickFx on release: fades the same glow out over 260ms instead of snapping off. */
 .btn-flash::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 2px var(--select);
+  box-shadow:
+    inset 0 0 0 1px var(--accent-glow),
+    0 0 14px var(--accent-glow);
   pointer-events: none;
   animation: btnFlash 260ms ease-out;
 }
@@ -138,12 +149,72 @@ button:active::after {
     opacity: 0;
   }
 }
+/* Reset is destructive — its press glow reads as a warning (red), not the theme accent. */
+.wide-btn.danger:active::after,
+.wide-btn.danger.btn-flash::after {
+  box-shadow:
+    inset 0 0 0 1px var(--confirm-danger),
+    0 0 16px rgb(255 92 92 / 0.6);
+}
+/* A soft glow around the focused element (filter, not outline/box-shadow, so it layers on top
+   of a button's own bevel box-shadow instead of replacing it) reads as "themed" rather than the
+   thick default browser rectangle. */
 button:focus-visible,
 [tabindex]:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--pink);
-  outline-offset: 3px;
+  outline: none;
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+/* Volume / sync-offset sliders: themed instead of the browser's default blue. accent-color
+   covers the baseline look in every engine; the pseudo-elements add a track that actually
+   matches the panel and a thumb with the same soft glow the rest of the UI uses. Firefox draws
+   the filled portion natively via ::-moz-range-progress; WebKit/Blink don't expose an
+   equivalent without extra markup, so there it's an evenly colored track plus a glowing thumb. */
+input[type="range"] {
+  accent-color: var(--accent-color);
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--panel-lo);
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--panel-lo);
+}
+input[type="range"]::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-color);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow:
+    0 0 8px var(--accent-glow),
+    0 1px 2px rgb(0 0 0 / 0.5);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow:
+    0 0 8px var(--accent-glow),
+    0 1px 2px rgb(0 0 0 / 0.5);
 }
 svg {
   width: 24px;
@@ -914,6 +985,56 @@ html.depth-25d .knob {
   font: inherit;
   font-size: 14px;
 }
+/* Practice timer: MM:SS fields flanked by hold-to-repeat +/- steppers (ui/holdRepeat.ts)
+   instead of a single whole-minutes input. */
+.time-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.time-fields {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.time-fields input[type="number"] {
+  width: 3.2em;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  /* Custom +/- steppers make the native spin buttons redundant clutter. */
+  -moz-appearance: textfield;
+}
+.time-fields input[type="number"]::-webkit-inner-spin-button,
+.time-fields input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.time-sep {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.time-step-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+.time-step-btn:active {
+  transform: scale(0.92);
+}
 /*
  * Sits in normal flow right under the controls card (the .app grid's own gap gives it its
  * margin): a slim vertical "energy column" on the left, countdown + pause/stop stacked to its
@@ -1093,7 +1214,12 @@ html.depth-25d .knob {
 }
 .wide-btn.danger {
   color: #ff8a8a;
-  border-color: #5a2a2a;
+  border-color: rgb(255 92 92 / 0.4);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45),
+    0 0 10px rgb(255 92 92 / 0.18);
 }
 /* A colored segment traces the button's own rounded-rect border over the same 3s window the
    "tap again to confirm" buttons (reset, practice timer, song length Apply) stay armed for —

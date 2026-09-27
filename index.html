@@ -227,15 +227,23 @@
           <button type="button" class="info-btn" data-i18n-aria-label="haptics.hint" data-i18n-title="haptics.hint" aria-label="Feel the beat on devices that support vibration." title="Feel the beat on devices that support vibration.">i</button>
         </div>
       </div>
-      <label class="field">
-        <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceMinutesValue">Off</output></span>
-        <input id="practiceMinutesInput" type="number" min="0" max="60" step="1" />
+      <div class="field">
+        <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceTimeValue">Off</output></span>
+        <div class="time-picker">
+          <button type="button" id="practiceTimeDown" class="time-step-btn" data-i18n-aria-label="practiceTimer.decreaseAriaLabel" aria-label="Decrease practice length">−</button>
+          <div class="time-fields">
+            <input id="practiceMinutesInput" type="number" min="0" max="180" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.minutesAriaLabel" aria-label="Minutes" />
+            <span class="time-sep" aria-hidden="true">:</span>
+            <input id="practiceSecondsInput" type="number" min="0" max="59" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.secondsAriaLabel" aria-label="Seconds" />
+          </div>
+          <button type="button" id="practiceTimeUp" class="time-step-btn" data-i18n-aria-label="practiceTimer.increaseAriaLabel" aria-label="Increase practice length">+</button>
+        </div>
         <button type="button" id="practiceTimerApply" class="wide-btn" data-i18n="practiceTimer.apply">Start</button>
         <div class="sub-head">
           <small class="sub-label" data-i18n="practiceTimer.subLabel">0 = off</small>
-          <button type="button" class="info-btn" data-i18n-aria-label="practiceTimer.hint" data-i18n-title="practiceTimer.hint" aria-label="Auto-stops after this many minutes." title="Auto-stops after this many minutes.">i</button>
+          <button type="button" class="info-btn" data-i18n-aria-label="practiceTimer.hint" data-i18n-title="practiceTimer.hint" aria-label="Auto-stops after this length." title="Auto-stops after this length.">i</button>
         </div>
-      </label>
+      </div>
       <label class="field">
         <span><span data-i18n="volume.label">Volume</span> <output id="volumeValue">80%</output></span>
         <input id="volumeInput" type="range" min="0" max="100" step="1" />
