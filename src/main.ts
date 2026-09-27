@@ -20,6 +20,7 @@ import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
 import { mountInfoButtons } from './ui/infoButtons';
 import { createInfoPopup } from './ui/infoPopup';
+import { mountKnob } from './ui/knob';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountSettingsDialog } from './ui/settingsDialog';
@@ -62,7 +63,7 @@ store.subscribe((s, prev) => {
   if (s.language !== prev.language) {
     applyLanguage(s.language);
     document.documentElement.lang = s.language;
-    transport.refreshLabel();
+    knob.invalidate();
     fitColumnLabels();
     if (!engine.running) showIdleBarCounter();
     if (practiceTotalSeconds > 0) renderPauseButton();
@@ -101,14 +102,6 @@ async function applySound(slot: SoundSlot): Promise<void> {
   }
 }
 
-const playBtn = byId<HTMLButtonElement>('playBtn');
-
-// Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
-// mobile), buffers are null and beats would play silently. Block Play until they're ready.
-playBtn.disabled = true;
-void Promise.all([applySound('accent'), applySound('normal')]).finally(() => {
-  playBtn.disabled = false;
-});
 store.subscribe((s, prev) => {
   if (s.accentSoundId !== prev.accentSoundId) void applySound('accent');
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
@@ -125,14 +118,9 @@ const viz = new VizController(
   () => store.get(),
   (index) => store.set({ levels: cycleBeatLevel(store.get().levels, index) }),
   (level, barIndex) => {
-    if (level === 'accent') {
-      playBtn.classList.remove('pulse');
-      void playBtn.offsetWidth; // restart the animation even if it's already mid-pulse
-      playBtn.classList.add('pulse');
-    }
-    // Fills the otherwise-empty hub at the dial's center with a pulse on every beat.
+    if (level === 'accent') knob.flash();
     dialHub.classList.remove('pulse');
-    void dialHub.offsetWidth;
+    void dialHub.offsetWidth; // restart the animation even if it's already mid-pulse
     dialHub.classList.add('pulse');
     if (store.get().haptics && level !== 'mute' && navigator.vibrate) {
       navigator.vibrate(level === 'accent' ? 30 : 12);
@@ -290,6 +278,20 @@ store.subscribe((s, prev) => {
     startPracticeTimer(s.practiceMinutes);
   }
 });
+
+const knob = mountKnob(byId<HTMLCanvasElement>('knob'), {
+  store,
+  isRunning: () => engine.running,
+  toggle: () => void transport.toggle(),
+});
+// Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
+// mobile), buffers are null and beats would play silently. Block the knob's center tap until
+// they're ready.
+knob.setDisabled(true);
+void Promise.all([applySound('accent'), applySound('normal')]).finally(() => {
+  knob.setDisabled(false);
+});
+
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });

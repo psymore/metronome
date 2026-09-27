@@ -46,11 +46,6 @@
         <div id="dialHub" class="dial-hub" aria-hidden="true"></div>
       </section>
 
-      <button type="button" id="playBtn" class="play-btn" aria-pressed="false" aria-label="Start">
-        <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-        <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
-      </button>
-
       <div class="side">
         <section class="panel controls" data-i18n-aria-label="controls.ariaLabel" aria-label="Tempo controls">
           <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
@@ -66,13 +61,7 @@
           </div>
 
           <div class="dial-col">
-            <div id="dial" class="dial" role="slider" tabindex="0" data-i18n-aria-label="dial.ariaLabel" aria-label="Tempo in BPM" aria-valuemin="20" aria-valuemax="400" aria-valuenow="120">
-              <div id="dialRing" class="dial-ring"></div>
-              <div class="dial-face">
-                <output id="bpmValue" class="bpm-value">120</output>
-                <span class="bpm-unit" data-i18n="bpm.unit">BPM</span>
-              </div>
-            </div>
+            <canvas id="knob" class="knob" aria-label="Tempo in BPM. Tap the center to start or stop."></canvas>
             <span id="tempoMarking" class="tempo-marking"></span>
             <div class="nudges">
               <button type="button" id="bpmDown" class="nudge" data-i18n-aria-label="nudge.slower" aria-label="Slower">−</button>
@@ -260,7 +249,6 @@
         </div>
       </label>
       <button type="button" id="resetBtn" class="wide-btn danger" data-i18n="reset.button">Reset all settings</button>
-      <p class="hint shortcuts-hint" data-i18n="shortcuts.hint">Keys: Space start/stop · ↑↓ tempo (Shift ×5) · PgUp/PgDn ±10 · T tap · V visualiser</p>
     </dialog>
 
     <dialog id="soundDialog" class="sheet" aria-labelledby="soundTitle">

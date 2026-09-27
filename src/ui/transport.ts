@@ -1,11 +1,9 @@
 import type { AudioEngine } from '../engine/audioEngine';
-import { format, t } from '../i18n/i18n';
-import { byId } from './dom';
+import { format } from '../i18n/i18n';
 import type { Toast } from './toast';
 
 export interface Transport {
   toggle(): Promise<void>;
-  refreshLabel(): void;
 }
 
 export function mountTransport(deps: {
@@ -13,14 +11,7 @@ export function mountTransport(deps: {
   toast: Toast;
   onToggle: () => void;
 }): Transport {
-  const button = byId<HTMLButtonElement>('playBtn');
   let busy = false;
-
-  const render = () => {
-    const on = deps.engine.running;
-    button.setAttribute('aria-pressed', String(on));
-    button.setAttribute('aria-label', on ? t('play.stop') : t('play.start'));
-  };
 
   async function toggle(): Promise<void> {
     if (busy) return;
@@ -34,14 +25,9 @@ export function mountTransport(deps: {
       );
     } finally {
       busy = false;
-      render();
       deps.onToggle();
     }
   }
 
-  button.addEventListener('click', () => {
-    void toggle();
-  });
-  render();
-  return { toggle, refreshLabel: render };
+  return { toggle };
 }
