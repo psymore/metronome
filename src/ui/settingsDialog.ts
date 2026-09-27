@@ -1,8 +1,16 @@
 import { format, t } from '../i18n/i18n';
-import { defaultSettings, isThemeName, type Settings } from '../state/settings';
+import { formatTimeLeft } from '../state/practiceTimer';
+import {
+  clampPracticeSeconds,
+  defaultSettings,
+  isKnobFinish,
+  isThemeName,
+  type Settings,
+} from '../state/settings';
 import type { Store } from '../state/store';
 import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick } from './dom';
+import { mountHoldRepeat } from './holdRepeat';
 
 export interface SettingsDialogDeps {
   store: Store<Settings>;
@@ -10,12 +18,18 @@ export interface SettingsDialogDeps {
   onStartPractice: () => void;
 }
 
+/** Seconds a single tap (or hold-repeat tick) of the practice timer's +/- buttons moves by. */
+const PRACTICE_STEP_SECONDS = 15;
+
 export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('settingsDialog');
   const volumeInput = byId<HTMLInputElement>('volumeInput');
   const volumeValue = byId('volumeValue');
   const practiceMinutesInput = byId<HTMLInputElement>('practiceMinutesInput');
-  const practiceMinutesValue = byId('practiceMinutesValue');
+  const practiceSecondsInput = byId<HTMLInputElement>('practiceSecondsInput');
+  const practiceTimeValue = byId('practiceTimeValue');
+  const practiceTimeDown = byId<HTMLButtonElement>('practiceTimeDown');
+  const practiceTimeUp = byId<HTMLButtonElement>('practiceTimeUp');
   const practiceTimerApply = byId<HTMLButtonElement>('practiceTimerApply');
   const offsetInput = byId<HTMLInputElement>('offsetInput');
   const offsetValue = byId('offsetValue');
@@ -23,13 +37,18 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
   const beatRow = byId('beatRow');
   const hapticsToggle = byId<HTMLButtonElement>('hapticsToggle');
+  const depth25dToggle = byId<HTMLButtonElement>('depth25dToggle');
   const themeButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
+  );
+  const knobFinishButtons = Array.from(
+    dialog.querySelectorAll<HTMLButtonElement>('[data-knob-finish-option]'),
   );
 
   const practiceConfirm = createConfirmGate(practiceTimerApply, {
     idleText: () => t('practiceTimer.apply'),
-    armedText: () => format('practiceTimer.confirm', { n: store.get().practiceMinutes }),
+    armedText: () =>
+      format('practiceTimer.confirm', { time: formatTimeLeft(0, store.get().practiceSeconds) }),
   });
 
   byId('settingsBtn').addEventListener('click', () => {
@@ -41,12 +60,27 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   volumeInput.addEventListener('input', () => {
     store.set({ volume: Number(volumeInput.value) / 100 });
   });
-  practiceMinutesInput.addEventListener('input', () => {
-    store.set({ practiceMinutes: Number(practiceMinutesInput.value) });
+
+  const setPracticeSeconds = (seconds: number): void => {
+    store.set({ practiceSeconds: clampPracticeSeconds(seconds) });
     practiceConfirm.disarm();
+  };
+  practiceMinutesInput.addEventListener('input', () => {
+    const ss = store.get().practiceSeconds % 60;
+    setPracticeSeconds(Number(practiceMinutesInput.value) * 60 + ss);
   });
+  practiceSecondsInput.addEventListener('input', () => {
+    const mm = Math.floor(store.get().practiceSeconds / 60);
+    setPracticeSeconds(mm * 60 + Number(practiceSecondsInput.value));
+  });
+  mountHoldRepeat(practiceTimeDown, () =>
+    setPracticeSeconds(store.get().practiceSeconds - PRACTICE_STEP_SECONDS),
+  );
+  mountHoldRepeat(practiceTimeUp, () =>
+    setPracticeSeconds(store.get().practiceSeconds + PRACTICE_STEP_SECONDS),
+  );
   practiceTimerApply.addEventListener('click', () => {
-    if (store.get().practiceMinutes <= 0) return;
+    if (store.get().practiceSeconds <= 0) return;
     if (practiceConfirm.tap()) {
       dialog.close();
       onStartPractice();
@@ -61,11 +95,20 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
       if (isThemeName(theme)) store.set({ theme });
     });
   }
+  for (const button of knobFinishButtons) {
+    button.addEventListener('click', () => {
+      const knobFinish = button.dataset.knobFinishOption;
+      if (isKnobFinish(knobFinish)) store.set({ knobFinish });
+    });
+  }
   beatsClickableToggle.addEventListener('click', () => {
     store.set({ beatsClickable: !store.get().beatsClickable });
   });
   hapticsToggle.addEventListener('click', () => {
     store.set({ haptics: !store.get().haptics });
+  });
+  depth25dToggle.addEventListener('click', () => {
+    store.set({ depth25d: !store.get().depth25d });
   });
 
   // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
@@ -81,20 +124,23 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     const percent = Math.round(s.volume * 100);
     volumeInput.value = String(percent);
     volumeValue.textContent = `${percent}%`;
-    practiceMinutesInput.value = String(s.practiceMinutes);
-    practiceMinutesValue.textContent =
-      s.practiceMinutes > 0
-        ? format('practiceTimer.minutes', { n: s.practiceMinutes })
-        : t('practiceTimer.off');
-    practiceTimerApply.disabled = s.practiceMinutes <= 0;
+    practiceMinutesInput.value = String(Math.floor(s.practiceSeconds / 60));
+    practiceSecondsInput.value = String(s.practiceSeconds % 60);
+    practiceTimeValue.textContent =
+      s.practiceSeconds > 0 ? formatTimeLeft(0, s.practiceSeconds) : t('practiceTimer.off');
+    practiceTimerApply.disabled = s.practiceSeconds <= 0;
     offsetInput.value = String(s.syncOffsetMs);
     offsetValue.textContent = `${s.syncOffsetMs > 0 ? '+' : ''}${s.syncOffsetMs} ms`;
     for (const button of themeButtons) {
       button.setAttribute('aria-checked', String(button.dataset.themeOption === s.theme));
     }
+    for (const button of knobFinishButtons) {
+      button.setAttribute('aria-checked', String(button.dataset.knobFinishOption === s.knobFinish));
+    }
     beatsClickableToggle.setAttribute('aria-checked', String(s.beatsClickable));
     beatRow.classList.toggle('dim', !s.beatsClickable);
     hapticsToggle.setAttribute('aria-checked', String(s.haptics));
+    depth25dToggle.setAttribute('aria-checked', String(s.depth25d));
   };
   render(store.get());
   store.subscribe(render);

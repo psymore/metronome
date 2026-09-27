@@ -47,7 +47,7 @@ describe('circular geometry', () => {
     expect(l.cx).toBe(200);
     expect(l.cy).toBe(150);
     expect(l.r).toBeCloseTo(117);
-    expect(l.hub).toBeCloseTo(117 * 0.24);
+    expect(l.hub).toBeCloseTo(117 * 0.16);
     expect(circularLayout(10, 10).r).toBe(10);
   });
 });

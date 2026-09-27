@@ -40,7 +40,8 @@ export function circularLayout(width: number, height: number) {
   const size = Math.min(width, height);
   const labelPad = Math.max(18, size * 0.07);
   const r = Math.max(10, size / 2 - labelPad - 12);
-  return { cx: width / 2, cy: height / 2, r, hub: r * 0.24, labelPad };
+  // Hub shrunk to 2/3 of its previous size (0.24 -> 0.16): less dead space at the center.
+  return { cx: width / 2, cy: height / 2, r, hub: r * 0.16, labelPad };
 }
 
 export function linearLayout(width: number, height: number) {

@@ -10,12 +10,16 @@ export const THEMES = ['teal', 'amber', 'blue'] as const;
 export type ThemeName = (typeof THEMES)[number];
 export const LANGUAGES = ['en', 'tr'] as const;
 export type Language = (typeof LANGUAGES)[number];
+/** The BPM knob's brushed-metal tint: neutral chrome, or a fixed teal-tinted metal — independent
+ *  of the color theme above (which only recolors the LCD glow/indicator). */
+export const KNOB_FINISHES = ['chrome', 'teal'] as const;
+export type KnobFinish = (typeof KNOB_FINISHES)[number];
 
 export const MIN_BEATS = 1;
 export const MAX_BEATS = 16;
 export const SYNC_OFFSET_LIMIT_MS = 200;
 export const MAX_TARGET_BARS = 999;
-export const MAX_PRACTICE_MINUTES = 180;
+export const MAX_PRACTICE_SECONDS = 180 * 60;
 export const SETTINGS_KEY = 'metronome.settings.v1';
 /** Loop count choices for the bar counter: 0 means infinite. */
 export const LOOP_COUNTS = [1, 2, 4, 8, 0] as const;
@@ -41,11 +45,15 @@ export interface Settings {
   targetBars: number;
   /** Times to repeat the targetBars-bar loop; 1 = play once (default), 0 = infinite. Ignored when targetBars is 0. */
   loopCount: number;
-  /** Minutes to play before auto-stopping; 0 means no limit. */
-  practiceMinutes: number;
+  /** Seconds to play before auto-stopping; 0 means no limit. */
+  practiceSeconds: number;
   /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
   subdivision: Subdivision;
   language: Language;
+  /** Tilted, cylindrical 3D shape for the BPM knob instead of a flat disc. */
+  depth25d: boolean;
+  /** The BPM knob's metal tint. */
+  knobFinish: KnobFinish;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -63,9 +71,11 @@ export const DEFAULT_SETTINGS: Settings = {
   haptics: false,
   targetBars: 0,
   loopCount: 1,
-  practiceMinutes: 0,
+  practiceSeconds: 0,
   subdivision: 1,
   language: 'en',
+  depth25d: false,
+  knobFinish: 'chrome',
 };
 
 export function defaultSettings(): Settings {
@@ -82,6 +92,10 @@ export function isBeatUnit(v: unknown): v is BeatUnit {
 
 export function isThemeName(v: unknown): v is ThemeName {
   return (THEMES as readonly unknown[]).includes(v);
+}
+
+export function isKnobFinish(v: unknown): v is KnobFinish {
+  return (KNOB_FINISHES as readonly unknown[]).includes(v);
 }
 
 export function isSubdivision(v: unknown): v is Subdivision {
@@ -142,6 +156,12 @@ export function clampTargetBars(n: number): number {
   return Math.min(MAX_TARGET_BARS, Math.max(0, Math.round(n)));
 }
 
+/** Clamps a practice-timer length in seconds; 0 means off. */
+export function clampPracticeSeconds(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(MAX_PRACTICE_SECONDS, Math.max(0, Math.round(n)));
+}
+
 function isIntInRange(v: unknown, min: number, max: number): v is number {
   return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 }
@@ -181,11 +201,17 @@ export function sanitizeSettings(raw: unknown): Settings {
     haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
     targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,
     loopCount: isLoopCount(r.loopCount) ? r.loopCount : d.loopCount,
-    practiceMinutes: isIntInRange(r.practiceMinutes, 0, MAX_PRACTICE_MINUTES)
-      ? r.practiceMinutes
-      : d.practiceMinutes,
+    // practiceMinutes is the pre-MM:SS field name; still read so upgrading doesn't silently
+    // reset an existing saved practice length.
+    practiceSeconds: isIntInRange(r.practiceSeconds, 0, MAX_PRACTICE_SECONDS)
+      ? r.practiceSeconds
+      : isIntInRange(r.practiceMinutes, 0, MAX_PRACTICE_SECONDS / 60)
+        ? r.practiceMinutes * 60
+        : d.practiceSeconds,
     subdivision: isSubdivision(r.subdivision) ? r.subdivision : d.subdivision,
     language: isLanguage(r.language) ? r.language : d.language,
+    depth25d: typeof r.depth25d === 'boolean' ? r.depth25d : d.depth25d,
+    knobFinish: isKnobFinish(r.knobFinish) ? r.knobFinish : d.knobFinish,
   };
 }
 

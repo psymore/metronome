@@ -46,10 +46,29 @@
         <div id="dialHub" class="dial-hub" aria-hidden="true"></div>
       </section>
 
-      <button type="button" id="playBtn" class="play-btn" aria-pressed="false" aria-label="Start">
-        <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-        <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
-      </button>
+      <div id="practiceTimerBar" class="practice-timer-bar" hidden>
+        <div id="practiceFadeBar" class="practice-energy" aria-hidden="true">
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+        </div>
+        <div class="practice-timer-controls">
+          <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
+          <div class="practice-timer-buttons">
+            <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
+              <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+              <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </button>
+            <button type="button" id="practiceStopBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.stopAriaLabel" aria-label="Stop timer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z" /></svg>
+            </button>
+            <button type="button" id="practiceCloseBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.closeAriaLabel" aria-label="Turn off practice timer">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div class="side">
         <section class="panel controls" data-i18n-aria-label="controls.ariaLabel" aria-label="Tempo controls">
@@ -66,13 +85,7 @@
           </div>
 
           <div class="dial-col">
-            <div id="dial" class="dial" role="slider" tabindex="0" data-i18n-aria-label="dial.ariaLabel" aria-label="Tempo in BPM" aria-valuemin="20" aria-valuemax="400" aria-valuenow="120">
-              <div id="dialRing" class="dial-ring"></div>
-              <div class="dial-face">
-                <output id="bpmValue" class="bpm-value">120</output>
-                <span class="bpm-unit" data-i18n="bpm.unit">BPM</span>
-              </div>
-            </div>
+            <canvas id="knob" class="knob" aria-label="Tempo in BPM. Tap the center to start or stop."></canvas>
             <span id="tempoMarking" class="tempo-marking"></span>
             <div class="nudges">
               <button type="button" id="bpmDown" class="nudge" data-i18n-aria-label="nudge.slower" aria-label="Slower">−</button>
@@ -89,20 +102,6 @@
             <span class="label" data-i18n="label.settings">Settings</span>
           </div>
         </section>
-      </div>
-
-      <div id="practiceTimerBar" class="practice-timer-bar" hidden>
-        <div id="practiceFadeBar" class="practice-fade-bar" aria-hidden="true"></div>
-        <div class="practice-timer-controls">
-          <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
-          <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
-            <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
-            <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-          </button>
-          <button type="button" id="practiceStopBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.stopAriaLabel" aria-label="Stop timer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z" /></svg>
-          </button>
-        </div>
       </div>
 
       <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
@@ -195,6 +194,25 @@
         </div>
       </div>
       <div class="field">
+        <span data-i18n="knobFinish.label">Knob finish</span>
+        <div class="unit-row" role="radiogroup" aria-label="Knob metal finish">
+          <button type="button" role="radio" class="chip" data-knob-finish-option="chrome" aria-checked="false" data-i18n="knobFinish.chrome">Chrome</button>
+          <button type="button" role="radio" class="chip" data-knob-finish-option="teal" aria-checked="false" data-i18n="knobFinish.teal">Teal metal</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>
+          <span data-i18n="depth25d.label">2.5D knob</span>
+          <button type="button" id="depth25dToggle" class="switch" role="switch" aria-checked="false" data-i18n-aria-label="depth25d.switchAriaLabel" aria-label="Toggle the 2.5D knob shape">
+            <span class="switch-knob"></span>
+          </button>
+        </span>
+        <div class="sub-head">
+          <p class="sub-label" data-i18n="depth25d.subLabel">Tilted, cylindrical BPM knob</p>
+          <button type="button" class="info-btn" data-i18n-aria-label="depth25d.hint" data-i18n-title="depth25d.hint" aria-label="Gives the BPM knob a tilted, cylindrical 3D shape instead of a flat disc." title="Gives the BPM knob a tilted, cylindrical 3D shape instead of a flat disc.">i</button>
+        </div>
+      </div>
+      <div class="field">
         <span>
           <span data-i18n="beats.label">Beats</span>
           <button type="button" id="beatsClickableToggle" class="switch" role="switch" aria-checked="true" data-i18n-aria-label="beats.switchAriaLabel" aria-label="Tap beats directly on the visualiser">
@@ -219,15 +237,31 @@
           <button type="button" class="info-btn" data-i18n-aria-label="haptics.hint" data-i18n-title="haptics.hint" aria-label="Feel the beat on devices that support vibration." title="Feel the beat on devices that support vibration.">i</button>
         </div>
       </div>
-      <label class="field">
-        <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceMinutesValue">Off</output></span>
-        <input id="practiceMinutesInput" type="number" min="0" max="60" step="1" />
+      <div class="field">
+        <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceTimeValue">Off</output></span>
+        <div class="time-picker">
+          <div class="time-fields">
+            <div class="time-field">
+              <input id="practiceMinutesInput" type="number" min="0" max="180" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.minutesAriaLabel" aria-label="Minutes" />
+              <span class="time-field-label" data-i18n="practiceTimer.minutesShort">min</span>
+            </div>
+            <span class="time-sep" aria-hidden="true">:</span>
+            <div class="time-field">
+              <input id="practiceSecondsInput" type="number" min="0" max="59" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.secondsAriaLabel" aria-label="Seconds" />
+              <span class="time-field-label" data-i18n="practiceTimer.secondsShort">sec</span>
+            </div>
+          </div>
+          <div class="time-steppers">
+            <button type="button" id="practiceTimeDown" class="time-step-btn" data-i18n-aria-label="practiceTimer.decreaseAriaLabel" aria-label="Decrease practice length">−</button>
+            <button type="button" id="practiceTimeUp" class="time-step-btn" data-i18n-aria-label="practiceTimer.increaseAriaLabel" aria-label="Increase practice length">+</button>
+          </div>
+        </div>
         <button type="button" id="practiceTimerApply" class="wide-btn" data-i18n="practiceTimer.apply">Start</button>
         <div class="sub-head">
           <small class="sub-label" data-i18n="practiceTimer.subLabel">0 = off</small>
-          <button type="button" class="info-btn" data-i18n-aria-label="practiceTimer.hint" data-i18n-title="practiceTimer.hint" aria-label="Auto-stops after this many minutes." title="Auto-stops after this many minutes.">i</button>
+          <button type="button" class="info-btn" data-i18n-aria-label="practiceTimer.hint" data-i18n-title="practiceTimer.hint" aria-label="Auto-stops after this length." title="Auto-stops after this length.">i</button>
         </div>
-      </label>
+      </div>
       <label class="field">
         <span><span data-i18n="volume.label">Volume</span> <output id="volumeValue">80%</output></span>
         <input id="volumeInput" type="range" min="0" max="100" step="1" />
@@ -241,7 +275,6 @@
         </div>
       </label>
       <button type="button" id="resetBtn" class="wide-btn danger" data-i18n="reset.button">Reset all settings</button>
-      <p class="hint shortcuts-hint" data-i18n="shortcuts.hint">Keys: Space start/stop · ↑↓ tempo (Shift ×5) · PgUp/PgDn ±10 · T tap · V visualiser</p>
     </dialog>
 
     <dialog id="soundDialog" class="sheet" aria-labelledby="soundTitle">

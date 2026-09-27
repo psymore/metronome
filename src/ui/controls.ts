@@ -4,7 +4,6 @@ import { cycleBeatLevel, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
 import { tempoMarking } from '../state/tempoMarking';
-import { angleDelta, bpmAfterRotation, DEGREES_PER_BPM } from './dialMath';
 import { byId } from './dom';
 
 export interface ControlsDeps {
@@ -13,9 +12,6 @@ export interface ControlsDeps {
 }
 
 export function mountControls({ store, toggle }: ControlsDeps): void {
-  const dial = byId('dial');
-  const dialRing = byId('dialRing');
-  const bpmValue = byId('bpmValue');
   const tempoMarkingEl = byId('tempoMarking');
   const beatRow = byId('beatRow');
   const sigTop = byId('sigTop');
@@ -31,40 +27,6 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
 
   byId('bpmUp').addEventListener('click', () => nudge(1));
   byId('bpmDown').addEventListener('click', () => nudge(-1));
-
-  dial.addEventListener(
-    'wheel',
-    (e) => {
-      e.preventDefault();
-      const step = e.shiftKey ? 5 : 1;
-      nudge(e.deltaY < 0 ? step : -step);
-    },
-    { passive: false },
-  );
-
-  dial.addEventListener('pointerdown', (e) => {
-    dial.setPointerCapture(e.pointerId);
-    const rect = dial.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    let previous = Math.atan2(e.clientY - cy, e.clientX - cx);
-    let total = 0;
-    const startBpm = store.get().bpm;
-    const onMove = (ev: PointerEvent) => {
-      const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx);
-      total += angleDelta(previous, angle);
-      previous = angle;
-      setBpm(bpmAfterRotation(startBpm, total));
-    };
-    const onUp = () => {
-      dial.removeEventListener('pointermove', onMove);
-      dial.removeEventListener('pointerup', onUp);
-      dial.removeEventListener('pointercancel', onUp);
-    };
-    dial.addEventListener('pointermove', onMove);
-    dial.addEventListener('pointerup', onUp);
-    dial.addEventListener('pointercancel', onUp);
-  });
 
   function tap(): void {
     const bpm = tapper.tap(performance.now());
@@ -113,10 +75,7 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   }
 
   function render(s: Settings): void {
-    bpmValue.textContent = String(s.bpm);
     tempoMarkingEl.textContent = tempoMarking(s.bpm);
-    dial.setAttribute('aria-valuenow', String(s.bpm));
-    dialRing.style.setProperty('--rotation', `${s.bpm * DEGREES_PER_BPM}deg`);
     sigTop.textContent = String(s.beatsPerBar);
     sigBottom.textContent = String(s.beatUnit);
     renderBeatsInto(beatRow, s);
@@ -124,6 +83,8 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   render(store.get());
   store.subscribe((s) => render(s));
 
+  // Mobile-first app: the only keyboard affordance kept is Space to start/stop, for anyone
+  // driving it from a physical keyboard (e.g. the Tauri desktop build).
   const ignoreKeys = (e: KeyboardEvent): boolean => {
     if (e.ctrlKey || e.metaKey || e.altKey) return true;
     const target = e.target instanceof HTMLElement ? e.target : null;
@@ -131,41 +92,10 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
       !!target && (!!target.closest('dialog') || /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName))
     );
   };
-
   document.addEventListener('keydown', (e) => {
-    if (ignoreKeys(e)) return;
-    switch (e.key) {
-      case ' ':
-        e.preventDefault();
-        if (!e.repeat) void toggle();
-        break;
-      case 'ArrowUp':
-      case 'ArrowRight':
-        e.preventDefault();
-        nudge(e.shiftKey ? 5 : 1);
-        break;
-      case 'ArrowDown':
-      case 'ArrowLeft':
-        e.preventDefault();
-        nudge(e.shiftKey ? -5 : -1);
-        break;
-      case 'PageUp':
-        e.preventDefault();
-        nudge(10);
-        break;
-      case 'PageDown':
-        e.preventDefault();
-        nudge(-10);
-        break;
-      case 't':
-      case 'T':
-        if (!e.repeat) tap();
-        break;
-      case 'v':
-      case 'V':
-        store.set({ visualizer: store.get().visualizer === 'circular' ? 'linear' : 'circular' });
-        break;
-    }
+    if (e.key !== ' ' || ignoreKeys(e)) return;
+    e.preventDefault();
+    if (!e.repeat) void toggle();
   });
   // Space on a focused button would also "click" it on keyup; our keydown already toggled.
   document.addEventListener(

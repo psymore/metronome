@@ -101,10 +101,19 @@ describe('sanitizeSettings', () => {
       haptics: false,
       targetBars: 0,
       loopCount: 1,
-      practiceMinutes: 0,
+      practiceSeconds: 0,
       subdivision: 1,
       language: 'en',
+      depth25d: false,
+      knobFinish: 'chrome',
     });
+  });
+
+  it('migrates the old whole-minutes practice field to seconds', () => {
+    expect(sanitizeSettings({ practiceMinutes: 5 }).practiceSeconds).toBe(300);
+    // A practiceSeconds value, once present, wins outright over the legacy field.
+    expect(sanitizeSettings({ practiceMinutes: 5, practiceSeconds: 90 }).practiceSeconds).toBe(90);
+    expect(sanitizeSettings({ practiceMinutes: -1 }).practiceSeconds).toBe(0);
   });
 
   it('rejects out-of-range or fractional beat counts', () => {

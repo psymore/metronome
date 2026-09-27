@@ -20,6 +20,7 @@ import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
 import { mountInfoButtons } from './ui/infoButtons';
 import { createInfoPopup } from './ui/infoPopup';
+import { mountKnob } from './ui/knob';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountSettingsDialog } from './ui/settingsDialog';
@@ -50,6 +51,7 @@ const showIdleBarCounter = (): void => {
 
 const applyTheme = (s: Settings) => {
   document.documentElement.dataset.theme = s.theme;
+  document.documentElement.classList.toggle('depth-25d', s.depth25d);
 };
 applyTheme(store.get());
 store.subscribe(applyTheme);
@@ -61,7 +63,7 @@ store.subscribe((s, prev) => {
   if (s.language !== prev.language) {
     applyLanguage(s.language);
     document.documentElement.lang = s.language;
-    transport.refreshLabel();
+    knob.invalidate();
     fitColumnLabels();
     if (!engine.running) showIdleBarCounter();
     if (practiceTotalSeconds > 0) renderPauseButton();
@@ -100,14 +102,6 @@ async function applySound(slot: SoundSlot): Promise<void> {
   }
 }
 
-const playBtn = byId<HTMLButtonElement>('playBtn');
-
-// Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
-// mobile), buffers are null and beats would play silently. Block Play until they're ready.
-playBtn.disabled = true;
-void Promise.all([applySound('accent'), applySound('normal')]).finally(() => {
-  playBtn.disabled = false;
-});
 store.subscribe((s, prev) => {
   if (s.accentSoundId !== prev.accentSoundId) void applySound('accent');
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
@@ -124,14 +118,9 @@ const viz = new VizController(
   () => store.get(),
   (index) => store.set({ levels: cycleBeatLevel(store.get().levels, index) }),
   (level, barIndex) => {
-    if (level === 'accent') {
-      playBtn.classList.remove('pulse');
-      void playBtn.offsetWidth; // restart the animation even if it's already mid-pulse
-      playBtn.classList.add('pulse');
-    }
-    // Fills the otherwise-empty hub at the dial's center with a pulse on every beat.
+    if (level === 'accent') knob.flash();
     dialHub.classList.remove('pulse');
-    void dialHub.offsetWidth;
+    void dialHub.offsetWidth; // restart the animation even if it's already mid-pulse
     dialHub.classList.add('pulse');
     if (store.get().haptics && level !== 'mute' && navigator.vibrate) {
       navigator.vibrate(level === 'accent' ? 30 : 12);
@@ -216,22 +205,23 @@ function runPracticeCountdown(): void {
   tick();
 
   practiceEndTimer = setTimeout(() => {
-    const minutes = Math.round(practiceTotalSeconds / 60);
+    const time = formatTimeLeft(0, practiceTotalSeconds);
     stopPracticeTimer();
-    if (!engine.running) return;
-    void transport.toggle();
-    toast(format('toast.practiceTimerEnded', { minutes }));
+    // The practice session ending is a cue about time, not a reason to cut the beat off
+    // mid-bar — the metronome keeps playing until the player stops it themselves.
+    if (store.get().haptics && navigator.vibrate) navigator.vibrate([20, 40, 20]);
+    toast(format('toast.practiceTimerEnded', { time }));
   }, remainingSeconds * 1000);
 }
 
-function startPracticeTimer(minutes: number): void {
+function startPracticeTimer(seconds: number): void {
   clearTimeout(practiceTick);
   clearTimeout(practiceEndTimer);
-  if (minutes <= 0) {
+  if (seconds <= 0) {
     stopPracticeTimer();
     return;
   }
-  practiceTotalSeconds = minutes * 60;
+  practiceTotalSeconds = seconds;
   practiceElapsedBeforeRun = 0;
   practicePaused = false;
   practiceTimerBar.hidden = false;
@@ -261,11 +251,25 @@ function resumePracticeTimer(): void {
   runPracticeCountdown();
 }
 
+/** The timer's own square Stop icon: rewinds to the full configured length and stops the
+ *  metronome too, but — unlike stopPracticeTimer — leaves the bar on screen (paused at 0
+ *  elapsed) instead of dismissing it. Only the new × button dismisses it. */
+function resetAndStopPracticeTimer(): void {
+  if (engine.running) void transport.toggle(); // stops the metronome; onToggle pauses the timer
+  clearTimeout(practiceTick);
+  clearTimeout(practiceEndTimer);
+  practiceElapsedBeforeRun = 0;
+  practicePaused = true;
+  renderPracticeProgress(0);
+  renderPauseButton();
+}
+
 practicePauseBtn.addEventListener('click', () => {
   if (practicePaused) resumePracticeTimer();
   else pausePracticeTimer();
 });
-byId('practiceStopBtn').addEventListener('click', stopPracticeTimer);
+byId('practiceStopBtn').addEventListener('click', resetAndStopPracticeTimer);
+byId('practiceCloseBtn').addEventListener('click', stopPracticeTimer);
 
 const transport = mountTransport({
   engine,
@@ -274,20 +278,37 @@ const transport = mountTransport({
     wakeLock.setActive(engine.running);
     viz.invalidate();
     if (!engine.running) {
-      stopPracticeTimer();
+      // Stopping the metronome pauses the timer (keeping it on screen) rather than resetting
+      // it — only the timer's own Stop/× buttons do that.
+      pausePracticeTimer();
       showIdleBarCounter();
       return;
     }
-    startPracticeTimer(store.get().practiceMinutes);
+    if (practicePaused) resumePracticeTimer();
+    else startPracticeTimer(store.get().practiceSeconds);
   },
 });
 // Changing the practice length mid-session restarts the countdown (and its fade) from now,
 // instead of waiting for a stop/start to pick up the new value.
 store.subscribe((s, prev) => {
-  if (s.practiceMinutes !== prev.practiceMinutes && engine.running) {
-    startPracticeTimer(s.practiceMinutes);
+  if (s.practiceSeconds !== prev.practiceSeconds && engine.running) {
+    startPracticeTimer(s.practiceSeconds);
   }
 });
+
+const knob = mountKnob(byId<HTMLCanvasElement>('knob'), {
+  store,
+  isRunning: () => engine.running,
+  toggle: () => void transport.toggle(),
+});
+// Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
+// mobile), buffers are null and beats would play silently. Block the knob's center tap until
+// they're ready.
+knob.setDisabled(true);
+void Promise.all([applySound('accent'), applySound('normal')]).finally(() => {
+  knob.setDisabled(false);
+});
+
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
@@ -296,7 +317,7 @@ mountSettingsDialog({
   store,
   onStartPractice: () => {
     if (engine.running) {
-      startPracticeTimer(store.get().practiceMinutes);
+      startPracticeTimer(store.get().practiceSeconds);
     } else {
       void transport.toggle();
     }
