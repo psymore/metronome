@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "vercel:deploy": "vercel",
+    "vercel:deploy:prod": "vercel --prod",
     "lint": "biome check .",
     "format": "biome check --write .",
     "tauri": "tauri",
