@@ -125,8 +125,8 @@ button:active::after {
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 0 0 1px var(--accent-glow),
-    0 0 14px var(--accent-glow);
+    inset 0 0 0 1.5px var(--accent-color),
+    0 0 16px var(--accent-glow);
   pointer-events: none;
 }
 /* Fired by clickFx on release: fades the same glow out over 260ms instead of snapping off. */
@@ -136,8 +136,8 @@ button:active::after {
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 0 0 1px var(--accent-glow),
-    0 0 14px var(--accent-glow);
+    inset 0 0 0 1.5px var(--accent-color),
+    0 0 16px var(--accent-glow);
   pointer-events: none;
   animation: btnFlash 260ms ease-out;
 }
@@ -183,15 +183,15 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  /* --edge, not --panel-lo: the track sits on a --panel-lo field background, and the two are
-     close enough to be indistinguishable — this is the same recessed tone .field's own number
-     inputs use, so the track actually reads as a groove instead of disappearing. */
-  background: var(--edge);
+  /* A dim tint of the theme accent (the same --select-soft the checked switch uses), not a
+     neutral gray — visibly a groove against its --panel-lo field, and colored like the rest of
+     the theme instead of looking unthemed. */
+  background: var(--accent-glow);
 }
 input[type="range"]::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--edge);
+  background: var(--accent-glow);
 }
 input[type="range"]::-moz-range-progress {
   height: 6px;
@@ -988,18 +988,30 @@ html.depth-25d .knob {
   font: inherit;
   font-size: 14px;
 }
-/* Practice timer: MM:SS fields flanked by hold-to-repeat +/- steppers (ui/holdRepeat.ts)
-   instead of a single whole-minutes input. */
+/* Practice timer: stacked MM:SS fields (each labeled so it's never ambiguous which is which)
+   with hold-to-repeat +/- steppers (ui/holdRepeat.ts) below, instead of a single whole-minutes
+   input. */
 .time-picker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
 }
 .time-fields {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+.time-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.time-field-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .time-fields input[type="number"] {
   width: 3.2em;
@@ -1015,9 +1027,15 @@ html.depth-25d .knob {
   margin: 0;
 }
 .time-sep {
+  align-self: flex-end;
+  margin-bottom: 6px;
   color: var(--muted);
   font-family: var(--font-mono);
   font-weight: 600;
+}
+.time-steppers {
+  display: flex;
+  gap: 14px;
 }
 .time-step-btn {
   width: 34px;

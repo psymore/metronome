@@ -46,6 +46,30 @@
         <div id="dialHub" class="dial-hub" aria-hidden="true"></div>
       </section>
 
+      <div id="practiceTimerBar" class="practice-timer-bar" hidden>
+        <div id="practiceFadeBar" class="practice-energy" aria-hidden="true">
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+        </div>
+        <div class="practice-timer-controls">
+          <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
+          <div class="practice-timer-buttons">
+            <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
+              <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+              <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </button>
+            <button type="button" id="practiceStopBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.stopAriaLabel" aria-label="Stop timer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z" /></svg>
+            </button>
+            <button type="button" id="practiceCloseBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.closeAriaLabel" aria-label="Turn off practice timer">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="side">
         <section class="panel controls" data-i18n-aria-label="controls.ariaLabel" aria-label="Tempo controls">
           <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
@@ -78,27 +102,6 @@
             <span class="label" data-i18n="label.settings">Settings</span>
           </div>
         </section>
-      </div>
-
-      <div id="practiceTimerBar" class="practice-timer-bar" hidden>
-        <div id="practiceFadeBar" class="practice-energy" aria-hidden="true">
-          <span class="energy-particle"></span>
-          <span class="energy-particle"></span>
-          <span class="energy-particle"></span>
-          <span class="energy-particle"></span>
-        </div>
-        <div class="practice-timer-controls">
-          <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
-          <div class="practice-timer-buttons">
-            <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
-              <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
-              <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-            </button>
-            <button type="button" id="practiceStopBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.stopAriaLabel" aria-label="Stop timer">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z" /></svg>
-            </button>
-          </div>
-        </div>
       </div>
 
       <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
@@ -191,6 +194,13 @@
         </div>
       </div>
       <div class="field">
+        <span data-i18n="knobFinish.label">Knob finish</span>
+        <div class="unit-row" role="radiogroup" aria-label="Knob metal finish">
+          <button type="button" role="radio" class="chip" data-knob-finish-option="chrome" aria-checked="false" data-i18n="knobFinish.chrome">Chrome</button>
+          <button type="button" role="radio" class="chip" data-knob-finish-option="teal" aria-checked="false" data-i18n="knobFinish.teal">Teal metal</button>
+        </div>
+      </div>
+      <div class="field">
         <span>
           <span data-i18n="depth25d.label">2.5D knob</span>
           <button type="button" id="depth25dToggle" class="switch" role="switch" aria-checked="false" data-i18n-aria-label="depth25d.switchAriaLabel" aria-label="Toggle the 2.5D knob shape">
@@ -230,13 +240,21 @@
       <div class="field">
         <span><span data-i18n="practiceTimer.label">Practice timer</span> <output id="practiceTimeValue">Off</output></span>
         <div class="time-picker">
-          <button type="button" id="practiceTimeDown" class="time-step-btn" data-i18n-aria-label="practiceTimer.decreaseAriaLabel" aria-label="Decrease practice length">−</button>
           <div class="time-fields">
-            <input id="practiceMinutesInput" type="number" min="0" max="180" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.minutesAriaLabel" aria-label="Minutes" />
+            <div class="time-field">
+              <input id="practiceMinutesInput" type="number" min="0" max="180" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.minutesAriaLabel" aria-label="Minutes" />
+              <span class="time-field-label" data-i18n="practiceTimer.minutesShort">min</span>
+            </div>
             <span class="time-sep" aria-hidden="true">:</span>
-            <input id="practiceSecondsInput" type="number" min="0" max="59" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.secondsAriaLabel" aria-label="Seconds" />
+            <div class="time-field">
+              <input id="practiceSecondsInput" type="number" min="0" max="59" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.secondsAriaLabel" aria-label="Seconds" />
+              <span class="time-field-label" data-i18n="practiceTimer.secondsShort">sec</span>
+            </div>
           </div>
-          <button type="button" id="practiceTimeUp" class="time-step-btn" data-i18n-aria-label="practiceTimer.increaseAriaLabel" aria-label="Increase practice length">+</button>
+          <div class="time-steppers">
+            <button type="button" id="practiceTimeDown" class="time-step-btn" data-i18n-aria-label="practiceTimer.decreaseAriaLabel" aria-label="Decrease practice length">−</button>
+            <button type="button" id="practiceTimeUp" class="time-step-btn" data-i18n-aria-label="practiceTimer.increaseAriaLabel" aria-label="Increase practice length">+</button>
+          </div>
         </div>
         <button type="button" id="practiceTimerApply" class="wide-btn" data-i18n="practiceTimer.apply">Start</button>
         <div class="sub-head">

@@ -1,7 +1,28 @@
 import { t } from '../i18n/i18n';
-import type { Settings } from '../state/settings';
+import type { KnobFinish, Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { angleDelta, bpmAfterRotation } from './dialMath';
+
+const METAL_STOPS: Record<KnobFinish, readonly [number, string][]> = {
+  chrome: [
+    [0.0, '#6b6b70'],
+    [0.18, '#e8e8ec'],
+    [0.35, '#4a4a4e'],
+    [0.52, '#9a9aa0'],
+    [0.7, '#f2f2f5'],
+    [0.88, '#55555a'],
+    [1.0, '#6b6b70'],
+  ],
+  teal: [
+    [0.0, '#1e362a'],
+    [0.18, '#63987a'],
+    [0.35, '#0f2118'],
+    [0.52, '#335a45'],
+    [0.7, '#75ad8e'],
+    [0.88, '#0c1c14'],
+    [1.0, '#1e362a'],
+  ],
+};
 
 export interface KnobDeps {
   store: Store<Settings>;
@@ -54,7 +75,11 @@ function lighten([r, g, b]: [number, number, number], amount: number): [number, 
 
 /** Pre-rendered once per (radius, theme): the conic brushed-steel face, sampled and rotated
  *  live instead of recomputing its gradient every frame. */
-function renderMetalTexture(radius: number, dpr: number): OffscreenCanvas | HTMLCanvasElement {
+function renderMetalTexture(
+  radius: number,
+  dpr: number,
+  finish: KnobFinish,
+): OffscreenCanvas | HTMLCanvasElement {
   const diameter = radius * 2;
   const canvas =
     typeof OffscreenCanvas !== 'undefined'
@@ -70,13 +95,7 @@ function renderMetalTexture(radius: number, dpr: number): OffscreenCanvas | HTML
   const c = radius;
 
   const conic = ctx.createConicGradient(Math.PI / 4, c, c);
-  conic.addColorStop(0.0, '#6b6b70');
-  conic.addColorStop(0.18, '#e8e8ec');
-  conic.addColorStop(0.35, '#4a4a4e');
-  conic.addColorStop(0.52, '#9a9aa0');
-  conic.addColorStop(0.7, '#f2f2f5');
-  conic.addColorStop(0.88, '#55555a');
-  conic.addColorStop(1.0, '#6b6b70');
+  for (const [offset, color] of METAL_STOPS[finish]) conic.addColorStop(offset, color);
   ctx.fillStyle = conic;
   ctx.beginPath();
   ctx.arc(c, c, radius, 0, Math.PI * 2);
@@ -199,7 +218,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
   let metalTexture: OffscreenCanvas | HTMLCanvasElement | null = null;
   let teethRing: OffscreenCanvas | HTMLCanvasElement | null = null;
   let sideWall: OffscreenCanvas | HTMLCanvasElement | null = null;
-  let assetsFor = { radius: -1, tilted: false };
+  let assetsFor = { radius: -1, tilted: false, finish: '' as KnobFinish | '' };
 
   const TOOTH_COUNT = 72;
 
@@ -226,9 +245,16 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
   function ensureAssets(): void {
     const g = geometry();
-    if (assetsFor.radius === g.outerRadius && assetsFor.tilted === g.tilted && metalTexture) return;
-    assetsFor = { radius: g.outerRadius, tilted: g.tilted };
-    metalTexture = renderMetalTexture(g.innerRadius, dpr);
+    const finish = deps.store.get().knobFinish;
+    if (
+      assetsFor.radius === g.outerRadius &&
+      assetsFor.tilted === g.tilted &&
+      assetsFor.finish === finish &&
+      metalTexture
+    )
+      return;
+    assetsFor = { radius: g.outerRadius, tilted: g.tilted, finish };
+    metalTexture = renderMetalTexture(g.innerRadius, dpr, finish);
     teethRing = renderTeethRing(g.outerRadius, g.toothDepth, TOOTH_COUNT, dpr);
     sideWall = g.tilted ? renderSideWall(g.outerRadius, g.thickness, g.perspectiveY, dpr) : null;
   }
@@ -252,22 +278,10 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     c2d.clearRect(0, 0, cssWidth, cssHeight);
 
-    // Ground shadow.
-    c2d.save();
-    c2d.beginPath();
-    c2d.ellipse(
-      cx,
-      cy + (g.tilted ? g.thickness : 0) + g.outerRadius * 0.05,
-      g.outerRadius + 6,
-      (g.outerRadius + 6) * g.perspectiveY,
-      0,
-      0,
-      Math.PI * 2,
-    );
-    c2d.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    c2d.fill();
-    c2d.restore();
-
+    // No manually-drawn ground shadow: it's a hard-edged fill that, sized close to the canvas's
+    // own bounds, was getting clipped by the (square) canvas edge into a visible flat black
+    // patch behind the disc. The .knob CSS's own `filter: drop-shadow(...)` already gives the
+    // whole rendered shape a proper soft shadow, for free, with no clipping risk.
     if (g.tilted && sideWall) {
       c2d.drawImage(
         sideWall,
@@ -354,16 +368,31 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     const flashLeft = Math.max(0, flashUntil - performance.now());
     const flashT = flashLeft / FLASH_MS; // 1 → just flashed, 0 → fully decayed
-    const baseAlpha = running ? 0.4 : 0.12;
-    const alpha = Math.min(0.85, baseAlpha + flashT * 0.45);
+    const baseAlpha = running ? 0.35 : 0.12;
+    const alpha = Math.min(0.9, baseAlpha + flashT * 0.5);
     const hoverRgb = lighten(theme.brassRgb, 0.35);
-    const glowR = g.coreRadius + g.coreRadius * (0.2 + flashT * 0.15);
-    const glow = c2d.createRadialGradient(0, 0, g.coreRadius * 0.7, 0, 0, glowR);
-    glow.addColorStop(0, hovered ? rgba(hoverRgb, 0.4) : rgba(theme.brassRgb, alpha));
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    const glowRgb = hovered ? hoverRgb : theme.brassRgb;
+
+    // Rim-only glow: fully transparent through the middle of the screen (the dark LCD backing
+    // stays visibly dark) and only brightens right at the edge, so lighting up reads as "the
+    // border and the digits glow" rather than "the whole display floods with color".
+    const rimGlow = c2d.createRadialGradient(0, 0, g.coreRadius * 0.8, 0, 0, g.coreRadius);
+    rimGlow.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    rimGlow.addColorStop(1, rgba(glowRgb, alpha));
     c2d.beginPath();
-    c2d.arc(0, 0, glowR, 0, Math.PI * 2);
-    c2d.fillStyle = glow;
+    c2d.arc(0, 0, g.coreRadius, 0, Math.PI * 2);
+    c2d.fillStyle = rimGlow;
+    c2d.fill();
+
+    // A small bleed onto the metal just outside the screen — the ambient light an LED bezel
+    // casts on its surroundings — kept separate so it never brightens the screen's interior.
+    const outerR = g.coreRadius * (1.12 + flashT * 0.1);
+    const outerGlow = c2d.createRadialGradient(0, 0, g.coreRadius, 0, 0, outerR);
+    outerGlow.addColorStop(0, rgba(glowRgb, alpha * 0.5));
+    outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    c2d.beginPath();
+    c2d.arc(0, 0, outerR, 0, Math.PI * 2);
+    c2d.fillStyle = outerGlow;
     c2d.fill();
 
     c2d.beginPath();
@@ -419,7 +448,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     (ctx as CanvasRenderingContext2D).setTransform(dpr, 0, 0, dpr, 0, 0);
-    assetsFor = { radius: -1, tilted: false };
+    assetsFor = { radius: -1, tilted: false, finish: '' };
     render();
   }
 
@@ -492,7 +521,11 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
       render();
     }
     if (s.depth25d !== prev.depth25d) {
-      assetsFor = { radius: -1, tilted: false };
+      assetsFor = { radius: -1, tilted: false, finish: '' };
+      render();
+    }
+    if (s.knobFinish !== prev.knobFinish) {
+      assetsFor = { radius: -1, tilted: false, finish: '' };
       render();
     }
   });

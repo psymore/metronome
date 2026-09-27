@@ -251,11 +251,25 @@ function resumePracticeTimer(): void {
   runPracticeCountdown();
 }
 
+/** The timer's own square Stop icon: rewinds to the full configured length and stops the
+ *  metronome too, but — unlike stopPracticeTimer — leaves the bar on screen (paused at 0
+ *  elapsed) instead of dismissing it. Only the new × button dismisses it. */
+function resetAndStopPracticeTimer(): void {
+  if (engine.running) void transport.toggle(); // stops the metronome; onToggle pauses the timer
+  clearTimeout(practiceTick);
+  clearTimeout(practiceEndTimer);
+  practiceElapsedBeforeRun = 0;
+  practicePaused = true;
+  renderPracticeProgress(0);
+  renderPauseButton();
+}
+
 practicePauseBtn.addEventListener('click', () => {
   if (practicePaused) resumePracticeTimer();
   else pausePracticeTimer();
 });
-byId('practiceStopBtn').addEventListener('click', stopPracticeTimer);
+byId('practiceStopBtn').addEventListener('click', resetAndStopPracticeTimer);
+byId('practiceCloseBtn').addEventListener('click', stopPracticeTimer);
 
 const transport = mountTransport({
   engine,
@@ -264,11 +278,14 @@ const transport = mountTransport({
     wakeLock.setActive(engine.running);
     viz.invalidate();
     if (!engine.running) {
-      stopPracticeTimer();
+      // Stopping the metronome pauses the timer (keeping it on screen) rather than resetting
+      // it — only the timer's own Stop/× buttons do that.
+      pausePracticeTimer();
       showIdleBarCounter();
       return;
     }
-    startPracticeTimer(store.get().practiceSeconds);
+    if (practicePaused) resumePracticeTimer();
+    else startPracticeTimer(store.get().practiceSeconds);
   },
 });
 // Changing the practice length mid-session restarts the countdown (and its fade) from now,
