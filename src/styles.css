@@ -402,19 +402,33 @@ output {
 /* Sits in normal flow below the stage instead of pinned to the dial's center: a bigger,
    easier-to-reach primary control, closer to thumb range than the top of the visualiser. */
 .play-btn {
+  position: relative;
   justify-self: center;
   width: clamp(88px, 24vw, 112px);
   height: clamp(88px, 24vw, 112px);
   border-radius: 50%;
   border: 2px solid var(--pink);
-  background: var(--panel);
+  background: radial-gradient(circle at 34% 26%, #3c3c40 0%, #1a1a1c 45%, #050506 100%);
   box-shadow:
     0 0 0 4px var(--edge),
-    0 0 0 6px var(--copper);
+    0 0 0 6px var(--copper),
+    inset 0 2px 3px rgb(255 255 255 / 0.1),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6);
   color: var(--pink);
   display: grid;
   place-items: center;
   transition: transform 80ms ease;
+}
+/* Same static brushed-metal grain as the dial, for a matching material. */
+.play-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
 }
 .play-btn.pulse {
   animation: beatPulse 260ms ease-out;
@@ -439,6 +453,7 @@ output {
 .play-btn svg {
   width: 42%;
   height: 42%;
+  filter: drop-shadow(0 0 5px var(--brass-soft));
 }
 .play-btn .icon-pause,
 .play-btn[aria-pressed="true"] .icon-play {
@@ -626,6 +641,19 @@ output {
 .dial:active {
   cursor: grabbing;
 }
+/* Brushed-metal grain: a static SVG noise filter, painted once like any other
+   background layer — no runtime cost, sits under the ring/face so it only
+   shows on the exposed chrome. */
+.dial::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
 .dial-ring {
   position: absolute;
   inset: 0;
@@ -660,10 +688,20 @@ output {
   position: absolute;
   inset: 21%;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 30%, #2d2d32, #111113 75%);
+  /* A recessed LCD panel embedded in the knob rather than a plain dark disc. */
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgb(0 0 0 / 0.16) 0px,
+      rgb(0 0 0 / 0.16) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(circle at 50% 30%, #0e1712, #050a07 78%);
   box-shadow:
     0 0 0 5px #0b0b0d,
-    inset 0 2px 5px rgb(255 255 255 / 0.07);
+    inset 0 2px 6px rgb(0 0 0 / 0.85),
+    inset 0 0 14px rgb(0 0 0 / 0.6);
   display: grid;
   place-content: center;
   text-align: center;
@@ -674,12 +712,17 @@ output {
   font-size: clamp(28px, 9vw, 40px);
   font-weight: 600;
   line-height: 1;
+  color: var(--brass);
+  text-shadow:
+    0 0 6px var(--brass),
+    0 0 16px var(--brass-soft);
 }
 .bpm-unit {
   font-size: 11px;
   letter-spacing: 0.3em;
   color: var(--pink);
   margin-top: 2px;
+  text-shadow: 0 0 6px var(--pink-soft);
 }
 .tempo-marking {
   font-family: var(--serif);
