@@ -20,13 +20,36 @@ export interface Knob {
 }
 
 interface KnobTheme {
+  /** Hex string, for direct fillStyle/strokeStyle use. */
   brass: string;
+  /** Same color as an [r, g, b] tuple, for building rgba() strings at custom (animated)
+   *  alpha — the LCD glow needs to fade in and out, which a fixed CSS var can't do. */
+  brassRgb: [number, number, number];
+}
+
+/** #rrggbb -> [r, g, b]; falls back to the default brass if a theme ever ships a non-hex value. */
+function hexToRgb(hex: string): [number, number, number] {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return [127, 224, 187];
+  const n = Number.parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
 function readKnobTheme(el: Element): KnobTheme {
   const css = getComputedStyle(el);
-  const v = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
-  return { brass: v('--brass', '#7fe0bb') };
+  const brass = css.getPropertyValue('--brass').trim() || '#7fe0bb';
+  return { brass, brassRgb: hexToRgb(brass) };
+}
+
+function rgba([r, g, b]: [number, number, number], alpha: number): string {
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** Blends a theme color toward white — used for the hover state, so it reads as "the accent,
+ *  brightened" for every theme instead of a hardcoded emerald tint. */
+function lighten([r, g, b]: [number, number, number], amount: number): [number, number, number] {
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  return [mix(r), mix(g), mix(b)];
 }
 
 /** Pre-rendered once per (radius, theme): the conic brushed-steel face, sampled and rotated
@@ -182,10 +205,10 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
   function geometry() {
     const size = Math.min(cssWidth, cssHeight);
-    const outerRadius = size * 0.4;
+    const outerRadius = size * 0.47;
     const toothDepth = outerRadius * 0.09;
     const innerRadius = outerRadius - toothDepth;
-    const coreRadius = innerRadius * 0.42;
+    const coreRadius = innerRadius * 0.42 * 1.6;
     const thickness = outerRadius * 0.16;
     const tilted = document.documentElement.classList.contains('depth-25d');
     const perspectiveY = tilted ? 0.72 : 1;
@@ -333,9 +356,10 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     const flashT = flashLeft / FLASH_MS; // 1 → just flashed, 0 → fully decayed
     const baseAlpha = running ? 0.4 : 0.12;
     const alpha = Math.min(0.85, baseAlpha + flashT * 0.45);
+    const hoverRgb = lighten(theme.brassRgb, 0.35);
     const glowR = g.coreRadius + g.coreRadius * (0.2 + flashT * 0.15);
     const glow = c2d.createRadialGradient(0, 0, g.coreRadius * 0.7, 0, 0, glowR);
-    glow.addColorStop(0, hovered ? 'rgba(102, 255, 194, 0.4)' : `rgba(0, 255, 157, ${alpha})`);
+    glow.addColorStop(0, hovered ? rgba(hoverRgb, 0.4) : rgba(theme.brassRgb, alpha));
     glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     c2d.beginPath();
     c2d.arc(0, 0, glowR, 0, Math.PI * 2);
@@ -344,7 +368,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     c2d.beginPath();
     c2d.arc(0, 0, g.coreRadius, 0, Math.PI * 2);
-    c2d.strokeStyle = hovered ? '#66ffc2' : theme.brass;
+    c2d.strokeStyle = hovered ? rgba(hoverRgb, 1) : theme.brass;
     c2d.lineWidth = Math.max(1.2, g.coreRadius * 0.045);
     c2d.stroke();
 
@@ -359,10 +383,10 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     c2d.shadowBlur = 0;
     c2d.font = `${Math.round(g.coreRadius * 0.22)}px "Inter", system-ui, sans-serif`;
-    c2d.fillStyle = 'rgba(0, 255, 157, 0.65)';
+    c2d.fillStyle = rgba(theme.brassRgb, 0.65);
     c2d.fillText('BPM', 0, g.coreRadius * 0.08);
 
-    const iconColor = hovered ? '#66ffc2' : theme.brass;
+    const iconColor = hovered ? rgba(hoverRgb, 1) : theme.brass;
     c2d.fillStyle = iconColor;
     const iy = g.coreRadius * 0.42;
     const is = g.coreRadius * 0.24;

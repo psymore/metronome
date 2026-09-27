@@ -515,7 +515,7 @@ output {
 
 .controls {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 22px 18px;
@@ -587,12 +587,14 @@ output {
   display: grid;
   justify-items: center;
   gap: 10px;
+  min-width: 0;
 }
 /* The BPM dial and play/pause are now one canvas-rendered "knob" (see ui/knob.ts) instead of
    layered DOM elements — drag anywhere on the ring to change tempo, tap the center LCD to
    start/stop. Sized with headroom around the drawn disc so its drop-shadow isn't clipped. */
 .knob {
   width: min(190px, 46vw);
+  max-width: 100%;
   aspect-ratio: 1;
   touch-action: none;
   cursor: grab;
@@ -601,6 +603,11 @@ output {
 }
 .knob:active {
   cursor: grabbing;
+}
+/* The 2.5D puck needs extra room for its cylindrical side wall below the face, on top of the
+   1.3x size bump the tilted knob asks for. */
+html.depth-25d .knob {
+  width: min(247px, 60vw);
 }
 .tempo-marking {
   font-family: var(--serif);
@@ -1272,6 +1279,9 @@ html.depth-25d .practice-icon-btn {
   }
   .knob {
     width: 150px;
+  }
+  html.depth-25d .knob {
+    width: 195px;
   }
   .nudge {
     width: 38px;
