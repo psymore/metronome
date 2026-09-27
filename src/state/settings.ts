@@ -46,7 +46,7 @@ export interface Settings {
   /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
   subdivision: Subdivision;
   language: Language;
-  /** Extruded, cast-metal look for panels/buttons instead of the flat default surfaces. */
+  /** Tilted, cylindrical 3D shape for the BPM knob instead of a flat disc. */
   depth25d: boolean;
 }
 

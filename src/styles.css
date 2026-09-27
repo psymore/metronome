@@ -220,11 +220,12 @@ output {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--pink-soft);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
   color: var(--pink);
   display: flex;
   align-items: center;
@@ -253,10 +254,13 @@ output {
   gap: 2px;
   padding: 4px;
   min-width: 110px;
-  background: var(--panel);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 12px 30px rgb(0 0 0 / 0.5);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 12px 30px rgb(0 0 0 / 0.5);
 }
 .lang-option {
   border: 0;
@@ -433,15 +437,14 @@ output {
 }
 .panel {
   position: relative;
-  background:
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 3px),
-    radial-gradient(120% 90% at 50% -10%, rgb(255 255 255 / 0.05), transparent 55%), var(--panel);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   border: 1px solid var(--line);
   border-top: 1px solid var(--pink-soft);
   border-radius: var(--radius);
   box-shadow:
     0 10px 24px rgb(0 0 0 / 0.35),
-    inset 0 1px 0 rgb(255 255 255 / 0.04);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6);
   padding: 14px 16px;
 }
 .bolt {
@@ -537,12 +540,12 @@ output {
   width: 64px;
   height: 64px;
   border-radius: 6px;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4),
-    0 1px 2px rgb(0 0 0 / 0.5);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
   display: grid;
   place-items: center;
   /* Same dark outline the beat-node numbers on the visualiser get, so the icon/text sitting
@@ -624,12 +627,12 @@ html.depth-25d .knob {
   width: 44px;
   height: 44px;
   border-radius: 6px;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4),
-    0 1px 2px rgb(0 0 0 / 0.5);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
   font-size: 18px;
   line-height: 1;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
@@ -697,9 +700,7 @@ html.depth-25d .knob {
   width: min(92vw, 420px);
   max-height: 86vh;
   overflow: auto;
-  background:
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 3px),
-    radial-gradient(120% 90% at 50% -10%, rgb(255 255 255 / 0.05), transparent 55%), var(--panel);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   color: var(--text);
   border: 1px solid var(--line);
   border-top: 1px solid var(--pink-soft);
@@ -707,7 +708,8 @@ html.depth-25d .knob {
   padding: 18px 20px 22px;
   box-shadow:
     0 20px 60px rgb(0 0 0 / 0.6),
-    inset 0 1px 0 rgb(255 255 255 / 0.04);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6);
 }
 .sheet::backdrop {
   background: rgb(0 0 0 / 0.6);
@@ -734,11 +736,12 @@ html.depth-25d .knob {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
 }
 .icon-btn:active {
   transform: scale(0.9);
@@ -748,11 +751,12 @@ html.depth-25d .knob {
   min-width: 44px;
   padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
   font-size: 14px;
 }
 .chip[aria-checked="true"],
@@ -760,8 +764,8 @@ html.depth-25d .knob {
   border-color: var(--select);
   color: var(--select);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
     0 0 10px var(--select-soft);
 }
 .chip:active {
@@ -1009,11 +1013,12 @@ html.depth-25d .knob {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
   color: var(--select);
   display: grid;
   place-items: center;
@@ -1080,10 +1085,11 @@ html.depth-25d .knob {
   padding: 10px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
 }
 .wide-btn.danger {
   color: #ff8a8a;
@@ -1209,42 +1215,6 @@ html.depth-25d .knob {
 .sound-list li.empty {
   color: var(--muted);
   background: none;
-}
-
-/* 2.5D interface mode: the same cast-metal treatment used on the BPM knob and play button,
-   extended to every other surface — a diagonal light-to-dark bevel plus a crisp top highlight
-   and a deep bottom shadow read as "extruded" without any actual 3D transform, so hit-testing,
-   layout and the zero-scroll grid above are all untouched. */
-html.depth-25d .panel,
-html.depth-25d .sheet,
-html.depth-25d .square-btn,
-html.depth-25d .wide-btn,
-html.depth-25d .chip,
-html.depth-25d .nudge,
-html.depth-25d .icon-btn,
-html.depth-25d .lang-btn,
-html.depth-25d .lang-menu,
-html.depth-25d .practice-icon-btn {
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
-}
-html.depth-25d .chip[aria-checked="true"],
-html.depth-25d .chip.active {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 0 10px var(--select-soft);
-}
-html.depth-25d .square-btn,
-html.depth-25d .chip,
-html.depth-25d .nudge,
-html.depth-25d .icon-btn,
-html.depth-25d .lang-btn,
-html.depth-25d .practice-icon-btn {
-  border-color: rgb(255 255 255 / 0.08);
 }
 
 @media (min-width: 900px) {
