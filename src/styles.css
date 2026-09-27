@@ -183,12 +183,15 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--panel-lo);
+  /* --edge, not --panel-lo: the track sits on a --panel-lo field background, and the two are
+     close enough to be indistinguishable — this is the same recessed tone .field's own number
+     inputs use, so the track actually reads as a groove instead of disappearing. */
+  background: var(--edge);
 }
 input[type="range"]::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--panel-lo);
+  background: var(--edge);
 }
 input[type="range"]::-moz-range-progress {
   height: 6px;
