@@ -86,7 +86,8 @@
 html,
 body {
   margin: 0;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 body {
   background: radial-gradient(120% 80% at 50% 0%, var(--bg-hi), var(--bg) 60%);
@@ -177,12 +178,20 @@ output {
   height: 11px;
 }
 
+/* Locked to exactly one viewport height (dvh accounts for mobile browser chrome) and never
+   scrolls. The stage row is the only flexible one (minmax(0, 1fr)): it absorbs whatever space
+   the fixed-size rows around it (topbar, bar counter, play button, controls, practice timer)
+   don't need, so the visualiser shrinks instead of the page overflowing — including when the
+   practice timer bar appears/disappears, since an empty `auto` track collapses to zero. */
 .app {
   max-width: 480px;
   margin: 0 auto;
+  height: 100dvh;
+  overflow: hidden;
   padding: max(12px, env(safe-area-inset-top)) 16px
-    max(24px, calc(env(safe-area-inset-bottom) + 12px));
+    max(16px, calc(env(safe-area-inset-bottom) + 8px));
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
   gap: 14px;
 }
 .topbar {
@@ -340,9 +349,13 @@ output {
   display: none;
 }
 
+/* Sized from the grid row's own (flexible) height rather than a fixed viewport fraction, so it
+   shrinks automatically to whatever room is left — see .app's grid-template-rows. */
 .stage {
   position: relative;
-  width: min(100%, 58svh, 320px);
+  height: 100%;
+  max-height: 320px;
+  max-width: 100%;
   aspect-ratio: 1;
   margin: 0 auto;
 }
@@ -408,12 +421,18 @@ output {
   height: clamp(88px, 24vw, 112px);
   border-radius: 50%;
   border: 2px solid var(--pink);
-  background: radial-gradient(circle at 34% 26%, #3c3c40 0%, #1a1a1c 45%, #050506 100%);
+  /* Specular highlight over a brushed conic sheen over a black base — three layers
+     instead of one flat radial, so the surface reads as polished metal, not paint. */
+  background:
+    radial-gradient(circle at 32% 22%, rgb(255 255 255 / 0.5), transparent 26%),
+    conic-gradient(from 220deg, #4a4a4f, #1c1c1e 30%, #38383c 55%, #0a0a0b 75%, #4a4a4f),
+    radial-gradient(circle at 50% 60%, #202023, #020202 85%);
   box-shadow:
     0 0 0 4px var(--edge),
     0 0 0 6px var(--copper),
-    inset 0 2px 3px rgb(255 255 255 / 0.1),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6);
+    inset 0 2px 3px rgb(255 255 255 / 0.16),
+    inset 0 -4px 8px rgb(0 0 0 / 0.75),
+    0 10px 22px rgb(0 0 0 / 0.55);
   color: var(--pink);
   display: grid;
   place-items: center;
@@ -634,8 +653,8 @@ output {
   user-select: none;
   background: conic-gradient(#8d8d93, #ececf1, #9a9aa0, #f6f6f9, #8d8d93, #dcdce1, #8d8d93);
   box-shadow:
-    0 0 0 7px var(--edge),
-    0 0 0 8px var(--copper),
+    inset 0 1px 2px rgb(255 255 255 / 0.45),
+    inset 0 -2px 4px rgb(0 0 0 / 0.35),
     0 12px 30px rgb(0 0 0 / 0.6);
 }
 .dial:active {
@@ -654,19 +673,13 @@ output {
   mix-blend-mode: overlay;
   pointer-events: none;
 }
+/* No longer paints the tick-mark grooves — just a positioning frame for the
+   indicator (::after) so the bare chrome underneath stays fully visible. */
 .dial-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   transform: rotate(var(--rotation, 0deg));
-  background: repeating-conic-gradient(rgb(30 30 34 / 0.55) 0deg 1.2deg, transparent 1.2deg 10deg);
-  -webkit-mask: radial-gradient(
-    circle closest-side,
-    transparent 0 64%,
-    #000 65% 94%,
-    transparent 95%
-  );
-  mask: radial-gradient(circle closest-side, transparent 0 64%, #000 65% 94%, transparent 95%);
 }
 .dial-ring::after {
   content: "";
@@ -1027,46 +1040,98 @@ output {
 }
 /*
  * Sits in normal flow right under the controls card (the .app grid's own gap gives it its
- * margin), with the numeric countdown and pause/stop controls below the bar itself.
+ * margin): a slim vertical "energy column" on the left, countdown + pause/stop stacked to its
+ * right — instead of a full-width bar, so it reads as one compact, minimalist unit.
  */
 .practice-timer-bar {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 /*
- * Two layers: the element itself is a dim backdrop left behind by the time already spent, and
- * ::after is the bright remaining-time fill on top of it. A recursive setTimeout in main.ts
- * ticks once a second and steps --gone up by 1/totalSeconds, clipping the bright layer back by
- * one second's worth at a time — a single style write per second, no per-second DOM nodes.
+ * Hourglass/energy-flow read as a vertical column instead of a horizontal bar: the element
+ * itself is the dim, already-spent backdrop, and ::after is the bright remaining-energy fill,
+ * clipped back from the top as time passes (a battery draining, or sand settling). Same
+ * one-write-per-second technique as before (main.ts steps --gone, a plain CSS custom property),
+ * just rotated onto the vertical axis — no extra JS, no per-frame work, comfortably under any
+ * CPU/GPU budget. The particles are a purely decorative, infinite CSS animation (opacity +
+ * transform only, compositor-only, four tiny elements) layered on top for the "energy flow"
+ * feel; they cost nothing extra while the timer bar is hidden since display: none stops them.
  */
-.practice-fade-bar {
+.practice-energy {
   position: relative;
-  height: 6px;
+  width: 10px;
+  height: 46px;
   border-radius: 999px;
   background: var(--select-soft);
-  pointer-events: none;
+  overflow: hidden;
+  flex-shrink: 0;
 }
-.practice-fade-bar::after {
+.practice-energy::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--select);
-  box-shadow: 0 0 12px var(--select-soft);
-  clip-path: inset(0 calc(var(--gone, 0) * 1%) 0 0);
+  background: linear-gradient(180deg, var(--brass), var(--select));
+  box-shadow: 0 0 10px var(--select-soft);
+  clip-path: inset(calc(var(--gone, 0) * 1%) 0 0 0);
   transition: clip-path 200ms ease;
+}
+.energy-particle {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 4px var(--brass);
+  opacity: 0;
+  animation: energyRise 2.4s ease-in infinite;
+}
+.energy-particle:nth-child(2) {
+  animation-delay: 0.6s;
+  left: 30%;
+}
+.energy-particle:nth-child(3) {
+  animation-delay: 1.2s;
+  left: 70%;
+}
+.energy-particle:nth-child(4) {
+  animation-delay: 1.8s;
+}
+@keyframes energyRise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
 }
 .practice-timer-controls {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.practice-timer-buttons {
+  display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
 }
 .practice-time-left {
   font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--muted);
-  min-width: 3ch;
+  font-size: 15px;
+  color: var(--text);
 }
 .practice-icon-btn {
   width: 30px;
@@ -1274,19 +1339,47 @@ output {
   background: none;
 }
 
+/* 2.5D interface mode: the same cast-metal treatment used on the BPM knob and play button,
+   extended to every other surface — a diagonal light-to-dark bevel plus a crisp top highlight
+   and a deep bottom shadow read as "extruded" without any actual 3D transform, so hit-testing,
+   layout and the zero-scroll grid above are all untouched. */
+html.depth-25d .panel,
+html.depth-25d .sheet,
+html.depth-25d .square-btn,
+html.depth-25d .wide-btn,
+html.depth-25d .chip,
+html.depth-25d .nudge,
+html.depth-25d .icon-btn,
+html.depth-25d .lang-btn,
+html.depth-25d .lang-menu,
+html.depth-25d .practice-icon-btn {
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 8px 16px rgb(0 0 0 / 0.45);
+}
+html.depth-25d .chip[aria-checked="true"],
+html.depth-25d .chip.active {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 0 10px var(--select-soft);
+}
+html.depth-25d .square-btn,
+html.depth-25d .chip,
+html.depth-25d .nudge,
+html.depth-25d .icon-btn,
+html.depth-25d .lang-btn,
+html.depth-25d .practice-icon-btn {
+  border-color: rgb(255 255 255 / 0.08);
+}
+
 @media (min-width: 900px) {
   /* Desktop keeps the exact same single-column stacked layout as mobile — no side-by-side
-     columns — just centered as a block in the viewport instead of hugging the top of a tall
-     window, with a bit more room than the phone-width cap. */
-  body {
-    min-height: 100vh;
-    display: flex;
-    /* Plain "center" clips whichever end overflows first and makes it unreachable by
-       scrolling — a well-known flexbox/grid centering trap. "safe" falls back to start
-       alignment instead of doing that once content is taller than the viewport. */
-    align-items: safe center;
-    justify-content: safe center;
-  }
+     columns. .app already fills the full 100dvh and centers itself horizontally via its own
+     margin: 0 auto, so no extra centering is needed here; a wider cap just gives it more
+     breathing room than the phone-width max-width. */
   .app {
     /* A flex item's "auto" width shrinks to fit its content by default, so without an explicit
        width the stage's own min(100%, ...) had nothing to actually grow into. */
@@ -1299,7 +1392,7 @@ output {
   /* Shift the balance toward the visualiser: a bigger circle/line stage, a visibly smaller
      controls panel underneath it instead of the two competing for similar prominence. */
   .stage {
-    width: min(100%, 60vh, 460px);
+    max-height: 460px;
   }
   .controls {
     gap: 8px;

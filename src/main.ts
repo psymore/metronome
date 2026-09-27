@@ -50,6 +50,7 @@ const showIdleBarCounter = (): void => {
 
 const applyTheme = (s: Settings) => {
   document.documentElement.dataset.theme = s.theme;
+  document.documentElement.classList.toggle('depth-25d', s.depth25d);
 };
 applyTheme(store.get());
 store.subscribe(applyTheme);
@@ -218,8 +219,9 @@ function runPracticeCountdown(): void {
   practiceEndTimer = setTimeout(() => {
     const minutes = Math.round(practiceTotalSeconds / 60);
     stopPracticeTimer();
-    if (!engine.running) return;
-    void transport.toggle();
+    // The practice session ending is a cue about time, not a reason to cut the beat off
+    // mid-bar — the metronome keeps playing until the player stops it themselves.
+    if (store.get().haptics && navigator.vibrate) navigator.vibrate([20, 40, 20]);
     toast(format('toast.practiceTimerEnded', { minutes }));
   }, remainingSeconds * 1000);
 }

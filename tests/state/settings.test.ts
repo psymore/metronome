@@ -104,6 +104,7 @@ describe('sanitizeSettings', () => {
       practiceMinutes: 0,
       subdivision: 1,
       language: 'en',
+      depth25d: false,
     });
   });
 

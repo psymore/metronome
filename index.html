@@ -92,16 +92,23 @@
       </div>
 
       <div id="practiceTimerBar" class="practice-timer-bar" hidden>
-        <div id="practiceFadeBar" class="practice-fade-bar" aria-hidden="true"></div>
+        <div id="practiceFadeBar" class="practice-energy" aria-hidden="true">
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+          <span class="energy-particle"></span>
+        </div>
         <div class="practice-timer-controls">
           <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
-          <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
-            <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
-            <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-          </button>
-          <button type="button" id="practiceStopBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.stopAriaLabel" aria-label="Stop timer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z" /></svg>
-          </button>
+          <div class="practice-timer-buttons">
+            <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
+              <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+              <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </button>
+            <button type="button" id="practiceStopBtn" class="practice-icon-btn" data-i18n-aria-label="practiceTimer.stopAriaLabel" aria-label="Stop timer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z" /></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -192,6 +199,18 @@
           <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false" data-i18n="theme.teal">Teal</button>
           <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false" data-i18n="theme.amber">Amber</button>
           <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false" data-i18n="theme.blue">Blue</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>
+          <span data-i18n="depth25d.label">2.5D interface mode</span>
+          <button type="button" id="depth25dToggle" class="switch" role="switch" aria-checked="false" data-i18n-aria-label="depth25d.switchAriaLabel" aria-label="Toggle 2.5D interface mode">
+            <span class="switch-knob"></span>
+          </button>
+        </span>
+        <div class="sub-head">
+          <p class="sub-label" data-i18n="depth25d.subLabel">Extruded, cast-metal panels and buttons</p>
+          <button type="button" class="info-btn" data-i18n-aria-label="depth25d.hint" data-i18n-title="depth25d.hint" aria-label="Gives panels, buttons and dials a raised, cast-metal depth." title="Gives panels, buttons and dials a raised, cast-metal depth.">i</button>
         </div>
       </div>
       <div class="field">

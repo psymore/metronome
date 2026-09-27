@@ -46,6 +46,8 @@ export interface Settings {
   /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
   subdivision: Subdivision;
   language: Language;
+  /** Extruded, cast-metal look for panels/buttons instead of the flat default surfaces. */
+  depth25d: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -66,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
   practiceMinutes: 0,
   subdivision: 1,
   language: 'en',
+  depth25d: false,
 };
 
 export function defaultSettings(): Settings {
@@ -186,6 +189,7 @@ export function sanitizeSettings(raw: unknown): Settings {
       : d.practiceMinutes,
     subdivision: isSubdivision(r.subdivision) ? r.subdivision : d.subdivision,
     language: isLanguage(r.language) ? r.language : d.language,
+    depth25d: typeof r.depth25d === 'boolean' ? r.depth25d : d.depth25d,
   };
 }
 

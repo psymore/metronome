@@ -23,6 +23,7 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
   const beatRow = byId('beatRow');
   const hapticsToggle = byId<HTMLButtonElement>('hapticsToggle');
+  const depth25dToggle = byId<HTMLButtonElement>('depth25dToggle');
   const themeButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
   );
@@ -67,6 +68,9 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   hapticsToggle.addEventListener('click', () => {
     store.set({ haptics: !store.get().haptics });
   });
+  depth25dToggle.addEventListener('click', () => {
+    store.set({ depth25d: !store.get().depth25d });
+  });
 
   // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
   const resetConfirm = createConfirmGate(resetBtn, {
@@ -95,6 +99,7 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     beatsClickableToggle.setAttribute('aria-checked', String(s.beatsClickable));
     beatRow.classList.toggle('dim', !s.beatsClickable);
     hapticsToggle.setAttribute('aria-checked', String(s.haptics));
+    depth25dToggle.setAttribute('aria-checked', String(s.depth25d));
   };
   render(store.get());
   store.subscribe(render);
