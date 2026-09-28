@@ -106,18 +106,33 @@ export class AudioEngine {
     this.worker.postMessage('start');
   }
 
+  /**
+   * Swaps between the standard and polyrhythm schedulers while playing, following the current
+   * `polyrhythm.enabled`. Synchronous and gesture-free: the AudioContext, silent-unlock loop and
+   * worker tick are already running, so only the schedulers, pending clicks and timelines change.
+   * A no-op when stopped (start() picks the mode) or already in the requested mode.
+   */
+  switchMode(): void {
+    if (!this.running) return;
+    const poly = this.getPolyPattern().polyrhythm.enabled;
+    if (poly === this.polyScheduler.isRunning) return;
+    this.scheduler.stop();
+    this.polyScheduler.stop();
+    // Drop clicks the old mode already queued inside its look-ahead window.
+    this.stopSources();
+    this.timeline.clear();
+    this.polyTimelineA.clear();
+    this.polyTimelineB.clear();
+    const now = this.ctx.currentTime;
+    if (poly) this.polyScheduler.start(now);
+    else this.scheduler.start(now);
+  }
+
   stop(): void {
     this.scheduler.stop();
     this.polyScheduler.stop();
     this.worker.postMessage('stop');
-    for (const source of this.active) {
-      try {
-        source.stop();
-      } catch {
-        // Already stopped.
-      }
-    }
-    this.active.clear();
+    this.stopSources();
     this.timeline.clear();
     this.polyTimelineA.clear();
     this.polyTimelineB.clear();
@@ -127,6 +142,17 @@ export class AudioEngine {
     this.ctx.suspend().catch(() => {
       // Nothing to do: the context is already closed or the browser refused.
     });
+  }
+
+  private stopSources(): void {
+    for (const source of this.active) {
+      try {
+        source.stop();
+      } catch {
+        // Already stopped.
+      }
+    }
+    this.active.clear();
   }
 
   setVolume(volume: number): void {

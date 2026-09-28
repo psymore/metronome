@@ -73,7 +73,10 @@ store.subscribe((s, prev) => {
 
 const toast = createToast(byId('toast'));
 const showInfo = createInfoPopup(byId('infoPopup'));
-const engine = new AudioEngine({ getPattern: () => store.get(), getPolyPattern: () => store.get() });
+const engine = new AudioEngine({
+  getPattern: () => store.get(),
+  getPolyPattern: () => store.get(),
+});
 engine.setVolume(store.get().volume);
 store.subscribe((s, prev) => {
   if (s.volume !== prev.volume) engine.setVolume(s.volume);
@@ -172,10 +175,9 @@ store.subscribe((s) => {
 byId('stage').dataset.polyrhythm = String(store.get().polyrhythm.enabled);
 
 store.subscribe((s, prev) => {
-  if (s.polyrhythm.enabled !== prev.polyrhythm.enabled && engine.running) {
-    engine.stop();
-    void engine.start();
-  }
+  // Swap schedulers in place on the running context: no stop/start cycle, so nothing here
+  // bypasses Transport's busy guard, resume() timeout or error toast, or needs a user gesture.
+  if (s.polyrhythm.enabled !== prev.polyrhythm.enabled) engine.switchMode();
 });
 
 const wakeLock = createWakeLock();
