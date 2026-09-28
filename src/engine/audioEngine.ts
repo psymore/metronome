@@ -20,11 +20,11 @@ const SILENT_LOOP_SRC =
   'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 
 export class AudioEngine {
-  readonly ctx: AudioContext;
+  private _ctx: AudioContext;
   readonly timeline = new BeatTimeline<BeatEvent>();
   readonly polyTimelineA = new BeatTimeline<PolyBeatEvent>();
   readonly polyTimelineB = new BeatTimeline<PolyBeatEvent>();
-  private readonly master: GainNode;
+  private master: GainNode;
   private readonly scheduler: Scheduler;
   private readonly polyScheduler: PolyScheduler;
   private readonly getPolyPattern: () => PolyPattern;
@@ -38,9 +38,6 @@ export class AudioEngine {
   private readonly silentUnlock: HTMLAudioElement;
 
   constructor(opts: AudioEngineOptions) {
-    this.ctx = new AudioContext({ latencyHint: 'interactive' });
-    this.master = this.ctx.createGain();
-    this.master.connect(this.ctx.destination);
     this.getPolyPattern = opts.getPolyPattern;
     this.scheduler = new Scheduler({
       getPattern: opts.getPattern,
@@ -53,27 +50,57 @@ export class AudioEngine {
     });
     this.worker = new Worker(new URL('./timerWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = () => {
-      const now = this.ctx.currentTime;
+      const now = this._ctx.currentTime;
       this.scheduler.tick(now);
       this.polyScheduler.tick(now);
     };
     this.silentUnlock = new Audio(SILENT_LOOP_SRC);
     this.silentUnlock.loop = true;
     this.silentUnlock.volume = 0;
-    const tryResume = () => {
-      // Device change or OS interruption while playing: try to get the clock running again.
-      if (!this.scheduler.isRunning && !this.polyScheduler.isRunning) return;
-      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
-      if (this.silentUnlock.paused) this.silentUnlock.play().catch(() => {});
-    };
-    this.ctx.addEventListener('statechange', tryResume);
-    // `statechange` fires only on the running->suspended transition. If that resume attempt is
-    // rejected (iOS can refuse it right after an interruption), the context stays suspended with
-    // no further event to retry on — so also retry whenever the page comes back to the foreground.
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) tryResume();
+      if (!document.hidden) this.tryResume();
     });
-    window.addEventListener('pageshow', tryResume);
+    window.addEventListener('pageshow', this.tryResume);
+    this._ctx = this.createContext();
+    this.master = this.createMaster();
+  }
+
+  get ctx(): AudioContext {
+    return this._ctx;
+  }
+
+  private createContext(): AudioContext {
+    const ctx = new AudioContext({ latencyHint: 'interactive' });
+    ctx.addEventListener('statechange', this.tryResume);
+    return ctx;
+  }
+
+  private createMaster(): GainNode {
+    const master = this._ctx.createGain();
+    master.connect(this._ctx.destination);
+    return master;
+  }
+
+  private readonly tryResume = () => {
+    // Device change or OS interruption while playing: try to get the clock running again.
+    if (!this.scheduler.isRunning && !this.polyScheduler.isRunning) return;
+    if (this._ctx.state === 'suspended') this._ctx.resume().catch(() => {});
+    if (this.silentUnlock.paused) this.silentUnlock.play().catch(() => {});
+  };
+
+  /**
+   * `AudioContext.resume()` can hang forever instead of ever settling — once that happens, per
+   * spec every later `resume()` call on the same context returns that same stuck promise, so the
+   * context can never recover on its own. Call this after a failed `start()` (see
+   * `ui/transport.ts`'s timeout) to throw the wedged context away and build a fresh one, so the
+   * next tap gets a real chance instead of being doomed to time out forever.
+   */
+  recoverContext(): void {
+    if (this.scheduler.isRunning || this.polyScheduler.isRunning) return;
+    const stale = this._ctx;
+    this._ctx = this.createContext();
+    this.master = this.createMaster();
+    stale.close().catch(() => {});
   }
 
   get running(): boolean {

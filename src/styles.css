@@ -601,6 +601,20 @@ output {
     opacity: 0;
   }
 }
+/* Shown the instant Play is tapped, while start() awaits AudioContext.resume() — without it the
+   dial gives no feedback for up to 5s (the transport's stuck-context timeout) and looks frozen. */
+#knob.starting {
+  animation: knobStarting 900ms ease-in-out infinite;
+}
+@keyframes knobStarting {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
 @keyframes beatPulse {
   from {
     box-shadow:

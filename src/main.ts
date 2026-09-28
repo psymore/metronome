@@ -400,9 +400,11 @@ practiceStopBtn.addEventListener('click', resetAndStopPracticeTimer);
   });
 }
 
+const knobEl = byId<HTMLCanvasElement>('knob');
 const transport = mountTransport({
   engine,
   toast,
+  onBusyChange: (busy) => knobEl.classList.toggle('starting', busy),
   onToggle: () => {
     wakeLock.setActive(engine.running);
     knob.invalidate();
