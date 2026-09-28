@@ -1099,6 +1099,36 @@ html.depth-25d .knob {
 .picker-block .stepper {
   justify-content: center;
 }
+/* Polyrhythm's own ratio steppers/sound pickers read as sheet controls, not instrument-panel
+   hardware — override .nudge's metallic knob-disc look with a flat panel button (same recipe as
+   .small-btn) and style the plain <select>s like the Sound dialog's themed .slot-row select.
+   Metallic stays reserved for the main screen's BPM nudges. */
+#polyBlock .nudge {
+  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+  border: 1px solid var(--line);
+  color: var(--text);
+  text-shadow: none;
+}
+#polyBlock .nudge::before {
+  content: none;
+}
+#polyBlock .nudge:active {
+  transform: scale(0.92);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
+}
+#polyBlock select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-lo);
+  color: var(--text);
+  font: inherit;
+  margin-bottom: 10px;
+}
 /* A segmented control for presets: unlike free-floating chips, segments sit flush against
    each other in one continuous pill and scroll horizontally if they overflow. */
 .segmented {
