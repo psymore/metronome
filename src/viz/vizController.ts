@@ -1,5 +1,5 @@
-import type { BeatEvent } from '../engine/scheduler';
 import type { PolyBeatEvent } from '../engine/polyScheduler';
+import type { BeatEvent } from '../engine/scheduler';
 import type { BeatLevel, Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
 import { drawNode } from './drawNode';
@@ -160,7 +160,7 @@ export class VizController {
         b: s.polyrhythm.b,
         reducedMotion: this.reducedMotion.matches,
       });
-      drawPolyrhythm(this.ctx, this.size, frame, this.theme);
+      drawPolyrhythm(this.ctx, this.size, frame, this.theme, this.sprites);
       this.lastGlow = Math.max(frame.glowA, frame.glowB);
       return;
     }
