@@ -69,6 +69,17 @@ export function mountPolyrhythmControls({ store, sounds }: PolyrhythmControlsDep
     store.set({ polyrhythm: { ...store.get().polyrhythm, soundIdB: soundBSelect.value } }),
   );
 
+  const refreshSoundSelects = async (): Promise<void> => {
+    await Promise.all([
+      fillSoundSelect(soundASelect, store.get().polyrhythm.soundIdA),
+      fillSoundSelect(soundBSelect, store.get().polyrhythm.soundIdB),
+    ]);
+  };
+
+  // A sound may have been uploaded or deleted (via the Sound dialog) since these selects were
+  // last populated — re-list on every open so the options stay current, same as soundDialog.ts.
+  byId('signatureBtn').addEventListener('click', () => void refreshSoundSelects());
+
   const render = (s: Settings) => {
     const enabled = s.polyrhythm.enabled;
     for (const button of modeButtons) {
@@ -83,10 +94,7 @@ export function mountPolyrhythmControls({ store, sounds }: PolyrhythmControlsDep
     if (soundBSelect.value !== s.polyrhythm.soundIdB) soundBSelect.value = s.polyrhythm.soundIdB;
   };
 
-  void Promise.all([
-    fillSoundSelect(soundASelect, store.get().polyrhythm.soundIdA),
-    fillSoundSelect(soundBSelect, store.get().polyrhythm.soundIdB),
-  ]).then(() => render(store.get()));
+  void refreshSoundSelects().then(() => render(store.get()));
   render(store.get());
   store.subscribe(render);
 }
