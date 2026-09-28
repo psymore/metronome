@@ -46,7 +46,7 @@ export function circularLayout(width: number, height: number) {
 
 export function linearLayout(width: number, height: number) {
   const pad = Math.max(24, width * 0.08);
-  return { left: pad, width: Math.max(10, width - pad * 2), y: height * 0.36 };
+  return { left: pad, width: Math.max(10, width - pad * 2), y: height / 2 };
 }
 
 /** Straight-line distance between adjacent node centers on a circle of radius `r`. */

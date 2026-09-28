@@ -4,6 +4,7 @@ import {
   circularNodeSpacing,
   glowIntensity,
   handAngle,
+  linearLayout,
   linearNodeSpacing,
   linearNodeX,
   linearStickX,
@@ -49,6 +50,20 @@ describe('circular geometry', () => {
     expect(l.r).toBeCloseTo(117);
     expect(l.hub).toBeCloseTo(117 * 0.16);
     expect(circularLayout(10, 10).r).toBe(10);
+  });
+});
+
+describe('linearLayout', () => {
+  it('centers the track vertically in the canvas', () => {
+    expect(linearLayout(400, 300).y).toBe(150);
+    expect(linearLayout(320, 320).y).toBe(160);
+  });
+
+  it('insets the track horizontally by at least 24px or 8% of width', () => {
+    const narrow = linearLayout(200, 300);
+    expect(narrow.left).toBe(24);
+    const wide = linearLayout(1000, 300);
+    expect(wide.left).toBe(80);
   });
 });
 
