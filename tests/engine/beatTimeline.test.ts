@@ -55,3 +55,14 @@ describe('beatPhase', () => {
     expect(beatPhase(beat(10, 0), 10.5)).toBe(0);
   });
 });
+
+describe('BeatTimeline<T> with a non-BeatEvent shape', () => {
+  it('works with any object that has a numeric time field', () => {
+    interface Ping { time: number; label: string }
+    const t = new BeatTimeline<Ping>();
+    t.push({ time: 1, label: 'a' });
+    t.push({ time: 2, label: 'b' });
+    expect(t.beatAt(1.5)?.label).toBe('a');
+    expect(t.beatAt(2)?.label).toBe('b');
+  });
+});

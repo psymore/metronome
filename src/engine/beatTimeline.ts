@@ -1,12 +1,12 @@
 import type { BeatEvent } from './scheduler';
 
 /** Recently scheduled beats, oldest first, so visuals can look up what is being heard. */
-export class BeatTimeline {
-  private beats: BeatEvent[] = [];
+export class BeatTimeline<T extends { time: number } = BeatEvent> {
+  private beats: T[] = [];
 
   constructor(private readonly capacity = 64) {}
 
-  push(beat: BeatEvent): void {
+  push(beat: T): void {
     this.beats.push(beat);
     if (this.beats.length > this.capacity) {
       this.beats.splice(0, this.beats.length - this.capacity);
@@ -18,7 +18,7 @@ export class BeatTimeline {
   }
 
   /** The latest beat whose start time is <= time, or null. */
-  beatAt(time: number): BeatEvent | null {
+  beatAt(time: number): T | null {
     for (let i = this.beats.length - 1; i >= 0; i--) {
       const beat = this.beats[i];
       if (beat && beat.time <= time) return beat;
@@ -31,7 +31,7 @@ export class BeatTimeline {
   }
 }
 
-export function beatPhase(beat: BeatEvent, time: number): number {
+export function beatPhase(beat: { time: number; duration: number }, time: number): number {
   if (beat.duration <= 0) return 0;
   return Math.min(1, Math.max(0, (time - beat.time) / beat.duration));
 }
