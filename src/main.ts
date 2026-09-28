@@ -114,6 +114,8 @@ const viz = new VizController(
     running: () => engine.running,
     heardTime: () => engine.heardTime(store.get().syncOffsetMs),
     beatAt: (time) => engine.timeline.beatAt(time),
+    polyBeatAt: (layer, time) =>
+      (layer === 'A' ? engine.polyTimelineA : engine.polyTimelineB).beatAt(time),
   },
   () => store.get(),
   (index) => store.set({ levels: cycleBeatLevel(store.get().levels, index) }),

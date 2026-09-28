@@ -1,4 +1,5 @@
 import type { BeatEvent } from '../engine/scheduler';
+import type { PolyBeatEvent } from '../engine/polyScheduler';
 import type { BeatLevel, Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
 import { drawNode } from './drawNode';
@@ -7,6 +8,8 @@ import { circularLayout } from './geometry';
 import { circularBeatAt, linearBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
 import { NodeSpriteCache, spriteSize } from './nodeSprite';
+import { computePolyFrame } from './polyFrame';
+import { drawPolyrhythm } from './polyrhythm';
 import { shouldAnimate } from './renderPolicy';
 import type { VizTheme } from './types';
 
@@ -15,6 +18,7 @@ export interface VizSource {
   /** Audio time currently heard, already shifted by the sync offset. */
   heardTime(): number;
   beatAt(time: number): BeatEvent | null;
+  polyBeatAt(layer: 'A' | 'B', time: number): PolyBeatEvent | null;
 }
 
 export function readTheme(el: Element): VizTheme {
@@ -71,7 +75,7 @@ export class VizController {
   private readonly onPointerDown = (e: PointerEvent): void => {
     if (!this.onBeatTap) return;
     const s = this.getSettings();
-    if (!s.beatsClickable) return;
+    if (!s.beatsClickable || s.polyrhythm.enabled) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -142,6 +146,25 @@ export class VizController {
     }
     this.sprites.setContext(s.theme, this.dpr);
     const heard = this.source.heardTime();
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+    if (s.polyrhythm.enabled) {
+      const beatA = this.source.polyBeatAt('A', heard);
+      const beatB = this.source.polyBeatAt('B', heard);
+      const frame = computePolyFrame({
+        running: this.source.running(),
+        beatA,
+        beatB,
+        heardTime: heard,
+        a: s.polyrhythm.a,
+        b: s.polyrhythm.b,
+        reducedMotion: this.reducedMotion.matches,
+      });
+      drawPolyrhythm(this.ctx, this.size, frame, this.theme);
+      this.lastGlow = Math.max(frame.glowA, frame.glowB);
+      return;
+    }
+
     const beat = this.source.beatAt(heard);
     const frame = computeFrame({
       running: this.source.running(),
@@ -151,7 +174,6 @@ export class VizController {
       levels: s.levels,
       reducedMotion: this.reducedMotion.matches,
     });
-    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
     visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites);
     if (frame.glow > this.lastGlow) {
