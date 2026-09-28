@@ -152,10 +152,16 @@ let practiceTotalSeconds = 0;
 let practiceElapsedBeforeRun = 0;
 let practiceRunStartedAt = 0;
 let practicePaused = false;
+// True only while the countdown has run out on its own (see finishPracticeTimer) — kept
+// separate from practicePaused so a plain metronome stop/start (tapping the knob, etc.) doesn't
+// look like "resume" and silently relaunch the timer. Only the Replay button clears it.
+let practiceFinished = false;
 const practiceTimerBar = byId('practiceTimerBar');
+const practiceTimerButtons = byId('practiceTimerButtons');
 const practiceFadeBar = byId('practiceFadeBar');
 const practiceTimeLeft = byId('practiceTimeLeft');
 const practicePauseBtn = byId<HTMLButtonElement>('practicePauseBtn');
+const practiceStopBtn = byId<HTMLButtonElement>('practiceStopBtn');
 
 function renderPracticeProgress(elapsedSeconds: number): void {
   practiceFadeBar.style.setProperty(
@@ -181,8 +187,30 @@ function stopPracticeTimer(): void {
   practiceTotalSeconds = 0;
   practiceElapsedBeforeRun = 0;
   practicePaused = false;
-  practiceTimerBar.hidden = true;
+  practiceFinished = false;
+  practiceTimerBar.classList.add('is-off');
+  practiceTimerButtons.classList.add('is-off');
   practiceFadeBar.style.setProperty('--gone', '0');
+  practicePauseBtn.classList.remove('finished');
+  practiceStopBtn.disabled = false;
+}
+
+/** Countdown reached 0 on its own: unlike stopPracticeTimer, the bar and its buttons stay put
+ *  instead of vanishing — pause/resume becomes a replay button and Stop is disabled, since
+ *  there's nothing left running to stop. */
+function finishPracticeTimer(): void {
+  clearTimeout(practiceTick);
+  clearTimeout(practiceEndTimer);
+  practiceTick = undefined;
+  practiceEndTimer = undefined;
+  // Anchoring the next resume at 0 elapsed (not practiceTotalSeconds) means pressing replay
+  // starts a fresh countdown instead of instantly hitting the end again.
+  practiceElapsedBeforeRun = 0;
+  practicePaused = true;
+  practiceFinished = true;
+  renderPracticeProgress(practiceTotalSeconds); // shows 0:00 / fully drained
+  practicePauseBtn.classList.add('finished');
+  practiceStopBtn.disabled = true;
 }
 
 /** (Re)starts the running countdown from practiceElapsedBeforeRun, whether this is a fresh
@@ -205,12 +233,10 @@ function runPracticeCountdown(): void {
   tick();
 
   practiceEndTimer = setTimeout(() => {
-    const time = formatTimeLeft(0, practiceTotalSeconds);
-    stopPracticeTimer();
+    finishPracticeTimer();
     // The practice session ending is a cue about time, not a reason to cut the beat off
     // mid-bar — the metronome keeps playing until the player stops it themselves.
     if (store.get().haptics && navigator.vibrate) navigator.vibrate([20, 40, 20]);
-    toast(format('toast.practiceTimerEnded', { time }));
   }, remainingSeconds * 1000);
 }
 
@@ -224,7 +250,11 @@ function startPracticeTimer(seconds: number): void {
   practiceTotalSeconds = seconds;
   practiceElapsedBeforeRun = 0;
   practicePaused = false;
-  practiceTimerBar.hidden = false;
+  practiceFinished = false;
+  practiceTimerBar.classList.remove('is-off');
+  practiceTimerButtons.classList.remove('is-off');
+  practicePauseBtn.classList.remove('finished');
+  practiceStopBtn.disabled = false;
   renderPauseButton();
   renderPracticeProgress(0);
   runPracticeCountdown();
@@ -260,15 +290,28 @@ function resetAndStopPracticeTimer(): void {
   clearTimeout(practiceEndTimer);
   practiceElapsedBeforeRun = 0;
   practicePaused = true;
+  practiceFinished = false;
+  practicePauseBtn.classList.remove('finished');
+  practiceStopBtn.disabled = false;
   renderPracticeProgress(0);
   renderPauseButton();
 }
 
+// Proxies straight to the metronome's own toggle rather than calling pause/resumePracticeTimer
+// itself: onToggle below already pauses/resumes the timer in lockstep with engine.running, so
+// this keeps the timer's pause button and the metronome's play state as one single switch.
+// The "finished" (replay) case needs its own path: the metronome may already be running (it
+// keeps playing after the countdown ends on its own — see runPracticeCountdown), so a plain
+// toggle() there would just stop it instead of starting a fresh countdown.
 practicePauseBtn.addEventListener('click', () => {
-  if (practicePaused) resumePracticeTimer();
-  else pausePracticeTimer();
+  if (practiceFinished) {
+    startPracticeTimer(store.get().practiceSeconds);
+    if (!engine.running) void transport.toggle();
+    return;
+  }
+  void transport.toggle();
 });
-byId('practiceStopBtn').addEventListener('click', resetAndStopPracticeTimer);
+practiceStopBtn.addEventListener('click', resetAndStopPracticeTimer);
 
 // × (close) button: two-tap confirm to avoid accidental off — first tap arms it for 2 s,
 // second tap within the window turns the timer fully off (sets practiceSeconds to 0 and hides
@@ -286,10 +329,11 @@ byId('practiceStopBtn').addEventListener('click', resetAndStopPracticeTimer);
       closeBtn.classList.add('armed');
       return;
     }
-    // Second tap within 2 s: confirm — turn timer fully off.
+    // Second tap within 2 s: confirm — turn timer fully off, and stop the metronome with it.
     clearTimeout(closeBtnArmed);
     closeBtnArmed = undefined;
     closeBtn.classList.remove('armed');
+    if (engine.running) void transport.toggle();
     stopPracticeTimer();
     store.set({ practiceSeconds: 0 });
   });
@@ -304,11 +348,17 @@ const transport = mountTransport({
     viz.invalidate();
     if (!engine.running) {
       // Stopping the metronome pauses the timer (keeping it on screen) rather than resetting
-      // it — only the timer's own Stop/× buttons do that.
-      pausePracticeTimer();
+      // it — only the timer's own Stop/× buttons do that. Not when finished, though: the timer
+      // is already at rest showing its replay button, and pausePracticeTimer would no-op
+      // anyway (see its own guard) — this is just about not touching finished's own state.
+      if (!practiceFinished) pausePracticeTimer();
       showIdleBarCounter();
       return;
     }
+    // A finished timer stays exactly as it is — showing its replay button — no matter what the
+    // metronome does. Only the replay button itself (see its own click handler) restarts it;
+    // otherwise a plain knob tap to start playing again would silently relaunch the countdown.
+    if (practiceFinished) return;
     if (practicePaused) {
       // If elapsed is 0 the timer was reset (Stop button) — start fresh rather than resume.
       if (practiceElapsedBeforeRun === 0 && practiceTotalSeconds > 0) {
@@ -380,3 +430,65 @@ if (!('__TAURI_INTERNALS__' in window)) {
       // Offline support is a bonus; the app works without it.
     });
 }
+
+// The boot loader (inline styles in index.html, so it can paint before this bundle even
+// finishes loading) has done its job once we get here — everything above has run
+// synchronously, so the real UI is already in the DOM and ready to be shown. Fade it out
+// (matching its own inline transition) rather than removing it outright — it stays in the DOM
+// so the title button below can bring it back as an on-demand preview.
+const bootLoader = document.getElementById('bootLoader');
+/** pointer-events must track visibility, not just sit at "none" forever: while the preview is
+ *  actually showing it should behave like the real loading screen and block clicks on whatever
+ *  is behind it (Settings, the knob, ...) — it was previously always pointer-events: none, so
+ *  the real buttons underneath stayed clickable right through it.
+ *  Also toggles the "is-hidden" class (see styles.css), which pauses the spin/color-cycle
+ *  animations on the nodes and knob — opacity: 0 alone doesn't stop a running CSS animation,
+ *  so without this they'd keep ticking in the background for the entire life of the tab, never
+ *  actually visible again unless the preview is reopened. */
+function setBootLoaderHidden(hidden: boolean): void {
+  if (!bootLoader) return;
+  bootLoader.style.opacity = hidden ? '0' : '1';
+  bootLoader.style.pointerEvents = hidden ? 'none' : 'auto';
+  bootLoader.classList.toggle('is-hidden', hidden);
+}
+setBootLoaderHidden(true);
+
+// Clicking the "Metronome" title replays the boot loading screen — just a fun way to see it
+// again without reloading the page. It stays open until closed (no auto-hide timer), and
+// closing snaps it shut instantly (transition: none, skipping the normal 250ms fade) since a
+// deliberate close reads as "dismiss this now", not "fade it like usual."
+let titlePreviewShowing = false;
+function closeTitlePreview(): void {
+  if (!bootLoader || !titlePreviewShowing) return;
+  titlePreviewShowing = false;
+  bootLoader.style.transition = 'none';
+  setBootLoaderHidden(true);
+  bootLoader.classList.remove('boot-playing'); // back to the same at-rest state next time
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bootLoader.style.transition = '';
+    });
+  });
+}
+byId('titleBtn').addEventListener('click', () => {
+  if (!bootLoader) return;
+  // While showing, the overlay itself sits on top and intercepts the click (see
+  // #bootTopbar below) — this only ever fires to open it, or via keyboard activation
+  // (Enter/Space), which targets the focused element directly regardless of what's drawn
+  // on top of it.
+  if (titlePreviewShowing) {
+    closeTitlePreview();
+    return;
+  }
+  titlePreviewShowing = true;
+  setBootLoaderHidden(false);
+});
+// The overlay covers the real title's own position while showing, so it needs its own handler
+// on that same top-left corner to close — otherwise there'd be no way to dismiss it at all.
+byId('bootTopbar').addEventListener('click', closeTitlePreview);
+
+// Tapping the boot-knob mirrors the real knob's tap-to-start/stop: the knob itself never
+// spins (see .boot-knob in index.html), only the beat circle does, and only while "playing."
+document.querySelector('.boot-knob')?.addEventListener('click', () => {
+  bootLoader?.classList.toggle('boot-playing');
+});

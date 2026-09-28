@@ -20,3 +20,4 @@ cloud-patches/
 
 .vercel
 .env*
+.playwright-mcp/

@@ -131,7 +131,10 @@ button {
   cursor: pointer;
   touch-action: manipulation;
   position: relative;
-  overflow: hidden;
+  /* Not overflow: hidden — the click glow's outer box-shadow (button:active::after /
+     .btn-flash::after below) needs to extend past the button's own edge, and a hidden-overflow
+     parent clips a child's box-shadow to the parent's box even though border-radius already
+     clips backgrounds/borders on its own. */
   transition: transform 160ms cubic-bezier(0.34, 1.5, 0.62, 1);
 }
 button:active {
@@ -141,28 +144,31 @@ button:disabled {
   opacity: 0.45;
   cursor: default;
 }
-/* Soft themed glow for exactly as long as the button is held — plain :active, no JS, no timer
-   to outrun — instead of a hard inset border. A thin 1px hint plus a tight outer blur read as
-   "glow on the element itself", not a large surrounding halo. */
+/* Soft themed feedback for exactly as long as the button is held — plain :active, no JS, no timer
+   to outrun. A border at 50% of the current theme color plus a symmetric outer glow (box-shadow
+   blur only, no background fill — a solid fill reads as the button being "on", not just pressed).
+   Applies to every button, theme swatches included: their own click gets this same transient
+   border, on top of whichever swatch is currently selected keeping its permanent glow (see
+   [aria-checked] below). */
 button:active::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 0 0 1.5px var(--accent-color),
-    0 0 8px var(--accent-glow);
+    inset 0 0 0 1.5px color-mix(in srgb, var(--select) 50%, transparent),
+    0 0 10px var(--select-soft);
   pointer-events: none;
 }
-/* Fired by clickFx on release: fades the same glow out over 260ms instead of snapping off. */
+/* Fired by clickFx on release: fades the same border+glow out over 260ms instead of snapping off. */
 .btn-flash::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 0 0 1.5px var(--accent-color),
-    0 0 8px var(--accent-glow);
+    inset 0 0 0 1.5px color-mix(in srgb, var(--select) 50%, transparent),
+    0 0 10px var(--select-soft);
   pointer-events: none;
   animation: btnFlash 260ms ease-out;
 }
@@ -181,15 +187,19 @@ button:active::after {
     inset 0 0 0 1px var(--confirm-danger),
     0 0 16px rgb(255 92 92 / 0.6);
 }
-/* A soft glow around the focused element (filter, not outline/box-shadow, so it layers on top
-   of a button's own bevel box-shadow instead of replacing it) reads as "themed" rather than the
-   thick default browser rectangle. */
+/* A crisp themed ring around the focused element, via outline rather than filter: drop-shadow
+   or box-shadow. box-shadow would replace each button's own (very different) bevel/metal
+   box-shadow list while focused; drop-shadow has to blur to be visible at all (0-blur is
+   invisible, hidden under the source), and that blur traces a visibly rounder corner than the
+   button's own crisp border-radius. outline sidesteps both: it's additive (doesn't touch
+   box-shadow), needs no blur to render, and modern browsers curve it to the element's actual
+   border-radius, so it traces the same corner arc as the button's own border. */
 button:focus-visible,
 [tabindex]:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: none;
-  filter: drop-shadow(0 0 6px var(--accent-glow));
+  outline: 2px solid var(--select);
+  outline-offset: 2px;
 }
 /* Volume / sync-offset sliders: themed instead of the browser's default blue. accent-color
    covers the baseline look in every engine; the pseudo-elements add a track that actually
@@ -260,7 +270,13 @@ output {
 }
 .label {
   font-size: 11px;
-  line-height: 1;
+  /* Fixed box height, decoupled from font-size (line-height: 1 would shrink the box along with
+     the text in .label-sm) — so the label always occupies the same vertical space whether it
+     lands at 11px or 9px. Otherwise switching languages, which changes which size the shrink-to-
+     fit in labelFit.ts picks, changes each column's total height, and .controls' align-items:
+     center then recenters the whole row — visibly nudging every button up or down. */
+  height: 11px;
+  line-height: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
@@ -279,9 +295,11 @@ output {
 
 /* Locked to exactly one viewport height (dvh accounts for mobile browser chrome) and never
    scrolls. The stage row is the only flexible one (minmax(0, 1fr)): it absorbs whatever space
-   the fixed-size rows around it (topbar, bar counter, play button, controls, practice timer)
-   don't need, so the visualiser shrinks instead of the page overflowing — including when the
-   practice timer bar appears/disappears, since an empty `auto` track collapses to zero. */
+   the fixed-size rows around it (topbar, controls) don't need, so the visualiser shrinks
+   instead of the page overflowing. Just 3 rows now: the practice timer bar and the bar counter
+   both live as absolutely-positioned overlays (see .practice-timer-bar and .bar-counter) rather
+   than rows of their own, so neither one ever changes how much room the other rows get,
+   opened or closed. */
 .app {
   max-width: 480px;
   margin: 0 auto;
@@ -290,10 +308,12 @@ output {
   padding: max(12px, env(safe-area-inset-top)) 16px
     max(16px, calc(env(safe-area-inset-bottom) + 8px));
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 14px;
 }
 .topbar {
+  grid-row: 1 / 2;
+  grid-column: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -305,6 +325,50 @@ output {
   font-size: 21px;
   font-weight: 700;
   letter-spacing: 0.01em;
+}
+/* Resets the inner button back to plain text so it reads as the title, not a button — the
+   click behavior (replaying the boot loading screen, see main.ts) is a bonus, not something
+   that should visually announce itself as a button. Plain white text (an earlier version
+   filled the text itself with the gradient via background-clip: text, but that made the
+   letters too dim to read against the dark header) — the gradient now only shows up in the
+   shadow dropped below it.
+   filter: drop-shadow() can't itself be a gradient (each drop-shadow() is one solid color,
+   and stacking several just gives stepped/discrete colors, not a smooth left-to-right blend),
+   so the shadow is back to being a real linear-gradient background on ::after, blurred and
+   offset down 6px like a dropped shadow. The first version of this technique had the same
+   idea but ended up invisible on some browsers: .title-btn was position: relative without a
+   z-index, so it never actually got its own stacking context, and the ::after's z-index: -1
+   had nothing local to stack behind — it could paint behind some ancestor's background
+   instead of just behind this button. z-index: 0 here is what actually fixes that (any
+   explicit z-index on a positioned element establishes one), not the switch away from it. */
+.title-btn {
+  position: relative;
+  z-index: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: #fff;
+  /* A long press otherwise triggers the browser's native text-selection menu — it's a button,
+     not a text node meant to be selected/copied. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.title-btn::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 4px;
+  right: 4px;
+  top: 10px;
+  bottom: 0;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #4fb894, #d99a3f, #58a6ff, #b0b4bc);
+  filter: blur(3px);
+  opacity: 0.85;
 }
 .title-row {
   display: flex;
@@ -428,22 +492,31 @@ output {
   content: none;
 }
 
+/* Moved off its own row in the .app grid (see the comment there) and onto the controls panel
+   itself: absolutely positioned so it floats above the panel's top-right corner, over the
+   Tap/Settings column, without taking up any layout space of its own — nothing else in the
+   panel (or the grid rows around it) has to move or shrink to make room for it.
+   The pill itself is back to its plain panel-colored chrome; only the digits glow, via
+   text-shadow + a themed color, to read as a small digital readout without turning the whole
+   button into an LCD panel. */
 .bar-counter {
-  justify-self: center;
+  position: absolute;
+  top: -16px;
+  right: 10px;
   width: max-content;
   max-width: 100%;
-  padding: 5px 14px;
+  padding: 7px 18px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
+  box-shadow: 0 0 4.2px var(--accent-glow);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: var(--select);
+  text-shadow: 0 0 6px var(--select-soft);
+  z-index: 1;
 }
 .bar-counter:active {
   transform: scale(0.96);
@@ -453,8 +526,13 @@ output {
 }
 
 /* Sized from the grid row's own (flexible) height rather than a fixed viewport fraction, so it
-   shrinks automatically to whatever room is left — see .app's grid-template-rows. */
+   shrinks automatically to whatever room is left — see .app's grid-template-rows.
+   Explicit grid-row (rather than relying on auto-placement) so it's guaranteed to land in the
+   same cell as .practice-timer-bar, which deliberately shares this row — otherwise the
+   auto-placement algorithm would see that cell as "occupied" and bump .stage down a row. */
 .stage {
+  grid-row: 2 / 3;
+  grid-column: 1;
   position: relative;
   height: 100%;
   max-height: 320px;
@@ -531,6 +609,8 @@ output {
 }
 
 .side {
+  grid-row: 3 / 4;
+  grid-column: 1;
   display: grid;
   gap: 14px;
 }
@@ -660,13 +740,15 @@ output {
 .square-btn {
   width: 64px;
   height: 64px;
-  border-radius: 6px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
+  /* Same radius as .nudge/.wide-btn (and the app's usual 4px-grid radii elsewhere: 8/12/16px)
+     — was 6px, visibly less rounded than the other panel buttons. */
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
+  /* Explicit padding-box clip: without it the background's corner curve and the border's own
+     curve are rasterized via slightly different paths on some mobile browsers, especially with
+     a semi-transparent border-color, and the two arcs visibly don't quite line up. */
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
+  box-shadow: 0 0 4.2px var(--accent-glow);
   display: grid;
   place-items: center;
   /* Same dark outline the beat-node numbers on the visualiser get, so the icon/text sitting
@@ -677,7 +759,11 @@ output {
   filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.6));
 }
 .square-btn:active {
-  transform: translateY(1px) scale(0.96);
+  /* No scale() here: shrinking the button resamples its rasterized border/background as a
+     bitmap, and that resampling blurs the two curves unevenly, reopening the corner seam that
+     background-clip: padding-box fixes for the resting state. A pure translate repositions the
+     existing pixels instead of resizing them, so it can't introduce that artifact. */
+  transform: translateY(1px);
   box-shadow:
     inset 0 2px 5px rgb(0 0 0 / 0.65),
     0 1px 1px rgb(0 0 0 / 0.4);
@@ -699,7 +785,14 @@ output {
   font-weight: 700;
   letter-spacing: 0.12em;
   font-size: 13px;
+  /* A faint tint of the theme color at rest sets TAP apart from the other square buttons,
+     which stay plain --text. */
+  color: color-mix(in srgb, var(--select) 25%, var(--text));
 }
+/* .flash is a 120ms JS-timed pulse fired on every tap (see controls.ts), independent of how long
+   the pointer stays down — without :active here too, a held press outlives that 120ms and the
+   text reverts to white while the finger is still on the button. */
+.tap:active,
 .tap.flash {
   box-shadow:
     0 0 0 2px var(--pink),
@@ -717,7 +810,9 @@ output {
    layered DOM elements — drag anywhere on the ring to change tempo, tap the center LCD to
    start/stop. Sized with headroom around the drawn disc so its drop-shadow isn't clipped. */
 .knob {
-  width: min(190px, 46vw);
+  /* 1.2x the original min(190px, 46vw): the outer metallic ring is bigger (see ui/knob.ts
+     geometry(), which pegs the LCD face to the pre-scale size so only the ring grows). */
+  width: min(228px, 55.2vw);
   max-width: 100%;
   aspect-ratio: 1;
   touch-action: none;
@@ -731,7 +826,7 @@ output {
 /* The 2.5D puck needs extra room for its cylindrical side wall below the face, on top of the
    1.3x size bump the tilted knob asks for. */
 html.depth-25d .knob {
-  width: min(247px, 60vw);
+  width: min(296px, 72vw);
 }
 .tempo-marking {
   font-family: var(--serif);
@@ -744,23 +839,70 @@ html.depth-25d .knob {
   gap: 12px;
   margin-top: 8px;
 }
+/* Squared-off version of the knob's turned-metal disc (ui/knob.ts): a conic sweep through the
+   theme's --copper/--brass/--select stops standing in for its rotated highlight, a
+   repeating-radial-gradient for the lathed concentric grooves, and a glossy radial highlight
+   for the light hitting the machined face — a hairline theme-colored edge, not a heavy bezel. */
 .nudge {
+  position: relative;
+  /* Without this, .nudge never establishes its own stacking context (position:relative alone
+     doesn't), so ::before's z-index: -1 escapes it and paints behind the button's own
+     background instead of behind just the glyph — the LCD screen disappears entirely. */
+  isolation: isolate;
   width: 44px;
   height: 44px;
-  border-radius: 6px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
+  /* padding-box: with 3 comma-separated background layers, this is simpler than appending
+     padding-box to each one — see the note on .square-btn's background for why it's needed. */
+  background-clip: padding-box;
+  background:
+    radial-gradient(circle at 33% 28%, rgb(255 255 255 / 0.65), rgb(255 255 255 / 0) 42%),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgb(255 255 255 / 0.1) 0px,
+      rgb(255 255 255 / 0.1) 0.6px,
+      rgb(0 0 0 / 0.06) 0.6px,
+      rgb(0 0 0 / 0.06) 1.6px
+    ),
+    conic-gradient(
+      from 210deg,
+      var(--copper),
+      var(--brass),
+      var(--select),
+      var(--brass),
+      var(--copper),
+      var(--copper)
+    );
+  box-shadow: 0 0 4.2px var(--accent-glow);
+  font-family: var(--font-mono);
   font-size: 18px;
+  font-weight: 700;
   line-height: 1;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+  color: var(--brass);
+  text-shadow:
+    0 0 4px var(--brass),
+    0 0 8px var(--brass-soft);
+}
+/* An actual LCD screen behind the glyph, not just a hint of one — same near-black face and
+   proportions as the knob's BPM readout (its dark disc fills roughly half the knob's width),
+   with a metal rim showing around the edges. Negative z-index keeps it behind the button's own
+   text node without needing a wrapper span. */
+.nudge::before {
+  content: "";
+  position: absolute;
+  inset: 26.6%;
+  border-radius: 4px;
+  background: #050a07;
+  box-shadow:
+    inset 0 0 5px rgb(0 0 0 / 0.9),
+    0 0 0 1px rgb(0 0 0 / 0.4);
+  z-index: -1;
 }
 .nudge:active {
-  transform: translateY(1px) scale(0.94);
-  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.65);
+  /* No scale() — see the note on .square-btn:active. */
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.4);
 }
 
 .toast {
@@ -1125,14 +1267,41 @@ html.depth-25d .knob {
   transform: scale(0.92);
 }
 /*
- * Sits in normal flow right under the controls card (the .app grid's own gap gives it its
- * margin): a slim vertical "energy column" on the left, countdown + pause/stop stacked to its
- * right — instead of a full-width bar, so it reads as one compact, minimalist unit.
+ * A tall strip along the left edge instead of a row of its own: explicitly placed into the
+ * *same* grid cell as .stage (grid-row: 2, the app's flexible row) rather than getting a row
+ * of its own. position: absolute would have looked simpler, but its inset properties resolve
+ * against the nearest *positioned* ancestor, not the grid area — .app has no such ancestor, so
+ * top/bottom insets landed relative to the whole page and overlapped the header. Staying a
+ * normal (static) grid item placed into .stage's cell means its top/bottom are the row's own
+ * boundaries for free — right under the header down to the top of the controls panel — via
+ * align-self: stretch, with margin (not padding) giving the real gap at both ends. It never
+ * changes .stage's own size: the row is minmax(0, 1fr), and this item's min-content height is
+ * ~0 (see .practice-energy's min-height: 0), so it doesn't push the flexible row's floor up.
+ * justify-self: start keeps it pinned to the left edge of the (single, full-width) column
+ * instead of centered like .stage's own square box is.
  */
 .practice-timer-bar {
+  grid-row: 2 / 3;
+  grid-column: 1;
+  justify-self: start;
+  align-self: stretch;
+  margin: 10px 0;
+  width: 46px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  padding-top: 6px;
+  overflow: hidden;
+}
+.practice-timer-bar.is-off {
+  opacity: 0;
+  pointer-events: none;
+}
+/* The particle animations otherwise keep running (invisibly) while collapsed — pause them so
+   collapsing this still costs nothing, matching the previous display: none behavior. */
+.practice-timer-bar.is-off .energy-particle {
+  animation-play-state: paused;
 }
 /*
  * Hourglass/energy-flow read as a vertical column instead of a horizontal bar: the element
@@ -1143,11 +1312,14 @@ html.depth-25d .knob {
  * CPU/GPU budget. The particles are a purely decorative, infinite CSS animation (opacity +
  * transform only, compositor-only, four tiny elements) layered on top for the "energy flow"
  * feel; they cost nothing extra while the timer bar is hidden since display: none stops them.
+ * Now flex: 1 instead of a fixed height so it fills however much of the tall strip the
+ * countdown label above it leaves behind.
  */
 .practice-energy {
   position: relative;
-  width: 10px;
-  height: 46px;
+  width: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
   border-radius: 999px;
   background: var(--select-soft);
   overflow: hidden;
@@ -1160,19 +1332,24 @@ html.depth-25d .knob {
   border-radius: inherit;
   background: linear-gradient(180deg, var(--brass), var(--select));
   box-shadow: 0 0 10px var(--select-soft);
+  /* No transition: animating clip-path isn't compositor-only like transform/opacity, so easing
+     it every second competed with the visualiser's own per-frame paint for main-thread time —
+     the rotating beat indicator would visibly stutter once a second while the timer ran. A
+     plain step to the new level each second costs nothing extra. */
   clip-path: inset(calc(var(--gone, 0) * 1%) 0 0 0);
-  transition: clip-path 200ms ease;
 }
 .energy-particle {
   position: absolute;
   left: 50%;
-  bottom: -4px;
-  width: 3px;
-  height: 3px;
-  margin-left: -1.5px;
+  bottom: 0%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
   border-radius: 50%;
   background: var(--brass);
-  box-shadow: 0 0 4px var(--brass);
+  box-shadow:
+    0 0 8px 2px var(--brass),
+    0 0 16px var(--select-soft);
   opacity: 0;
   animation: energyRise 2.4s ease-in infinite;
 }
@@ -1187,57 +1364,72 @@ html.depth-25d .knob {
 .energy-particle:nth-child(4) {
   animation-delay: 1.8s;
 }
+/* bottom: 0% -> 100% instead of a fixed translateY(-50px): a fixed pixel rise only covered a
+   fraction of the timer bar once it grew tall (see .practice-timer-bar), so the particles
+   looked stuck near the very bottom. Percentages resolve against the (relatively positioned)
+   .practice-energy container's own height, so the rise always spans its full length no matter
+   how tall that ends up being. */
 @keyframes energyRise {
   0% {
-    transform: translateY(0);
+    bottom: 0%;
     opacity: 0;
   }
   15% {
-    opacity: 0.9;
+    opacity: 1;
   }
   85% {
-    opacity: 0.5;
+    opacity: 0.8;
   }
   100% {
-    transform: translateY(-50px);
+    bottom: 100%;
     opacity: 0;
   }
 }
-.practice-timer-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-.practice-timer-buttons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .practice-time-left {
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 13px;
   color: var(--text);
 }
+/* Moved off the timer bar and onto the controls panel: floats above the panel's top-left
+   corner the same way .bar-counter floats above the top-right (same -16px top offset), stacked
+   vertically so the two overlays sit at the same height without competing for room — nothing
+   inside the panel has to move for it. */
+.practice-timer-buttons {
+  position: absolute;
+  top: -16px;
+  left: 10px;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+.practice-timer-buttons.is-off {
+  opacity: 0;
+  pointer-events: none;
+}
+/* 1.5x the original 30px, with a visible-at-rest glow and a themed 50%-opacity border instead
+   of the barely-there rgb(255 255 255 / 0.08) default, so they read as "on" even before a
+   press. */
 .practice-icon-btn {
-  width: 30px;
-  height: 30px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1.5px solid color-mix(in srgb, var(--select) 50%, transparent);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
+    0 8px 16px rgb(0 0 0 / 0.45),
+    0 0 8px var(--select-soft);
   color: var(--select);
   display: grid;
   place-items: center;
 }
 .practice-icon-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
-.practice-icon-btn .icon-resume-timer {
+.practice-icon-btn .icon-resume-timer,
+.practice-icon-btn .icon-replay-timer {
   display: none;
 }
 .practice-icon-btn.paused .icon-pause-timer {
@@ -1246,9 +1438,24 @@ html.depth-25d .knob {
 .practice-icon-btn.paused .icon-resume-timer {
   display: block;
 }
+/* Countdown ran out on its own: the bar stays put instead of vanishing (see main.ts
+   finishPracticeTimer), the pause/resume button becomes a replay button, and Stop is disabled
+   since there's nothing left running to stop. .finished always wins over .paused for which
+   icon shows, since a finished timer is also left in the paused state internally. */
+.practice-icon-btn.finished .icon-pause-timer,
+.practice-icon-btn.finished .icon-resume-timer {
+  display: none;
+}
+.practice-icon-btn.finished .icon-replay-timer {
+  display: block;
+}
 .practice-icon-btn:active {
   transform: scale(0.9);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+}
+.practice-icon-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }
 /* Armed state: first tap on × warns before fully turning the timer off. */
 .practice-icon-btn.armed {
@@ -1308,12 +1515,9 @@ html.depth-25d .knob {
   width: 100%;
   padding: 10px;
   border-radius: 12px;
-  border: 1px solid var(--line);
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
+  box-shadow: 0 0 4.2px var(--accent-glow);
 }
 .wide-btn.danger {
   color: #ff8a8a;
@@ -1362,7 +1566,8 @@ html.depth-25d .knob {
   }
 }
 .wide-btn:active {
-  transform: scale(0.98);
+  /* No scale() — see the note on .square-btn:active. */
+  transform: translateY(1px);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
 .slot {
@@ -1477,10 +1682,10 @@ html.depth-25d .knob {
     height: 52px;
   }
   .knob {
-    width: 150px;
+    width: 180px;
   }
   html.depth-25d .knob {
-    width: 195px;
+    width: 234px;
   }
   .nudge {
     width: 38px;

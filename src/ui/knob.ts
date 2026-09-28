@@ -109,14 +109,39 @@ function renderMetalTexture(
   ctx.arc(c, c, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  for (let r = 2; r < radius; r += 1.4) {
+  // Lathed grain: randomized ring width/spacing/opacity instead of a clean sine wave, so it
+  // reads as machined metal rather than a perfectly regular pattern.
+  for (let r = 2; r < radius; r += 0.9 + Math.random() * 0.9) {
     ctx.beginPath();
     ctx.arc(c, c, r, 0, Math.PI * 2);
-    const opacity = (Math.sin(r * 12) * 0.5 + 0.5) * 0.14;
+    const opacity = (0.25 + Math.random() * 0.75) * 0.14;
     ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 0.35 + Math.random() * 0.45;
     ctx.stroke();
   }
+
+  // Anisotropic highlight: a single directional light sweep baked into the unrotated texture,
+  // so it rotates together with the disc at draw time (ctx.rotate(rotation) in render()) — the
+  // reflection appears to move across the metal as the knob turns, for free, no extra cost.
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(c, c, radius, 0, Math.PI * 2);
+  ctx.clip();
+  const highlightAngle = -Math.PI / 3;
+  const hl = ctx.createLinearGradient(
+    c + Math.cos(highlightAngle) * radius,
+    c + Math.sin(highlightAngle) * radius,
+    c - Math.cos(highlightAngle) * radius,
+    c - Math.sin(highlightAngle) * radius,
+  );
+  hl.addColorStop(0, 'rgba(255, 255, 255, 0.32)');
+  hl.addColorStop(0.18, 'rgba(255, 255, 255, 0.06)');
+  hl.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+  hl.addColorStop(0.82, 'rgba(0, 0, 0, 0.08)');
+  hl.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+  ctx.fillStyle = hl;
+  ctx.fillRect(0, 0, diameter, diameter);
+  ctx.restore();
   return canvas;
 }
 
@@ -142,7 +167,8 @@ function renderTeethRing(
   if (!ctx) return canvas;
   ctx.scale(dpr, dpr);
   ctx.translate(outerRadius, outerRadius);
-  const toothWidth = Math.max(1.5, outerRadius * 0.03);
+  // 1.2x the original 0.03 ratio: chunkier gear-tooth notches around the rim.
+  const toothWidth = Math.max(1.5, outerRadius * 0.036);
   for (let i = 0; i < count; i++) {
     const angle = (i * Math.PI * 2) / count;
     ctx.save();
@@ -221,12 +247,21 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
   const TOOTH_COUNT = 72;
 
+  // Grows only the metal bezel/gear-teeth ring; the LCD ("insides") is pegged to the
+  // pre-scale size below so it doesn't grow along with it.
+  const OUTER_RING_SCALE = 1.2;
+
   function geometry() {
     const size = Math.min(cssWidth, cssHeight);
     const outerRadius = size * 0.47;
-    const toothDepth = outerRadius * 0.045;
+    // 1.2x the original 0.045 ratio: deeper gear-tooth notches.
+    const toothDepth = outerRadius * 0.054;
     const innerRadius = outerRadius - toothDepth;
-    const coreRadius = innerRadius * 0.42 * 1.6;
+    // The LCD face is sized off the pre-ring-scale radius, so enlarging the outer ring above
+    // doesn't also enlarge the "insides".
+    const baseOuterRadius = (size / OUTER_RING_SCALE) * 0.47;
+    const baseInnerRadius = baseOuterRadius - baseOuterRadius * 0.045;
+    const coreRadius = baseInnerRadius * 0.42 * 1.6;
     const thickness = outerRadius * 0.16;
     const tilted = document.documentElement.classList.contains('depth-25d');
     const perspectiveY = tilted ? 0.72 : 1;
@@ -368,7 +403,10 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     const flashLeft = Math.max(0, flashUntil - performance.now());
     const flashT = flashLeft / FLASH_MS; // 1 → just flashed, 0 → fully decayed
-    const baseAlpha = running ? 0.35 : 0.12;
+    // Fixed at the idle level regardless of `running`, so starting/stopping the metronome never
+    // shifts the LCD background's own color — only the per-beat flash() pulse (which only fires
+    // while playing) and the text/icon glow below are allowed to change with play state.
+    const baseAlpha = 0.12;
     const alpha = Math.min(0.9, baseAlpha + flashT * 0.5);
     const hoverRgb = lighten(theme.brassRgb, 0.35);
     const glowRgb = hovered ? hoverRgb : theme.brassRgb;
@@ -422,9 +460,12 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     c2d.fillStyle = rgba(theme.brassRgb, 0.65);
     c2d.fillText('BPM', 0, g.coreRadius * 0.08);
 
-    // Play / pause icon — centered below the label.
+    // Play / pause icon — centered below the label. Glows while running, same as the BPM
+    // number above, so play state reads through the icon/text rather than the background.
     const iconColor = hovered ? rgba(hoverRgb, 1) : theme.brass;
     c2d.fillStyle = iconColor;
+    c2d.shadowColor = iconColor;
+    c2d.shadowBlur = running ? 5 : 0;
     const iy = g.coreRadius * 0.48;
     const is = g.coreRadius * 0.22;
     if (!running) {
