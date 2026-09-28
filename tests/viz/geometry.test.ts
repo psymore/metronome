@@ -6,12 +6,13 @@ import {
   circularRingRadius,
   glowIntensity,
   handAngle,
+  linearGridStickX,
+  linearGridX,
+  linearGridY,
   linearLayout,
   linearNodeSpacing,
   linearNodeX,
   linearStickX,
-  linearGridX,
-  linearGridY,
   nodeAngle,
   nodeRadius,
   polar,
@@ -148,6 +149,27 @@ describe('linearGridX / linearGridY', () => {
     // 2 nodes, cell width 100: row is 200 wide, centered -> starts at 100
     expect(linearGridX(0, 2, 0, 400)).toBe(150);
     expect(linearGridX(1, 2, 0, 400)).toBe(250);
+  });
+
+  it('puts the grid stick on each sphere at phase 0 and on the next sphere at phase 1 (full row)', () => {
+    for (let col = 0; col < 3; col++) {
+      expect(linearGridStickX(col, 0, 4, 10, 400)).toBe(linearGridX(col, 4, 10, 400));
+      expect(linearGridStickX(col, 1, 4, 10, 400)).toBe(linearGridX(col + 1, 4, 10, 400));
+    }
+    expect(linearGridStickX(1, 0.5, 4, 10, 400)).toBe(210); // halfway between 160 and 260
+  });
+
+  it('keeps the grid stick on the spheres of a short, centered row', () => {
+    // 3 nodes, cell 100, row centered: spheres at 110, 210, 310 (left = 10)
+    expect(linearGridStickX(0, 0, 3, 10, 400)).toBe(110);
+    expect(linearGridStickX(0, 1, 3, 10, 400)).toBe(210);
+    expect(linearGridStickX(1, 0.25, 3, 10, 400)).toBe(235);
+    expect(linearGridStickX(2, 0, 3, 10, 400)).toBe(310);
+  });
+
+  it("ends the last beat's sweep on the row's bar line, half a cell past the sphere", () => {
+    expect(linearGridStickX(3, 1, 4, 10, 400)).toBe(410); // full row: track end
+    expect(linearGridStickX(1, 1, 2, 0, 400)).toBe(300); // short row: its own bar line
   });
 
   it('stacks rows symmetrically around the center', () => {

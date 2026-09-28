@@ -109,6 +109,24 @@ export function linearGridX(
   return rowLeft + cell * (col + 0.5);
 }
 
+/**
+ * X of the moving stick while beat `col` (of `rowCount` in its row) is playing, `phase` 0..1
+ * through it, on the same cell grid as `linearGridX`: on the sphere at phase 0, on the next
+ * sphere at phase 1. The row's last beat sweeps only half a cell, ending on the row's bar line.
+ */
+export function linearGridStickX(
+  col: number,
+  phase: number,
+  rowCount: number,
+  left: number,
+  width: number,
+  maxPerRow = MAX_PER_ROW,
+): number {
+  const cell = width / maxPerRow;
+  const span = col < rowCount - 1 ? cell : cell / 2;
+  return linearGridX(col, rowCount, left, width, maxPerRow) + span * phase;
+}
+
 /** Y position of `row` (of `rows` total), stacked symmetrically around `centerY` with fixed spacing. */
 export function linearGridY(row: number, rows: number, centerY: number, rowGap: number): number {
   return centerY + (row - (rows - 1) / 2) * rowGap;

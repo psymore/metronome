@@ -2,11 +2,11 @@ import type { BeatLevel } from '../state/settings';
 import { drawNode } from './drawNode';
 import {
   beatLayoutGrid,
+  linearGridStickX,
   linearGridX,
   linearGridY,
   linearLayout,
   linearNodeSpacing,
-  linearStickX,
   nodeRadius,
 } from './geometry';
 import { spriteSize } from './nodeSprite';
@@ -21,7 +21,17 @@ export const linearVisualizer: Visualizer = {
     const rows = cells[0]?.rows ?? 1;
     const nodeR = nodeRadius(track.width / 2, linearNodeSpacing(Math.min(n, 4), track.width));
     const tick = Math.max(18, nodeR * 2);
-    const rowGap = tick * 3.2;
+    const reach = tick * 2.2; // the stick's half-height, the tallest thing drawn around a row
+    // Rows shrink together to fit the canvas height (the mobile stage is capped at 320px), keeping
+    // the outer rows' stick on-canvas, but never so far that neighbouring spheres touch.
+    // Keep identical to linearBeatAt in hitTest.ts.
+    const rowGap =
+      rows > 1
+        ? Math.max(nodeR * 2 + 6, Math.min(tick * 3.2, (height - reach * 2) / (rows - 1)))
+        : tick * 3.2;
+    // Row tick marks stop halfway to the next row rather than running into its marks.
+    const rowTick = rows > 1 ? Math.min(tick, rowGap / 2) : tick;
+    const barTick = rows > 1 ? Math.min(tick * 1.4, rowGap / 2) : tick * 1.4;
     const gap = nodeR + 5;
 
     const rowY = (row: number) => linearGridY(row, rows, track.y, rowGap);
@@ -60,7 +70,7 @@ export const linearVisualizer: Visualizer = {
             ? nodeX(col, rowCount)
             : nodeX(rowCount - 1, rowCount) + track.width / 4 / 2;
         const isEnd = col === rowCount;
-        const h = isEnd ? tick * 1.4 : tick;
+        const h = isEnd ? barTick : rowTick;
         ctx.beginPath();
         if (isEnd) {
           ctx.moveTo(x, y - h);
@@ -79,15 +89,15 @@ export const linearVisualizer: Visualizer = {
       const cell = cells[frame.activeBeat];
       if (cell) {
         const y = rowY(cell.row);
-        const x = linearStickX(cell.col, frame.phase, cell.rowCount, track.left, track.width);
+        const x = linearGridStickX(cell.col, frame.phase, cell.rowCount, track.left, track.width);
         ctx.save();
         ctx.strokeStyle = theme.hand;
         ctx.lineWidth = 5;
         ctx.shadowColor = theme.glow;
         ctx.shadowBlur = 12;
         ctx.beginPath();
-        ctx.moveTo(x, y - tick * 2.2);
-        ctx.lineTo(x, y + tick * 2.2);
+        ctx.moveTo(x, y - reach);
+        ctx.lineTo(x, y + reach);
         ctx.stroke();
         ctx.restore();
       }

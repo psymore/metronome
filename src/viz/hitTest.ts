@@ -41,7 +41,12 @@ export function linearBeatAt(
   const rows = cells[0]?.rows ?? 1;
   const nodeR = nodeRadius(track.width / 2, linearNodeSpacing(Math.min(count, 4), track.width));
   const tick = Math.max(18, nodeR * 2);
-  const rowGap = tick * 3.2;
+  const reach = tick * 2.2;
+  // Keep identical to linearVisualizer.draw in linear.ts.
+  const rowGap =
+    rows > 1
+      ? Math.max(nodeR * 2 + 6, Math.min(tick * 3.2, (height - reach * 2) / (rows - 1)))
+      : tick * 3.2;
   const hitR = nodeR * 1.8;
   for (let i = 0; i < count; i++) {
     const cell = cells[i];
