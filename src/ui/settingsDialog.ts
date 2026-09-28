@@ -3,7 +3,6 @@ import { formatTimeLeft } from '../state/practiceTimer';
 import {
   clampPracticeSeconds,
   defaultSettings,
-  isKnobFinish,
   isThemeName,
   type Settings,
 } from '../state/settings';
@@ -40,9 +39,6 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const depth25dToggle = byId<HTMLButtonElement>('depth25dToggle');
   const themeButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
-  );
-  const knobFinishButtons = Array.from(
-    dialog.querySelectorAll<HTMLButtonElement>('[data-knob-finish-option]'),
   );
 
   const practiceConfirm = createConfirmGate(practiceTimerApply, {
@@ -95,12 +91,6 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
       if (isThemeName(theme)) store.set({ theme });
     });
   }
-  for (const button of knobFinishButtons) {
-    button.addEventListener('click', () => {
-      const knobFinish = button.dataset.knobFinishOption;
-      if (isKnobFinish(knobFinish)) store.set({ knobFinish });
-    });
-  }
   beatsClickableToggle.addEventListener('click', () => {
     store.set({ beatsClickable: !store.get().beatsClickable });
   });
@@ -133,9 +123,6 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     offsetValue.textContent = `${s.syncOffsetMs > 0 ? '+' : ''}${s.syncOffsetMs} ms`;
     for (const button of themeButtons) {
       button.setAttribute('aria-checked', String(button.dataset.themeOption === s.theme));
-    }
-    for (const button of knobFinishButtons) {
-      button.setAttribute('aria-checked', String(button.dataset.knobFinishOption === s.knobFinish));
     }
     beatsClickableToggle.setAttribute('aria-checked', String(s.beatsClickable));
     beatRow.classList.toggle('dim', !s.beatsClickable);

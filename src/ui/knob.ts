@@ -1,28 +1,27 @@
 import { t } from '../i18n/i18n';
-import type { KnobFinish, Settings } from '../state/settings';
+import type { Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { angleDelta, bpmAfterRotation } from './dialMath';
 
-const METAL_STOPS: Record<KnobFinish, readonly [number, string][]> = {
-  chrome: [
-    [0.0, '#6b6b70'],
-    [0.18, '#e8e8ec'],
-    [0.35, '#4a4a4e'],
-    [0.52, '#9a9aa0'],
-    [0.7, '#f2f2f5'],
-    [0.88, '#55555a'],
-    [1.0, '#6b6b70'],
-  ],
-  teal: [
-    [0.0, '#1e362a'],
-    [0.18, '#63987a'],
-    [0.35, '#0f2118'],
-    [0.52, '#335a45'],
-    [0.7, '#75ad8e'],
-    [0.88, '#0c1c14'],
-    [1.0, '#1e362a'],
-  ],
-};
+/**
+ * Builds stop colors by reading the current --brass/--select/--copper CSS variables from the
+ * knob canvas element so the metal tint always tracks the active UI theme.
+ */
+function themeMatchStops(el: Element): readonly [number, string][] {
+  const css = getComputedStyle(el);
+  const hi = css.getPropertyValue('--brass').trim() || '#7fe0bb';
+  const mid = css.getPropertyValue('--select').trim() || '#4fb894';
+  const lo = css.getPropertyValue('--copper').trim() || '#2f7a5f';
+  return [
+    [0.0, lo],
+    [0.18, hi],
+    [0.35, lo],
+    [0.52, mid],
+    [0.7, hi],
+    [0.88, lo],
+    [1.0, lo],
+  ];
+}
 
 export interface KnobDeps {
   store: Store<Settings>;
@@ -78,7 +77,7 @@ function lighten([r, g, b]: [number, number, number], amount: number): [number, 
 function renderMetalTexture(
   radius: number,
   dpr: number,
-  finish: KnobFinish,
+  stops: readonly [number, string][],
 ): OffscreenCanvas | HTMLCanvasElement {
   const diameter = radius * 2;
   const canvas =
@@ -95,7 +94,7 @@ function renderMetalTexture(
   const c = radius;
 
   const conic = ctx.createConicGradient(Math.PI / 4, c, c);
-  for (const [offset, color] of METAL_STOPS[finish]) conic.addColorStop(offset, color);
+  for (const [offset, color] of stops) conic.addColorStop(offset, color);
   ctx.fillStyle = conic;
   ctx.beginPath();
   ctx.arc(c, c, radius, 0, Math.PI * 2);
@@ -218,14 +217,14 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
   let metalTexture: OffscreenCanvas | HTMLCanvasElement | null = null;
   let teethRing: OffscreenCanvas | HTMLCanvasElement | null = null;
   let sideWall: OffscreenCanvas | HTMLCanvasElement | null = null;
-  let assetsFor = { radius: -1, tilted: false, finish: '' as KnobFinish | '' };
+  let assetsFor = { radius: -1, tilted: false, themeName: '' };
 
   const TOOTH_COUNT = 72;
 
   function geometry() {
     const size = Math.min(cssWidth, cssHeight);
     const outerRadius = size * 0.47;
-    const toothDepth = outerRadius * 0.09;
+    const toothDepth = outerRadius * 0.045;
     const innerRadius = outerRadius - toothDepth;
     const coreRadius = innerRadius * 0.42 * 1.6;
     const thickness = outerRadius * 0.16;
@@ -245,16 +244,17 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
   function ensureAssets(): void {
     const g = geometry();
-    const finish = deps.store.get().knobFinish;
+    const currentThemeName = deps.store.get().theme;
     if (
       assetsFor.radius === g.outerRadius &&
       assetsFor.tilted === g.tilted &&
-      assetsFor.finish === finish &&
+      assetsFor.themeName === currentThemeName &&
       metalTexture
     )
       return;
-    assetsFor = { radius: g.outerRadius, tilted: g.tilted, finish };
-    metalTexture = renderMetalTexture(g.innerRadius, dpr, finish);
+    assetsFor = { radius: g.outerRadius, tilted: g.tilted, themeName: currentThemeName };
+    const stops = themeMatchStops(canvas);
+    metalTexture = renderMetalTexture(g.innerRadius, dpr, stops);
     teethRing = renderTeethRing(g.outerRadius, g.toothDepth, TOOTH_COUNT, dpr);
     sideWall = g.tilted ? renderSideWall(g.outerRadius, g.thickness, g.perspectiveY, dpr) : null;
   }
@@ -373,10 +373,9 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     const hoverRgb = lighten(theme.brassRgb, 0.35);
     const glowRgb = hovered ? hoverRgb : theme.brassRgb;
 
-    // Rim-only glow: fully transparent through the middle of the screen (the dark LCD backing
-    // stays visibly dark) and only brightens right at the edge, so lighting up reads as "the
-    // border and the digits glow" rather than "the whole display floods with color".
-    const rimGlow = c2d.createRadialGradient(0, 0, g.coreRadius * 0.8, 0, 0, g.coreRadius);
+    // Rim-only glow: the inner stop starts at 0.88 so the gradient is invisible across most
+    // of the LCD face and only brightens right at the edge — the center stays visibly dark.
+    const rimGlow = c2d.createRadialGradient(0, 0, g.coreRadius * 0.88, 0, 0, g.coreRadius);
     rimGlow.addColorStop(0, 'rgba(0, 0, 0, 0)');
     rimGlow.addColorStop(1, rgba(glowRgb, alpha));
     c2d.beginPath();
@@ -384,11 +383,11 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     c2d.fillStyle = rimGlow;
     c2d.fill();
 
-    // A small bleed onto the metal just outside the screen — the ambient light an LED bezel
-    // casts on its surroundings — kept separate so it never brightens the screen's interior.
-    const outerR = g.coreRadius * (1.12 + flashT * 0.1);
+    // A very tight bleed onto the metal just outside the screen — kept narrow so it reads as
+    // "the bezel edge is lit" rather than "the whole knob area glows".
+    const outerR = g.coreRadius * (1.06 + flashT * 0.04);
     const outerGlow = c2d.createRadialGradient(0, 0, g.coreRadius, 0, 0, outerR);
-    outerGlow.addColorStop(0, rgba(glowRgb, alpha * 0.5));
+    outerGlow.addColorStop(0, rgba(glowRgb, alpha * 0.4));
     outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     c2d.beginPath();
     c2d.arc(0, 0, outerR, 0, Math.PI * 2);
@@ -402,23 +401,32 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     c2d.stroke();
 
     const bpm = Math.round(deps.store.get().bpm);
+
+    // All three LCD elements (BPM number, "BPM" label, play/pause icon) are laid out on the
+    // vertical center axis. textAlign/textBaseline must be set inside every save() block.
+    c2d.textAlign = 'center';
+
+    // BPM number — bright, glowing when running.
+    c2d.save();
+    c2d.textBaseline = 'middle';
     c2d.fillStyle = theme.brass;
     c2d.shadowColor = theme.brass;
-    c2d.shadowBlur = running ? 8 : 3;
+    c2d.shadowBlur = running ? 5 : 2;
     c2d.font = `700 ${Math.round(g.coreRadius * 0.52)}px "Roboto Mono", ui-monospace, monospace`;
-    c2d.textAlign = 'center';
-    c2d.textBaseline = 'middle';
     c2d.fillText(String(bpm), 0, -g.coreRadius * 0.22);
+    c2d.restore();
 
-    c2d.shadowBlur = 0;
+    // "BPM" label — dim, no shadow.
+    c2d.textBaseline = 'middle';
     c2d.font = `${Math.round(g.coreRadius * 0.22)}px "Inter", system-ui, sans-serif`;
     c2d.fillStyle = rgba(theme.brassRgb, 0.65);
     c2d.fillText('BPM', 0, g.coreRadius * 0.08);
 
+    // Play / pause icon — centered below the label.
     const iconColor = hovered ? rgba(hoverRgb, 1) : theme.brass;
     c2d.fillStyle = iconColor;
-    const iy = g.coreRadius * 0.42;
-    const is = g.coreRadius * 0.24;
+    const iy = g.coreRadius * 0.48;
+    const is = g.coreRadius * 0.22;
     if (!running) {
       c2d.beginPath();
       c2d.moveTo(-is * 0.4, iy - is);
@@ -442,13 +450,13 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
   function resize(): void {
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
-    dpr = window.devicePixelRatio || 1;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     cssWidth = rect.width;
     cssHeight = rect.height;
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     (ctx as CanvasRenderingContext2D).setTransform(dpr, 0, 0, dpr, 0, 0);
-    assetsFor = { radius: -1, tilted: false, finish: '' };
+    assetsFor = { radius: -1, tilted: false, themeName: '' };
     render();
   }
 
@@ -518,14 +526,11 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     if (s.bpm !== prev.bpm) render();
     if (s.theme !== prev.theme) {
       theme = readKnobTheme(canvas);
+      assetsFor = { radius: -1, tilted: false, themeName: '' };
       render();
     }
     if (s.depth25d !== prev.depth25d) {
-      assetsFor = { radius: -1, tilted: false, finish: '' };
-      render();
-    }
-    if (s.knobFinish !== prev.knobFinish) {
-      assetsFor = { radius: -1, tilted: false, finish: '' };
+      assetsFor = { radius: -1, tilted: false, themeName: '' };
       render();
     }
   });

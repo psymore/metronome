@@ -39,6 +39,8 @@
      read these instead of a hardcoded color, so they recolor with every theme automatically. */
   --accent-color: var(--select);
   --accent-glow: var(--select-soft);
+  /* Muted/dim accent for idle borders — same hue family, lower intensity than --accent-glow. */
+  --accent-idle: rgb(79 184 148 / 0.18);
 }
 
 /* Theme: Amber — brass/copper accent (matches a real metronome's pendulum) */
@@ -59,6 +61,7 @@
   --viz-label: #a89772;
   --viz-glow: #f0be6a;
   --viz-core: #fff6e8;
+  --accent-idle: rgb(217 154 63 / 0.18);
 }
 
 /* Theme: Blue — GitHub accent blue */
@@ -79,6 +82,28 @@
   --viz-label: #8fa3c2;
   --viz-glow: #91cbff;
   --viz-core: #eef6ff;
+  --accent-idle: rgb(88 166 255 / 0.18);
+}
+
+/* Theme: Chrome — neutral silver/steel, no color tint */
+:root[data-theme="chrome"] {
+  --pink: #b0b4bc;
+  --pink-soft: rgb(176 180 188 / 0.3);
+  --select: #b0b4bc;
+  --select-soft: rgb(176 180 188 / 0.28);
+  --brass: #d8dce4;
+  --brass-soft: rgb(216 220 228 / 0.35);
+  --copper: #6e737d;
+  --viz-ring: #5a5e66;
+  --viz-spoke: #3e4148;
+  --viz-node: #6e737d;
+  --viz-accent: #d8dce4;
+  --viz-node-idle: #3e4148;
+  --viz-hand: #b0b4bc;
+  --viz-label: #8e9199;
+  --viz-glow: #d8dce4;
+  --viz-core: #f4f5f7;
+  --accent-idle: rgb(176 180 188 / 0.18);
 }
 
 * {
@@ -117,8 +142,8 @@ button:disabled {
   cursor: default;
 }
 /* Soft themed glow for exactly as long as the button is held — plain :active, no JS, no timer
-   to outrun — instead of a hard inset border. A thin 1px hint plus an outer blur read as "glow",
-   not "default browser outline". */
+   to outrun — instead of a hard inset border. A thin 1px hint plus a tight outer blur read as
+   "glow on the element itself", not a large surrounding halo. */
 button:active::after {
   content: "";
   position: absolute;
@@ -126,7 +151,7 @@ button:active::after {
   border-radius: inherit;
   box-shadow:
     inset 0 0 0 1.5px var(--accent-color),
-    0 0 16px var(--accent-glow);
+    0 0 8px var(--accent-glow);
   pointer-events: none;
 }
 /* Fired by clickFx on release: fades the same glow out over 260ms instead of snapping off. */
@@ -137,7 +162,7 @@ button:active::after {
   border-radius: inherit;
   box-shadow:
     inset 0 0 0 1.5px var(--accent-color),
-    0 0 16px var(--accent-glow);
+    0 0 8px var(--accent-glow);
   pointer-events: none;
   animation: btnFlash 260ms ease-out;
 }
@@ -512,14 +537,36 @@ output {
 .panel {
   position: relative;
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  border: 1px solid var(--line);
-  border-top: 1px solid var(--pink-soft);
+  border: 1px solid var(--accent-idle);
   border-radius: var(--radius);
   box-shadow:
     0 10px 24px rgb(0 0 0 / 0.35),
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6);
   padding: 14px 16px;
+}
+/* Machined-edge highlight: a semi-transparent gradient layer that sits on top of the border,
+   simulating the way a CNC-milled edge catches light differently on each side. Implemented as
+   a ::before pseudo-element so border-radius is respected (border-image is not).
+   z-index: -1 keeps it behind the panel's own children. */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--panel), var(--panel)) padding-box,
+    linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.22) 0%,
+        rgb(255 255 255 / 0.06) 30%,
+        rgb(0 0 0 / 0.25) 65%,
+        rgb(255 255 255 / 0.10) 100%
+      )
+      border-box;
+  z-index: -1;
 }
 .bolt {
   display: block;
@@ -776,14 +823,33 @@ html.depth-25d .knob {
   overflow: auto;
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   color: var(--text);
-  border: 1px solid var(--line);
-  border-top: 1px solid var(--pink-soft);
+  border: 1px solid var(--accent-idle);
   border-radius: 8px;
   padding: 18px 20px 22px;
   box-shadow:
     0 20px 60px rgb(0 0 0 / 0.6),
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6);
+  position: relative;
+}
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--panel), var(--panel)) padding-box,
+    linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.22) 0%,
+        rgb(255 255 255 / 0.06) 30%,
+        rgb(0 0 0 / 0.25) 65%,
+        rgb(255 255 255 / 0.10) 100%
+      )
+      border-box;
+  z-index: -1;
 }
 .sheet::backdrop {
   background: rgb(0 0 0 / 0.6);
@@ -825,7 +891,7 @@ html.depth-25d .knob {
   min-width: 44px;
   padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--accent-idle);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.14),
@@ -844,7 +910,9 @@ html.depth-25d .knob {
 }
 .chip:active {
   transform: scale(0.94);
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 0.55),
+    0 0 6px var(--accent-idle);
 }
 .sig-editor {
   display: grid;
@@ -1181,6 +1249,20 @@ html.depth-25d .knob {
 .practice-icon-btn:active {
   transform: scale(0.9);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+}
+/* Armed state: first tap on × warns before fully turning the timer off. */
+.practice-icon-btn.armed {
+  color: var(--confirm-danger);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -3px 6px rgb(0 0 0 / 0.6),
+    0 0 10px rgb(255 92 92 / 0.55);
+  border-color: rgb(255 92 92 / 0.6);
+  animation: armedPulse 0.9s ease-in-out infinite;
+}
+@keyframes armedPulse {
+  0%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 -3px 6px rgb(0 0 0 / 0.6), 0 0 8px rgb(255 92 92 / 0.45); }
+  50%       { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 -3px 6px rgb(0 0 0 / 0.6), 0 0 18px rgb(255 92 92 / 0.75); }
 }
 .switch {
   position: relative;

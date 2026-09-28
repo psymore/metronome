@@ -269,13 +269,38 @@ practicePauseBtn.addEventListener('click', () => {
   else pausePracticeTimer();
 });
 byId('practiceStopBtn').addEventListener('click', resetAndStopPracticeTimer);
-byId('practiceCloseBtn').addEventListener('click', stopPracticeTimer);
+
+// × (close) button: two-tap confirm to avoid accidental off — first tap arms it for 2 s,
+// second tap within the window turns the timer fully off (sets practiceSeconds to 0 and hides
+// the bar).  An armed-state CSS class on the button gives a visible warning glow.
+{
+  const closeBtn = byId<HTMLButtonElement>('practiceCloseBtn');
+  let closeBtnArmed: ReturnType<typeof setTimeout> | undefined;
+  closeBtn.addEventListener('click', () => {
+    if (closeBtnArmed === undefined) {
+      // First tap: arm for 2 s.
+      closeBtnArmed = setTimeout(() => {
+        closeBtnArmed = undefined;
+        closeBtn.classList.remove('armed');
+      }, 2000);
+      closeBtn.classList.add('armed');
+      return;
+    }
+    // Second tap within 2 s: confirm — turn timer fully off.
+    clearTimeout(closeBtnArmed);
+    closeBtnArmed = undefined;
+    closeBtn.classList.remove('armed');
+    stopPracticeTimer();
+    store.set({ practiceSeconds: 0 });
+  });
+}
 
 const transport = mountTransport({
   engine,
   toast,
   onToggle: () => {
     wakeLock.setActive(engine.running);
+    knob.invalidate();
     viz.invalidate();
     if (!engine.running) {
       // Stopping the metronome pauses the timer (keeping it on screen) rather than resetting
@@ -284,8 +309,16 @@ const transport = mountTransport({
       showIdleBarCounter();
       return;
     }
-    if (practicePaused) resumePracticeTimer();
-    else startPracticeTimer(store.get().practiceSeconds);
+    if (practicePaused) {
+      // If elapsed is 0 the timer was reset (Stop button) — start fresh rather than resume.
+      if (practiceElapsedBeforeRun === 0 && practiceTotalSeconds > 0) {
+        startPracticeTimer(practiceTotalSeconds);
+      } else {
+        resumePracticeTimer();
+      }
+    } else {
+      startPracticeTimer(store.get().practiceSeconds);
+    }
   },
 });
 // Changing the practice length mid-session restarts the countdown (and its fade) from now,

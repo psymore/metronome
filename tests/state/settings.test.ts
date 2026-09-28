@@ -105,7 +105,6 @@ describe('sanitizeSettings', () => {
       subdivision: 1,
       language: 'en',
       depth25d: false,
-      knobFinish: 'chrome',
     });
   });
 

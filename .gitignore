@@ -17,3 +17,6 @@ android/*.apk.idsig
 android/*.aab
 
 cloud-patches/
+
+.vercel
+.env*

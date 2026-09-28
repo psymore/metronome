@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   base: process.env.GITHUB_PAGES === 'true' ? '/metronome/' : '/',
   clearScreen: false,
-  server: { port: 5173, strictPort: true },
+  server: { host: '0.0.0.0', port: 5173, strictPort: true },
   build: { target: 'es2022' },
   plugins: [
     VitePWA({
@@ -30,7 +30,15 @@ export default defineConfig({
           },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Remove caches from previous SW versions so stale assets never get served.
+        cleanupOutdatedCaches: true,
+        // Ensure navigating to any route serves the shell (required for offline PWA).
+        navigateFallback: 'index.html',
+        // Don't cache the SW itself or the version manifest through the SW cache.
+        navigateFallbackDenylist: [/^\/sw\.js$/, /^\/workbox-/, /^\/manifest\.webmanifest$/],
+      },
     }),
   ],
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },

@@ -16,6 +16,35 @@
       rel="stylesheet"
     />
     <script type="module" src="/src/main.ts"></script>
+    <!-- iOS error banner: only active with ?debug=1, so it never shows to real users. -->
+    <script>
+      (function () {
+        if (!new URLSearchParams(location.search).has('debug')) return;
+        function showBanner(msg) {
+          var b = document.getElementById('__ios_err_banner__');
+          if (!b) {
+            b = document.createElement('div');
+            b.id = '__ios_err_banner__';
+            b.style.cssText = [
+              'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:99999',
+              'background:#c0392b', 'color:#fff', 'font:13px/1.4 monospace',
+              'padding:10px 12px', 'white-space:pre-wrap', 'word-break:break-word',
+              'max-height:50vh', 'overflow:auto', '-webkit-overflow-scrolling:touch',
+              'box-shadow:0 2px 8px rgba(0,0,0,0.6)',
+            ].join(';');
+            document.body ? document.body.prepend(b) : document.addEventListener('DOMContentLoaded', function () { document.body.prepend(b); });
+          }
+          b.textContent = (b.textContent ? b.textContent + '\n---\n' : '') + msg;
+        }
+        window.onerror = function (msg, src, line, col, err) {
+          showBanner('ERROR: ' + msg + '\n' + (src || '') + ':' + line + ':' + col + (err && err.stack ? '\n' + err.stack : ''));
+        };
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          showBanner('UNHANDLED REJECTION: ' + (r && r.stack ? r.stack : String(r)));
+        });
+      })();
+    </script>
   </head>
   <body>
     <main class="app">
@@ -191,13 +220,7 @@
           <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false" data-i18n="theme.teal">Teal</button>
           <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false" data-i18n="theme.amber">Amber</button>
           <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false" data-i18n="theme.blue">Blue</button>
-        </div>
-      </div>
-      <div class="field">
-        <span data-i18n="knobFinish.label">Knob finish</span>
-        <div class="unit-row" role="radiogroup" aria-label="Knob metal finish">
-          <button type="button" role="radio" class="chip" data-knob-finish-option="chrome" aria-checked="false" data-i18n="knobFinish.chrome">Chrome</button>
-          <button type="button" role="radio" class="chip" data-knob-finish-option="teal" aria-checked="false" data-i18n="knobFinish.teal">Teal metal</button>
+          <button type="button" role="radio" class="chip" data-theme-option="chrome" aria-checked="false" data-i18n="theme.chrome">Chrome</button>
         </div>
       </div>
       <div class="field">
