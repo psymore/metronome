@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clampPolyCount,
   compoundAccentLevels,
   DEFAULT_SETTINGS,
   defaultSettings,
@@ -105,6 +106,7 @@ describe('sanitizeSettings', () => {
       subdivision: 1,
       language: 'en',
       depth25d: false,
+      polyrhythm: { enabled: false, a: 3, b: 4, soundIdA: 'builtin:click-high', soundIdB: 'builtin:click' },
     });
   });
 
@@ -191,5 +193,38 @@ describe('level helpers', () => {
     });
     expect(withBeatsPerBar(s, 0).beatsPerBar).toBe(1);
     expect(withBeatsPerBar(s, 99).beatsPerBar).toBe(16);
+  });
+});
+
+describe('polyrhythm settings', () => {
+  it('defaults to disabled, 3:4, with distinct builtin sounds', () => {
+    const d = defaultSettings();
+    expect(d.polyrhythm).toEqual({
+      enabled: false,
+      a: 3,
+      b: 4,
+      soundIdA: 'builtin:click-high',
+      soundIdB: 'builtin:click',
+    });
+  });
+
+  it('clampPolyCount clamps to 2..16 and rounds', () => {
+    expect(clampPolyCount(1)).toBe(2);
+    expect(clampPolyCount(17)).toBe(16);
+    expect(clampPolyCount(4.6)).toBe(5);
+  });
+
+  it('sanitizeSettings clamps a/b and falls back on malformed polyrhythm data', () => {
+    const s = sanitizeSettings({ polyrhythm: { enabled: true, a: 99, b: -3, soundIdA: 'x', soundIdB: '' } });
+    expect(s.polyrhythm.enabled).toBe(true);
+    expect(s.polyrhythm.a).toBe(16);
+    expect(s.polyrhythm.b).toBe(2);
+    expect(s.polyrhythm.soundIdA).toBe('x');
+    expect(s.polyrhythm.soundIdB).toBe('builtin:click'); // empty string is not a valid sound id -> default
+  });
+
+  it('sanitizeSettings falls back to defaults when polyrhythm is missing or malformed entirely', () => {
+    expect(sanitizeSettings({}).polyrhythm).toEqual(defaultSettings().polyrhythm);
+    expect(sanitizeSettings({ polyrhythm: 'nonsense' }).polyrhythm).toEqual(defaultSettings().polyrhythm);
   });
 });
