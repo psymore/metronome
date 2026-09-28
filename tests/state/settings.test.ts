@@ -106,7 +106,15 @@ describe('sanitizeSettings', () => {
       subdivision: 1,
       language: 'en',
       depth25d: false,
-      polyrhythm: { enabled: false, a: 3, b: 4, soundIdA: 'builtin:click-high', soundIdB: 'builtin:click' },
+      polyrhythm: {
+        enabled: false,
+        a: 3,
+        b: 4,
+        soundIdA: 'builtin:click-high',
+        soundIdB: 'builtin:click',
+        levelsA: ['accent', 'normal', 'normal'],
+        levelsB: ['accent', 'normal', 'normal', 'normal'],
+      },
     });
   });
 
@@ -205,6 +213,8 @@ describe('polyrhythm settings', () => {
       b: 4,
       soundIdA: 'builtin:click-high',
       soundIdB: 'builtin:click',
+      levelsA: ['accent', 'normal', 'normal'],
+      levelsB: ['accent', 'normal', 'normal', 'normal'],
     });
   });
 
@@ -215,7 +225,9 @@ describe('polyrhythm settings', () => {
   });
 
   it('sanitizeSettings clamps a/b and falls back on malformed polyrhythm data', () => {
-    const s = sanitizeSettings({ polyrhythm: { enabled: true, a: 99, b: -3, soundIdA: 'x', soundIdB: '' } });
+    const s = sanitizeSettings({
+      polyrhythm: { enabled: true, a: 99, b: -3, soundIdA: 'x', soundIdB: '' },
+    });
     expect(s.polyrhythm.enabled).toBe(true);
     expect(s.polyrhythm.a).toBe(16);
     expect(s.polyrhythm.b).toBe(2);
@@ -225,6 +237,8 @@ describe('polyrhythm settings', () => {
 
   it('sanitizeSettings falls back to defaults when polyrhythm is missing or malformed entirely', () => {
     expect(sanitizeSettings({}).polyrhythm).toEqual(defaultSettings().polyrhythm);
-    expect(sanitizeSettings({ polyrhythm: 'nonsense' }).polyrhythm).toEqual(defaultSettings().polyrhythm);
+    expect(sanitizeSettings({ polyrhythm: 'nonsense' }).polyrhythm).toEqual(
+      defaultSettings().polyrhythm,
+    );
   });
 });

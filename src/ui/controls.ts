@@ -16,6 +16,9 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   const beatRow = byId('beatRow');
   const sigTop = byId('sigTop');
   const sigBottom = byId('sigBottom');
+  const sigPolyA = byId('sigPolyA');
+  const sigPolyB = byId('sigPolyB');
+  const signatureBtn = byId('signatureBtn');
   const tapBtn = byId<HTMLButtonElement>('tapBtn');
   const tapper = new TapTempo();
 
@@ -78,6 +81,9 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
     tempoMarkingEl.textContent = tempoMarking(s.bpm);
     sigTop.textContent = String(s.beatsPerBar);
     sigBottom.textContent = String(s.beatUnit);
+    sigPolyA.textContent = String(s.polyrhythm.a);
+    sigPolyB.textContent = String(s.polyrhythm.b);
+    signatureBtn.classList.toggle('is-polyrhythm', s.polyrhythm.enabled);
     renderBeatsInto(beatRow, s);
   }
   render(store.get());

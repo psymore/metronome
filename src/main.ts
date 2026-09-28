@@ -9,6 +9,8 @@ import {
   cycleBeatLevel,
   DEFAULT_SETTINGS,
   loadSettings,
+  nextLevel,
+  resizePolyLevels,
   type Settings,
   saveSettings,
 } from './state/settings';
@@ -167,8 +169,24 @@ const viz = new VizController(
       toast(format('toast.songLengthEnded', { n: targetBars * loopCount }));
     }
   },
+  (layer, index) => {
+    const p = store.get().polyrhythm;
+    const src = layer === 'A' ? p.levelsA : p.levelsB;
+    const next = [...src];
+    next[index] = nextLevel(src[index] ?? 'normal');
+    store.set({ polyrhythm: { ...p, ...(layer === 'A' ? { levelsA: next } : { levelsB: next }) } });
+  },
 );
 store.subscribe(() => viz.invalidate());
+// Keep per-node level arrays sized to the ratio: growing adds default entries, shrinking trims.
+store.subscribe((s, prev) => {
+  const p = s.polyrhythm;
+  const q = prev.polyrhythm;
+  const patch: Partial<Settings['polyrhythm']> = {};
+  if (p.a !== q.a && p.levelsA.length !== p.a) patch.levelsA = resizePolyLevels(p.levelsA, p.a);
+  if (p.b !== q.b && p.levelsB.length !== p.b) patch.levelsB = resizePolyLevels(p.levelsB, p.b);
+  if (Object.keys(patch).length > 0) store.set({ polyrhythm: { ...p, ...patch } });
+});
 store.subscribe((s) => {
   byId('stage').dataset.polyrhythm = String(s.polyrhythm.enabled);
 });

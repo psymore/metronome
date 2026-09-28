@@ -51,7 +51,17 @@ export interface Settings {
   /** Tilted, cylindrical 3D shape for the BPM knob instead of a flat disc. */
   depth25d: boolean;
   /** Two-layer polyrhythm mode; replaces the standard beat while enabled. */
-  polyrhythm: { enabled: boolean; a: number; b: number; soundIdA: string; soundIdB: string };
+  polyrhythm: {
+    enabled: boolean;
+    a: number;
+    b: number;
+    soundIdA: string;
+    soundIdB: string;
+    /** Per-node level for layer A (length matches `a`). */
+    levelsA: BeatLevel[];
+    /** Per-node level for layer B (length matches `b`). */
+    levelsB: BeatLevel[];
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -73,8 +83,26 @@ export const DEFAULT_SETTINGS: Settings = {
   subdivision: 1,
   language: 'en',
   depth25d: false,
-  polyrhythm: { enabled: false, a: 3, b: 4, soundIdA: 'builtin:click-high', soundIdB: 'builtin:click' },
+  polyrhythm: {
+    enabled: false,
+    a: 3,
+    b: 4,
+    soundIdA: 'builtin:click-high',
+    soundIdB: 'builtin:click',
+    levelsA: defaultPolyLevels(3),
+    levelsB: defaultPolyLevels(4),
+  },
 };
+
+/** First node accents, the rest are normal — matches the standard beat row's initial pattern. */
+export function defaultPolyLevels(n: number): BeatLevel[] {
+  return Array.from({ length: n }, (_, i) => (i === 0 ? 'accent' : 'normal'));
+}
+
+/** Grows or shrinks a per-node level array to length `n`, filling new slots with defaults. */
+export function resizePolyLevels(levels: readonly BeatLevel[], n: number): BeatLevel[] {
+  return Array.from({ length: n }, (_, i) => levels[i] ?? (i === 0 ? 'accent' : 'normal'));
+}
 
 export function defaultSettings(): Settings {
   return { ...DEFAULT_SETTINGS, levels: [...DEFAULT_SETTINGS.levels] };
@@ -212,13 +240,26 @@ export function sanitizeSettings(raw: unknown): Settings {
     subdivision: isSubdivision(r.subdivision) ? r.subdivision : d.subdivision,
     language: isLanguage(r.language) ? r.language : d.language,
     depth25d: typeof r.depth25d === 'boolean' ? r.depth25d : d.depth25d,
-    polyrhythm: {
-      enabled: typeof rp.enabled === 'boolean' ? rp.enabled : d.polyrhythm.enabled,
-      a: typeof rp.a === 'number' ? clampPolyCount(rp.a) : d.polyrhythm.a,
-      b: typeof rp.b === 'number' ? clampPolyCount(rp.b) : d.polyrhythm.b,
-      soundIdA: isSoundId(rp.soundIdA) ? rp.soundIdA : d.polyrhythm.soundIdA,
-      soundIdB: isSoundId(rp.soundIdB) ? rp.soundIdB : d.polyrhythm.soundIdB,
-    },
+    polyrhythm: (() => {
+      const enabled = typeof rp.enabled === 'boolean' ? rp.enabled : d.polyrhythm.enabled;
+      const a = typeof rp.a === 'number' ? clampPolyCount(rp.a) : d.polyrhythm.a;
+      const b = typeof rp.b === 'number' ? clampPolyCount(rp.b) : d.polyrhythm.b;
+      const rawA = Array.isArray(rp.levelsA)
+        ? rp.levelsA.map((l): BeatLevel => (isBeatLevel(l) ? l : 'normal'))
+        : [];
+      const rawB = Array.isArray(rp.levelsB)
+        ? rp.levelsB.map((l): BeatLevel => (isBeatLevel(l) ? l : 'normal'))
+        : [];
+      return {
+        enabled,
+        a,
+        b,
+        soundIdA: isSoundId(rp.soundIdA) ? rp.soundIdA : d.polyrhythm.soundIdA,
+        soundIdB: isSoundId(rp.soundIdB) ? rp.soundIdB : d.polyrhythm.soundIdB,
+        levelsA: resizePolyLevels(rawA, a),
+        levelsB: resizePolyLevels(rawB, b),
+      };
+    })(),
   };
 }
 

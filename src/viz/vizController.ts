@@ -5,7 +5,7 @@ import { circularVisualizer } from './circular';
 import { drawNode } from './drawNode';
 import { computeFrame } from './frame';
 import { circularLayout } from './geometry';
-import { circularBeatAt, linearBeatAt } from './hitTest';
+import { circularBeatAt, linearBeatAt, polyBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
 import { NodeSpriteCache, spriteSize } from './nodeSprite';
 import { computePolyFrame } from './polyFrame';
@@ -29,6 +29,7 @@ export function readTheme(el: Element): VizTheme {
     spoke: v('--viz-spoke', '#8e8e96'),
     node: v('--viz-node', '#d23c73'),
     accent: v('--viz-accent', '#ff2f7d'),
+    accentAlt: v('--viz-accent-alt', '#f0be6a'),
     nodeIdle: v('--viz-node-idle', '#5a5a62'),
     hand: v('--viz-hand', '#ff2f7d'),
     label: v('--viz-label', '#b5b5bd'),
@@ -36,6 +37,8 @@ export function readTheme(el: Element): VizTheme {
     core: v('--viz-core', '#fff3f7'),
   };
 }
+
+const POLY_SPLIT_MS = 260;
 
 export class VizController {
   private readonly ctx: CanvasRenderingContext2D;
@@ -46,6 +49,11 @@ export class VizController {
   private themeName: string | undefined;
   private theme: VizTheme;
   private lastGlow = 0;
+  /** In-flight or settled split animation per coincident pair. `opening` true = 0→1 (branch out),
+   *  false = 1→0 (collapse back). Once a closing animation completes the entry is removed. */
+  private polyPairAnim = new Map<string, { start: number; opening: boolean }>();
+  /** Ratio for which polyPairAnim's keys are valid; resets when a or b changes. */
+  private polyRatio = '';
   private readonly sprites = new NodeSpriteCache((level, label, radius, dpr) =>
     this.paintSprite(level, label, radius, dpr),
   );
@@ -57,6 +65,7 @@ export class VizController {
     private readonly onBeatTap?: (index: number) => void,
     /** Fires once at the onset of each heard beat (glow rising from its prior decay). */
     private readonly onBeatStart?: (level: BeatLevel, barIndex: number) => void,
+    private readonly onPolyBeatTap?: (layer: 'A' | 'B', index: number) => void,
   ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not supported in this browser.');
@@ -73,18 +82,82 @@ export class VizController {
   }
 
   private readonly onPointerDown = (e: PointerEvent): void => {
-    if (!this.onBeatTap) return;
     const s = this.getSettings();
-    if (!s.beatsClickable || s.polyrhythm.enabled) return;
+    if (!s.beatsClickable) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    if (s.polyrhythm.enabled) {
+      const hit = polyBeatAt(
+        x,
+        y,
+        this.size.width,
+        this.size.height,
+        s.polyrhythm.a,
+        s.polyrhythm.b,
+        (key) => this.currentSplitFrac(key),
+      );
+      if (!hit) return;
+      if (hit.kind === 'pair') {
+        // First tap on a still-coincident pair: start its branch-out animation, do NOT cycle
+        // either layer's level. The user can then tap each half individually.
+        this.animatePair(hit.pairKey, true);
+        this.invalidate();
+        return;
+      }
+      if (hit.kind === 'pair-close') {
+        // Tap on the original vertex position between the two split nodes: collapse back to the
+        // symmetric rest state. Levels themselves are preserved; only the visual split closes.
+        this.animatePair(hit.pairKey, false);
+        this.invalidate();
+        return;
+      }
+      this.onPolyBeatTap?.(hit.layer, hit.index);
+      return;
+    }
+    if (!this.onBeatTap) return;
     const index =
       s.visualizer === 'linear'
         ? linearBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar)
         : circularBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar);
     if (index >= 0) this.onBeatTap(index);
   };
+
+  /** 0..1 progress of a pair's split animation, eased. 0 = coincident, 1 = fully branched. */
+  private currentSplitFrac(key: string): number {
+    const anim = this.polyPairAnim.get(key);
+    if (!anim) return 0;
+    if (this.reducedMotion.matches) return anim.opening ? 1 : 0;
+    const t = Math.min(1, Math.max(0, (performance.now() - anim.start) / POLY_SPLIT_MS));
+    const eased = 1 - (1 - t) ** 3;
+    return anim.opening ? eased : 1 - eased;
+  }
+
+  private animatePair(key: string, opening: boolean): void {
+    const now = performance.now();
+    const current = this.currentSplitFrac(key);
+    // Continuity: if a reverse gesture arrives mid-animation, start the new direction from the
+    // current visual position rather than snapping. Solve `1 - (1 - t)^3 === current` for t and
+    // shift `start` so the eased frac at now equals current.
+    const t = 1 - Math.cbrt(1 - (opening ? current : 1 - current));
+    this.polyPairAnim.set(key, { start: now - t * POLY_SPLIT_MS, opening });
+  }
+
+  private polyAnimating(): boolean {
+    for (const [key, anim] of this.polyPairAnim) {
+      const frac = this.currentSplitFrac(key);
+      if (anim.opening ? frac < 1 : frac > 0) return true;
+    }
+    return false;
+  }
+
+  private prunePolyPairs(): void {
+    // A finished collapse (frac hit 0) leaves the pair as if it was never opened; drop the entry
+    // so getSplitFrac returns 0 without paying the eased-math cost on every tick.
+    for (const [key, anim] of this.polyPairAnim) {
+      if (!anim.opening && this.currentSplitFrac(key) === 0) this.polyPairAnim.delete(key);
+    }
+  }
 
   /** Draw on the next frame. While the metronome runs, keeps drawing every frame. */
   invalidate(): void {
@@ -149,6 +222,16 @@ export class VizController {
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
     if (s.polyrhythm.enabled) {
+      const ratio = `${s.polyrhythm.a}:${s.polyrhythm.b}`;
+      if (ratio !== this.polyRatio) {
+        // Coincident-pair keys are indexed by (i, j) in the old ratio, so a change invalidates
+        // any in-flight animation; re-collapse all pairs.
+        this.polyPairAnim.clear();
+        this.polyRatio = ratio;
+      }
+      this.prunePolyPairs();
+      const splitFrac: Record<string, number> = {};
+      for (const [key] of this.polyPairAnim) splitFrac[key] = this.currentSplitFrac(key);
       const beatA = this.source.polyBeatAt('A', heard);
       const beatB = this.source.polyBeatAt('B', heard);
       const frame = computePolyFrame({
@@ -158,10 +241,16 @@ export class VizController {
         heardTime: heard,
         a: s.polyrhythm.a,
         b: s.polyrhythm.b,
+        levelsA: s.polyrhythm.levelsA,
+        levelsB: s.polyrhythm.levelsB,
+        splitFrac,
         reducedMotion: this.reducedMotion.matches,
       });
       drawPolyrhythm(this.ctx, this.size, frame, this.theme, this.sprites);
       this.lastGlow = Math.max(frame.glowA, frame.glowB);
+      // Keep the animation loop alive while any pair is still mid-split, even if the metronome
+      // itself is stopped and shouldAnimate() would otherwise pause the frame loop.
+      if (this.polyAnimating()) this.invalidate();
       return;
     }
 

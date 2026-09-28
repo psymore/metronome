@@ -58,7 +58,10 @@ describe('beatPhase', () => {
 
 describe('BeatTimeline<T> with a non-BeatEvent shape', () => {
   it('works with any object that has a numeric time field', () => {
-    interface Ping { time: number; label: string }
+    interface Ping {
+      time: number;
+      label: string;
+    }
     const t = new BeatTimeline<Ping>();
     t.push({ time: 1, label: 'a' });
     t.push({ time: 2, label: 'b' });

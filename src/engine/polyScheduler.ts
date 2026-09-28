@@ -16,7 +16,14 @@ export interface PolyBeatEvent {
 
 export interface PolyPattern {
   bpm: number;
-  polyrhythm: { enabled: boolean; a: number; b: number };
+  polyrhythm: {
+    enabled: boolean;
+    a: number;
+    b: number;
+    /** Optional per-node levels; the scheduler ignores them, but audioEngine reads them. */
+    levelsA?: readonly ('accent' | 'normal' | 'mute')[];
+    levelsB?: readonly ('accent' | 'normal' | 'mute')[];
+  };
 }
 
 export interface PolySchedulerOptions {

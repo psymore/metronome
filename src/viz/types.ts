@@ -6,6 +6,8 @@ export interface VizTheme {
   spoke: string;
   node: string;
   accent: string;
+  /** Contrasting accent used for polyrhythm layer A so the two layers read as distinct colors. */
+  accentAlt: string;
   nodeIdle: string;
   hand: string;
   label: string;

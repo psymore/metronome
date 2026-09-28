@@ -214,14 +214,24 @@ export class AudioEngine {
 
   private playPolyBeat(beat: PolyBeatEvent): void {
     (beat.layer === 'A' ? this.polyTimelineA : this.polyTimelineB).push(beat);
+    const layerLevels =
+      beat.layer === 'A'
+        ? this.getPolyPattern().polyrhythm.levelsA
+        : this.getPolyPattern().polyrhythm.levelsB;
+    const level = layerLevels?.[beat.index] ?? 'normal';
+    if (level === 'mute') return;
     const buffer = this.polyBuffers[beat.layer === 'A' ? 'polyA' : 'polyB'];
     if (!buffer) return;
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.master);
+    const gain = this.ctx.createGain();
+    gain.gain.value = level === 'accent' ? 1.35 : 1;
+    source.connect(gain);
+    gain.connect(this.master);
     source.onended = () => {
       this.active.delete(source);
       source.disconnect();
+      gain.disconnect();
     };
     this.active.add(source);
     source.start(beat.time);

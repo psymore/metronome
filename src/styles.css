@@ -29,6 +29,8 @@
   --viz-spoke: #3a453f;
   --viz-node: #2f7a5f;
   --viz-accent: #7fe0bb;
+  /* Contrasting warm hue for polyrhythm layer A on this cool theme. */
+  --viz-accent-alt: #f0be6a;
   --viz-node-idle: #3a453f;
   --viz-hand: #4fb894;
   --viz-label: #9db0a7;
@@ -56,6 +58,7 @@
   --viz-spoke: #4a4330;
   --viz-node: #8a5a2e;
   --viz-accent: #f0be6a;
+  --viz-accent-alt: #7fe0bb;
   --viz-node-idle: #4a4330;
   --viz-hand: #d99a3f;
   --viz-label: #a89772;
@@ -77,6 +80,7 @@
   --viz-spoke: #313a4d;
   --viz-node: #1f6feb;
   --viz-accent: #91cbff;
+  --viz-accent-alt: #f0be6a;
   --viz-node-idle: #313a4d;
   --viz-hand: #58a6ff;
   --viz-label: #8fa3c2;
@@ -98,6 +102,7 @@
   --viz-spoke: #3e4148;
   --viz-node: #6e737d;
   --viz-accent: #d8dce4;
+  --viz-accent-alt: #e0b072;
   --viz-node-idle: #3e4148;
   --viz-hand: #b0b4bc;
   --viz-label: #8e9199;
@@ -784,6 +789,49 @@ output {
   padding: 0 6px 3px;
   margin-bottom: 3px;
 }
+/* Polyrhythm state: swap the stacked "4/4" for a "POLY" tag + diagonal A/B fraction, painted in a
+   theme-tinted mix of the button's text color (color-mix, not opacity — text stays crisp on the
+   dark button). Only one of .sig / .sig-poly is visible at any time. */
+.sig-poly {
+  display: none;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: color-mix(in srgb, var(--select) 50%, var(--text));
+  line-height: 1;
+  align-items: center;
+  gap: 4px;
+  flex-direction: column;
+}
+#signatureBtn.is-polyrhythm .sig {
+  display: none;
+}
+#signatureBtn.is-polyrhythm .sig-poly {
+  display: inline-flex;
+}
+.sig-poly-tag {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  opacity: 0.85;
+}
+.sig-poly-fraction {
+  font-size: 22px;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+.sig-poly-slash {
+  font-size: 26px;
+  margin: 0 1px;
+  transform: translateY(2px);
+}
+.sig-poly-fraction span:first-child {
+  align-self: flex-start;
+  margin-right: -2px;
+}
+.sig-poly-fraction span:last-child {
+  align-self: flex-end;
+  margin-left: -2px;
+}
 .tap {
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1119,18 +1167,16 @@ html.depth-25d .knob {
   transform: scale(0.92);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
-/* Themed dropdown styling for all sound/select elements */
-select.themed-dropdown,
-#polyBlock select,
-.slot-row select,
-#soundDialog select {
+/* App-wide themed dropdown styling: every native <select> in the app follows this one recipe,
+   so the Sound dialog, the Polyrhythm A/B selects, and any future select share the same look.
+   Opt out with .native-select if a bare browser control is ever needed. */
+select:not(.native-select) {
   appearance: none;
   padding: 8px 40px 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--line);
   background-color: var(--panel-lo);
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f2ead9' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f2ead9' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: calc(100% - 12px) center;
   background-size: 12px 8px;
@@ -1138,34 +1184,21 @@ select.themed-dropdown,
   font: inherit;
   box-shadow: 0 0 4.2px var(--accent-glow);
   cursor: pointer;
-  margin-right: 4px;
 }
-select.themed-dropdown:focus,
-select.themed-dropdown:focus-visible,
-#polyBlock select:focus,
-#polyBlock select:focus-visible,
-.slot-row select:focus,
-.slot-row select:focus-visible,
-#soundDialog select:focus,
-#soundDialog select:focus-visible {
+select:not(.native-select):focus,
+select:not(.native-select):focus-visible {
   outline: none;
   border-color: var(--select);
   box-shadow:
     0 0 4.2px var(--accent-glow),
     0 0 0 2px var(--select);
 }
-select.themed-dropdown option,
-#polyBlock select option,
-.slot-row select option,
-#soundDialog select option {
+select:not(.native-select) option {
   background-color: var(--panel-lo);
   color: var(--text);
   padding: 8px;
 }
-select.themed-dropdown option:checked,
-#polyBlock select option:checked,
-.slot-row select option:checked,
-#soundDialog select option:checked {
+select:not(.native-select) option:checked {
   background: linear-gradient(var(--select), var(--select));
   background-color: var(--select);
   color: var(--text);
@@ -1173,6 +1206,9 @@ select.themed-dropdown option:checked,
 #polyBlock select {
   width: 100%;
   margin-bottom: 10px;
+}
+.slot-row select {
+  margin-right: 4px;
 }
 /* A segmented control for presets: unlike free-floating chips, segments sit flush against
    each other in one continuous pill and scroll horizontally if they overflow. */
