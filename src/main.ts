@@ -72,7 +72,7 @@ store.subscribe((s, prev) => {
 
 const toast = createToast(byId('toast'));
 const showInfo = createInfoPopup(byId('infoPopup'));
-const engine = new AudioEngine({ getPattern: () => store.get() });
+const engine = new AudioEngine({ getPattern: () => store.get(), getPolyPattern: () => store.get() });
 engine.setVolume(store.get().volume);
 store.subscribe((s, prev) => {
   if (s.volume !== prev.volume) engine.setVolume(s.volume);

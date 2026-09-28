@@ -1,12 +1,15 @@
 import type { PcmData } from '../sounds/pcm';
 import { BeatTimeline } from './beatTimeline';
 import { computeHeardTime } from './clock';
+import { type PolyBeatEvent, type PolyPattern, PolyScheduler } from './polyScheduler';
 import { type BeatEvent, type Pattern, Scheduler, type SchedulerStats } from './scheduler';
 
 export type SoundSlot = 'accent' | 'normal';
+export type PolySoundSlot = 'polyA' | 'polyB';
 
 export interface AudioEngineOptions {
   getPattern: () => Pattern;
+  getPolyPattern: () => PolyPattern;
 }
 
 // 50ms of silence, looped. iOS Safari puts a page in the "Ambient" audio session category
@@ -18,11 +21,19 @@ const SILENT_LOOP_SRC =
 
 export class AudioEngine {
   readonly ctx: AudioContext;
-  readonly timeline = new BeatTimeline();
+  readonly timeline = new BeatTimeline<BeatEvent>();
+  readonly polyTimelineA = new BeatTimeline<PolyBeatEvent>();
+  readonly polyTimelineB = new BeatTimeline<PolyBeatEvent>();
   private readonly master: GainNode;
   private readonly scheduler: Scheduler;
+  private readonly polyScheduler: PolyScheduler;
+  private readonly getPolyPattern: () => PolyPattern;
   private readonly worker: Worker;
   private readonly buffers: Record<SoundSlot, AudioBuffer | null> = { accent: null, normal: null };
+  private readonly polyBuffers: Record<PolySoundSlot, AudioBuffer | null> = {
+    polyA: null,
+    polyB: null,
+  };
   private readonly active = new Set<AudioBufferSourceNode>();
   private readonly silentUnlock: HTMLAudioElement;
 
@@ -30,19 +41,28 @@ export class AudioEngine {
     this.ctx = new AudioContext({ latencyHint: 'interactive' });
     this.master = this.ctx.createGain();
     this.master.connect(this.ctx.destination);
+    this.getPolyPattern = opts.getPolyPattern;
     this.scheduler = new Scheduler({
       getPattern: opts.getPattern,
       onBeat: (b) => this.playBeat(b),
       onSubdivision: (time) => this.playSubdivision(time),
     });
+    this.polyScheduler = new PolyScheduler({
+      getPattern: opts.getPolyPattern,
+      onEvent: (e) => this.playPolyBeat(e),
+    });
     this.worker = new Worker(new URL('./timerWorker.ts', import.meta.url), { type: 'module' });
-    this.worker.onmessage = () => this.scheduler.tick(this.ctx.currentTime);
+    this.worker.onmessage = () => {
+      const now = this.ctx.currentTime;
+      this.scheduler.tick(now);
+      this.polyScheduler.tick(now);
+    };
     this.silentUnlock = new Audio(SILENT_LOOP_SRC);
     this.silentUnlock.loop = true;
     this.silentUnlock.volume = 0;
     const tryResume = () => {
       // Device change or OS interruption while playing: try to get the clock running again.
-      if (!this.scheduler.isRunning) return;
+      if (!this.scheduler.isRunning && !this.polyScheduler.isRunning) return;
       if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
       if (this.silentUnlock.paused) this.silentUnlock.play().catch(() => {});
     };
@@ -57,7 +77,7 @@ export class AudioEngine {
   }
 
   get running(): boolean {
-    return this.scheduler.isRunning;
+    return this.scheduler.isRunning || this.polyScheduler.isRunning;
   }
 
   get sampleRate(): number {
@@ -70,17 +90,25 @@ export class AudioEngine {
 
   /** Must be called from a user gesture (autoplay policy). */
   async start(): Promise<void> {
-    if (this.scheduler.isRunning) return;
+    if (this.scheduler.isRunning || this.polyScheduler.isRunning) return;
     // Started together, from the same gesture: iOS only exempts Web Audio from the Ring/Silent
     // switch while a real media element is actively playing on the page.
     await Promise.all([this.ctx.resume(), this.silentUnlock.play().catch(() => {})]);
     this.timeline.clear();
-    this.scheduler.start(this.ctx.currentTime);
+    this.polyTimelineA.clear();
+    this.polyTimelineB.clear();
+    const now = this.ctx.currentTime;
+    if (this.getPolyPattern().polyrhythm.enabled) {
+      this.polyScheduler.start(now);
+    } else {
+      this.scheduler.start(now);
+    }
     this.worker.postMessage('start');
   }
 
   stop(): void {
     this.scheduler.stop();
+    this.polyScheduler.stop();
     this.worker.postMessage('stop');
     for (const source of this.active) {
       try {
@@ -91,6 +119,8 @@ export class AudioEngine {
     }
     this.active.clear();
     this.timeline.clear();
+    this.polyTimelineA.clear();
+    this.polyTimelineB.clear();
     this.silentUnlock.pause();
     // A running context holds the audio hardware clock open and drains battery in silence.
     // start() and preview() both resume it, so suspending here is self-healing.
@@ -105,6 +135,10 @@ export class AudioEngine {
 
   setSound(slot: SoundSlot, pcm: PcmData): void {
     this.buffers[slot] = this.toBuffer(pcm);
+  }
+
+  setPolySound(slot: PolySoundSlot, pcm: PcmData): void {
+    this.polyBuffers[slot] = this.toBuffer(pcm);
   }
 
   /** Note: decodeAudioData detaches `bytes`; pass a copy if you still need them. */
@@ -140,6 +174,21 @@ export class AudioEngine {
     this.timeline.push(beat);
     if (beat.level === 'mute') return;
     const buffer = this.buffers[beat.level];
+    if (!buffer) return;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.master);
+    source.onended = () => {
+      this.active.delete(source);
+      source.disconnect();
+    };
+    this.active.add(source);
+    source.start(beat.time);
+  }
+
+  private playPolyBeat(beat: PolyBeatEvent): void {
+    (beat.layer === 'A' ? this.polyTimelineA : this.polyTimelineB).push(beat);
+    const buffer = this.polyBuffers[beat.layer === 'A' ? 'polyA' : 'polyB'];
     if (!buffer) return;
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
