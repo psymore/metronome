@@ -200,7 +200,7 @@
     <script type="module" src="/src/main.ts"></script>
     <!-- iOS error banner: only active with ?debug=1, so it never shows to real users. -->
     <script>
-      (function () {
+      (() => {
         if (!new URLSearchParams(location.search).has('debug')) return;
         function showBanner(msg) {
           var b = document.getElementById('__ios_err_banner__');
@@ -214,14 +214,14 @@
               'max-height:50vh', 'overflow:auto', '-webkit-overflow-scrolling:touch',
               'box-shadow:0 2px 8px rgba(0,0,0,0.6)',
             ].join(';');
-            document.body ? document.body.prepend(b) : document.addEventListener('DOMContentLoaded', function () { document.body.prepend(b); });
+            document.body ? document.body.prepend(b) : document.addEventListener('DOMContentLoaded', () => { document.body.prepend(b); });
           }
           b.textContent = (b.textContent ? b.textContent + '\n---\n' : '') + msg;
         }
-        window.onerror = function (msg, src, line, col, err) {
+        window.onerror = (msg, src, line, col, err) => {
           showBanner('ERROR: ' + msg + '\n' + (src || '') + ':' + line + ':' + col + (err && err.stack ? '\n' + err.stack : ''));
         };
-        window.addEventListener('unhandledrejection', function (e) {
+        window.addEventListener('unhandledrejection', (e) => {
           var r = e.reason;
           showBanner('UNHANDLED REJECTION: ' + (r && r.stack ? r.stack : String(r)));
         });
@@ -355,7 +355,11 @@
         <h2 id="sigTitle" data-i18n="sigDialog.title">Time signature</h2>
         <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
-      <div class="segmented" role="radiogroup" data-i18n-aria-label="presets.ariaLabel" aria-label="Time signature presets">
+      <div class="segmented" role="radiogroup" data-i18n-aria-label="sigDialog.modeAriaLabel" aria-label="Signature mode">
+        <button type="button" role="radio" class="segment" data-sig-mode="standard" aria-checked="true" data-i18n="sigDialog.modeStandard">Standard</button>
+        <button type="button" role="radio" class="segment" data-sig-mode="polyrhythm" aria-checked="false" data-i18n="sigDialog.modePolyrhythm">Polyrhythm</button>
+      </div>
+      <div class="segmented" role="radiogroup" data-i18n-aria-label="presets.ariaLabel" aria-label="Time signature presets" data-standard-block>
         <button type="button" role="radio" class="segment" data-preset="2/4" aria-checked="false">2/4</button>
         <button type="button" role="radio" class="segment" data-preset="3/4" aria-checked="false">3/4</button>
         <button type="button" role="radio" class="segment" data-preset="4/4" aria-checked="false">4/4</button>
@@ -365,7 +369,7 @@
         <button type="button" role="radio" class="segment" data-preset="9/8" aria-checked="false">9/8</button>
         <button type="button" role="radio" class="segment" data-preset="12/8" aria-checked="false">12/8</button>
       </div>
-      <div class="picker-block">
+      <div class="picker-block" data-standard-block>
         <h3 class="sheet-sub" data-i18n="sigDialog.beatsTitle">Beats</h3>
         <div class="stepper">
           <button type="button" id="beatsDown" class="nudge" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
@@ -373,7 +377,7 @@
           <button type="button" id="beatsUp" class="nudge" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
         </div>
       </div>
-      <div class="picker-block">
+      <div class="picker-block" data-standard-block>
         <h3 class="sheet-sub" data-i18n="sigDialog.noteValueTitle">Note value</h3>
         <div class="unit-row" role="radiogroup" data-i18n-aria-label="unit.ariaLabel" aria-label="Note value">
           <button type="button" role="radio" class="chip" data-unit="2" aria-checked="false">2</button>
@@ -382,12 +386,29 @@
           <button type="button" role="radio" class="chip" data-unit="16" aria-checked="false">16</button>
         </div>
       </div>
-      <h3 class="sheet-sub" data-i18n="subdivision.title">Subdivision</h3>
-      <div class="unit-row" role="radiogroup" data-i18n-aria-label="subdivision.ariaLabel" aria-label="Click subdivision">
+      <h3 class="sheet-sub" data-i18n="subdivision.title" data-standard-block>Subdivision</h3>
+      <div class="unit-row" role="radiogroup" data-i18n-aria-label="subdivision.ariaLabel" aria-label="Click subdivision" data-standard-block>
         <button type="button" role="radio" class="chip" data-subdivision="1" aria-checked="true" data-i18n="subdivision.off">Off</button>
         <button type="button" role="radio" class="chip" data-subdivision="2" aria-checked="false" data-i18n="subdivision.eighths">8ths</button>
         <button type="button" role="radio" class="chip" data-subdivision="3" aria-checked="false" data-i18n="subdivision.triplets">Triplets</button>
         <button type="button" role="radio" class="chip" data-subdivision="4" aria-checked="false" data-i18n="subdivision.sixteenths">16ths</button>
+      </div>
+      <div id="polyBlock" class="picker-block" hidden>
+        <h3 class="sheet-sub" data-i18n="sigDialog.polyLayerA">Layer A</h3>
+        <div class="stepper">
+          <button type="button" id="polyADown" class="nudge" data-i18n-aria-label="nudge.fewerPolyA" aria-label="Fewer Layer A events">−</button>
+          <output id="polyAValue" class="stepper-value">3</output>
+          <button type="button" id="polyAUp" class="nudge" data-i18n-aria-label="nudge.morePolyA" aria-label="More Layer A events">+</button>
+        </div>
+        <select id="polySoundA" data-i18n-aria-label="sigDialog.polySoundA" aria-label="Layer A sound"></select>
+
+        <h3 class="sheet-sub" data-i18n="sigDialog.polyLayerB">Layer B</h3>
+        <div class="stepper">
+          <button type="button" id="polyBDown" class="nudge" data-i18n-aria-label="nudge.fewerPolyB" aria-label="Fewer Layer B events">−</button>
+          <output id="polyBValue" class="stepper-value">4</output>
+          <button type="button" id="polyBUp" class="nudge" data-i18n-aria-label="nudge.morePolyB" aria-label="More Layer B events">+</button>
+        </div>
+        <select id="polySoundB" data-i18n-aria-label="sigDialog.polySoundB" aria-label="Layer B sound"></select>
       </div>
     </dialog>
 

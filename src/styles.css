@@ -566,6 +566,9 @@ output {
 .stage[data-viz="linear"] .dial-hub {
   display: none;
 }
+.stage[data-polyrhythm="true"] .dial-hub {
+  display: none;
+}
 /* Fills the whole disc with a radiant flash, not just its rim — a radial-gradient overlay
    that's invisible at rest and only appears for the 260ms of the pulse itself. */
 .dial-hub::after {
@@ -639,13 +642,13 @@ output {
   background:
     linear-gradient(var(--panel), var(--panel)) padding-box,
     linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.22) 0%,
-        rgb(255 255 255 / 0.06) 30%,
-        rgb(0 0 0 / 0.25) 65%,
-        rgb(255 255 255 / 0.10) 100%
-      )
-      border-box;
+      135deg,
+      rgb(255 255 255 / 0.22) 0%,
+      rgb(255 255 255 / 0.06) 30%,
+      rgb(0 0 0 / 0.25) 65%,
+      rgb(255 255 255 / 0.1) 100%
+    )
+    border-box;
   z-index: -1;
 }
 .bolt {
@@ -984,13 +987,13 @@ html.depth-25d .knob {
   background:
     linear-gradient(var(--panel), var(--panel)) padding-box,
     linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.22) 0%,
-        rgb(255 255 255 / 0.06) 30%,
-        rgb(0 0 0 / 0.25) 65%,
-        rgb(255 255 255 / 0.10) 100%
-      )
-      border-box;
+      135deg,
+      rgb(255 255 255 / 0.22) 0%,
+      rgb(255 255 255 / 0.06) 30%,
+      rgb(0 0 0 / 0.25) 65%,
+      rgb(255 255 255 / 0.1) 100%
+    )
+    border-box;
   z-index: -1;
 }
 .sheet::backdrop {
@@ -1468,8 +1471,19 @@ html.depth-25d .knob {
   animation: armedPulse 0.9s ease-in-out infinite;
 }
 @keyframes armedPulse {
-  0%, 100% { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 -3px 6px rgb(0 0 0 / 0.6), 0 0 8px rgb(255 92 92 / 0.45); }
-  50%       { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 -3px 6px rgb(0 0 0 / 0.6), 0 0 18px rgb(255 92 92 / 0.75); }
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -3px 6px rgb(0 0 0 / 0.6),
+      0 0 8px rgb(255 92 92 / 0.45);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -3px 6px rgb(0 0 0 / 0.6),
+      0 0 18px rgb(255 92 92 / 0.75);
+  }
 }
 .switch {
   position: relative;

@@ -23,6 +23,7 @@ import { createInfoPopup } from './ui/infoPopup';
 import { mountKnob } from './ui/knob';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
+import { mountPolyrhythmControls } from './ui/polyrhythmDialog';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
 import { mountSoundDialog } from './ui/soundDialog';
@@ -107,6 +108,33 @@ store.subscribe((s, prev) => {
   if (s.normalSoundId !== prev.normalSoundId) void applySound('normal');
 });
 
+const polySlotRequest: Record<'polyA' | 'polyB', number> = { polyA: 0, polyB: 0 };
+
+async function applyPolySound(slot: 'polyA' | 'polyB'): Promise<void> {
+  const request = ++polySlotRequest[slot];
+  const s = store.get();
+  const id = slot === 'polyA' ? s.polyrhythm.soundIdA : s.polyrhythm.soundIdB;
+  const fallback =
+    slot === 'polyA' ? DEFAULT_SETTINGS.polyrhythm.soundIdA : DEFAULT_SETTINGS.polyrhythm.soundIdB;
+  const result = await library.resolve(id, fallback);
+  if (request !== polySlotRequest[slot]) return;
+  engine.setPolySound(slot, result.pcm);
+  if (result.error) {
+    toast(format('toast.soundLoadError', { error: result.error }));
+    store.set({
+      polyrhythm: {
+        ...store.get().polyrhythm,
+        ...(slot === 'polyA' ? { soundIdA: fallback } : { soundIdB: fallback }),
+      },
+    });
+  }
+}
+
+store.subscribe((s, prev) => {
+  if (s.polyrhythm.soundIdA !== prev.polyrhythm.soundIdA) void applyPolySound('polyA');
+  if (s.polyrhythm.soundIdB !== prev.polyrhythm.soundIdB) void applyPolySound('polyB');
+});
+
 const dialHub = byId('dialHub');
 const viz = new VizController(
   byId<HTMLCanvasElement>('viz'),
@@ -138,6 +166,17 @@ const viz = new VizController(
   },
 );
 store.subscribe(() => viz.invalidate());
+store.subscribe((s) => {
+  byId('stage').dataset.polyrhythm = String(s.polyrhythm.enabled);
+});
+byId('stage').dataset.polyrhythm = String(store.get().polyrhythm.enabled);
+
+store.subscribe((s, prev) => {
+  if (s.polyrhythm.enabled !== prev.polyrhythm.enabled && engine.running) {
+    engine.stop();
+    void engine.start();
+  }
+});
 
 const wakeLock = createWakeLock();
 
@@ -390,13 +429,19 @@ const knob = mountKnob(byId<HTMLCanvasElement>('knob'), {
 // mobile), buffers are null and beats would play silently. Block the knob's center tap until
 // they're ready.
 knob.setDisabled(true);
-void Promise.all([applySound('accent'), applySound('normal')]).finally(() => {
+void Promise.all([
+  applySound('accent'),
+  applySound('normal'),
+  applyPolySound('polyA'),
+  applyPolySound('polyB'),
+]).finally(() => {
   knob.setDisabled(false);
 });
 
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
+mountPolyrhythmControls({ store, sounds });
 mountBarCounterDialog({ store, toast });
 mountSettingsDialog({
   store,
