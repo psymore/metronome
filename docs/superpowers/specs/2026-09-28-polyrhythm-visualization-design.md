@@ -17,7 +17,7 @@ Decisions made during brainstorming:
 - No new wheel/scroll-picker widget or dependency — the existing `.stepper` (press-and-hold via `holdRepeat.ts`) pattern is reused.
 - No independent timer/scheduler for the polyrhythm animation — one master clock only, per `CLAUDE.md`.
 - No per-ratio image/SVG assets — geometry is computed at runtime from `a`/`b`.
-- Circle visualizer's existing look is unchanged except where the beat-reflow fix is genuinely shared logic.
+- Circle visualizer's existing look is entirely unchanged by this feature — the beat-reflow fix (section 6) applies only to Line, not Circle.
 - No changes to sound upload/library mechanics — Polyrhythm reuses existing sound ids via the existing sound picker's chip style.
 
 ## Architecture overview
@@ -100,11 +100,13 @@ Two vertex sets get distinct theme colors/line weights (e.g. accent vs. a second
 
 `src/viz/geometry.ts`'s `linearLayout` currently hardcodes the track's vertical position to `height * 0.36` — tuned by eye rather than derived from the stage's actual center. Fix: compute the track `y` from true vertical center of the square stage, adjusted only for node radius so nodes don't clip the canvas edge (the same kind of edge-inset math `circularLayout` already performs for its ring). This removes the arbitrary offset without changing the Line visualizer's stroke style, colors, or track/stick visual design — a pure positioning fix.
 
-## 6. Beat-sphere reflow (≤4 per row)
+## 6. Beat-sphere reflow (≤4 per row) — Line visualizer only
 
-Currently, both `circular.ts` and `linear.ts` place `n` beat nodes by dividing a single ring/track evenly, shrinking node size as `n` grows. New behavior: when node count exceeds 4, nodes wrap into rows of at most 4, centered, with consistent inter-node spacing preserved from the single-row case (not shrunk further to cram more per row).
+**Correction (ruled during implementation, superseding the original wording below and in the plan's Task 3):** the reflow applies to the **Line visualizer only**. The Circle visualizer keeps its original behavior unchanged — all `n` beats stay on a single ring, shrinking as `n` grows, exactly as on `master`. A first implementation applied the row/column math to the Circle visualizer too, rendering it as concentric rings; this reads as a spiral rather than a clean dial and was explicitly rejected. `circularRingRadius` (in `geometry.ts`, from the original Task 2) is kept as a tested-but-currently-unused pure helper rather than deleted, in case a future circular use for it turns up — but nothing in this feature calls it.
 
-This is implemented as new placement math in `geometry.ts` (row/column layout: `row = floor(i/4)`, `col = i % 4`, centered within the stage), applied to both circular and linear canvas node placement — not the DOM `#beatRow` (`ui/controls.ts`), which already flex-wraps correctly and needs no change. Node draw order (left-to-right, top-to-bottom) preserves beat order per the acceptance criteria.
+Currently, `linear.ts` places `n` beat nodes by dividing a single track evenly, shrinking node size as `n` grows. New behavior: when node count exceeds 4, nodes wrap into rows of at most 4, centered, with consistent inter-node spacing preserved from the single-row case (not shrunk further to cram more per row).
+
+This is implemented as new placement math in `geometry.ts` (row/column layout: `row = floor(i/4)`, `col = i % 4`, centered within the stage), applied only to linear canvas node placement and `linearBeatAt` hit-testing — not `circular.ts`/`circularBeatAt` (unchanged), and not the DOM `#beatRow` (`ui/controls.ts`), which already flex-wraps correctly and needs no change. Node draw order (left-to-right, top-to-bottom) preserves beat order per the acceptance criteria.
 
 ## 7. UI: Polyrhythm entry point + ratio picker
 
@@ -155,7 +157,7 @@ Canvas drawing output and dialog wiring remain manual-verification, per the proj
 - `src/viz/frame.ts` (or new sibling) — `layerPhase` / polyrhythm frame computation.
 - `src/viz/polyrhythm.ts` — new `Visualizer` implementation.
 - `src/viz/vizController.ts` — dispatch to polyrhythm renderer.
-- `src/viz/circular.ts`, `src/viz/linear.ts` — apply multi-row node placement.
+- `src/viz/linear.ts` — apply multi-row node placement. `src/viz/circular.ts` is *not* touched by this (see the correction in section 6).
 - `src/ui/signatureDialog.ts` — mode toggle; `src/ui/polyrhythmDialog.ts` (new, if split out) — ratio steppers + sound chips.
 - `src/ui/polyrhythmDialog.ts` — wired in `main.ts` alongside other `mount*` calls.
 - `index.html` / `src/styles.css` — new dialog markup/styles, minor additions only, reusing existing `.stage`/`.stepper`/`.segmented`/`.chip` classes.
