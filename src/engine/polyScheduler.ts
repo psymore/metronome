@@ -33,6 +33,11 @@ export interface PolySchedulerOptions {
  * `b` events) sharing one cycle of duration `4 * secondsPerBeat(bpm)`. Pure: never reads a clock
  * itself, callers pass `now` (AudioContext.currentTime). The cycle anchor is accumulated
  * (`cycleStart += cycleDuration`), never re-measured, so the two layers never drift apart.
+ *
+ * `a`, `b` and the cycle duration are snapshotted when a cycle begins and stay fixed until it
+ * ends, so a tempo or ratio change mid-cycle never re-indexes events that are already counted:
+ * it takes effect at the next cycle boundary. Every emitted event satisfies `time >= now`; after
+ * a stall each layer skips forward on its own grid rather than playing a burst of late clicks.
  */
 export class PolyScheduler {
   private readonly lookahead: number;
@@ -41,6 +46,10 @@ export class PolyScheduler {
   private cycleIndex = 0;
   private nextIndexA = 0;
   private nextIndexB = 0;
+  /** Snapshot of the pattern for the current cycle. */
+  private cycleA = 2;
+  private cycleB = 2;
+  private cycleDur = 2;
   private running = false;
 
   constructor(private readonly opts: PolySchedulerOptions) {
@@ -56,8 +65,7 @@ export class PolyScheduler {
     this.running = true;
     this.cycleStart = now + this.startDelay;
     this.cycleIndex = 0;
-    this.nextIndexA = 0;
-    this.nextIndexB = 0;
+    this.beginCycle();
     this.tick(now);
   }
 
@@ -65,40 +73,66 @@ export class PolyScheduler {
     this.running = false;
   }
 
-  private cycleDuration(bpm: number): number {
-    return 4 * secondsPerBeat(bpm);
+  /** Reads the pattern once for the cycle starting at `cycleStart`; the only place it is read. */
+  private beginCycle(): void {
+    const { bpm, polyrhythm } = this.opts.getPattern();
+    this.cycleA = Math.max(2, polyrhythm.a);
+    this.cycleB = Math.max(2, polyrhythm.b);
+    this.cycleDur = 4 * secondsPerBeat(bpm);
+    this.nextIndexA = 0;
+    this.nextIndexB = 0;
+  }
+
+  private timeOf(index: number, n: number): number {
+    return this.cycleStart + (index / n) * this.cycleDur;
+  }
+
+  /** After a stall, jump forward on each layer's own grid so no emitted event lies in the past. */
+  private skipMissed(now: number): void {
+    // Whole cycles that have fully elapsed: jump the anchor on the cycle grid.
+    while (this.cycleStart + this.cycleDur <= now) {
+      const missed = Math.max(1, Math.floor((now - this.cycleStart) / this.cycleDur));
+      this.cycleStart += missed * this.cycleDur;
+      this.cycleIndex += missed;
+      this.beginCycle();
+    }
+    // Within the current cycle, drop each layer's events that are already in the past.
+    while (this.nextIndexA < this.cycleA && this.timeOf(this.nextIndexA, this.cycleA) < now) {
+      this.nextIndexA++;
+    }
+    while (this.nextIndexB < this.cycleB && this.timeOf(this.nextIndexB, this.cycleB) < now) {
+      this.nextIndexB++;
+    }
   }
 
   tick(now: number): void {
     if (!this.running) return;
-    let { bpm, polyrhythm } = this.opts.getPattern();
-    let duration = this.cycleDuration(bpm);
-    const a = Math.max(2, polyrhythm.a);
-    const b = Math.max(2, polyrhythm.b);
-
-    // Genuine stall (the cycle has fallen more than a full look-ahead window behind): jump the
-    // cycle anchor forward on the same grid instead of firing a burst of late events.
-    if (this.cycleStart + duration < now - this.lookahead) {
-      const missedCycles = Math.ceil((now - (this.cycleStart + duration)) / duration);
-      this.cycleStart += missedCycles * duration;
-      this.cycleIndex += missedCycles;
-      this.nextIndexA = 0;
-      this.nextIndexB = 0;
-    }
-
-    while (this.nextIndexA < a || this.nextIndexB < b) {
-      ({ bpm, polyrhythm } = this.opts.getPattern());
-      duration = this.cycleDuration(bpm);
-      const timeA =
-        this.nextIndexA < a ? this.cycleStart + (this.nextIndexA / a) * duration : Infinity;
-      const timeB =
-        this.nextIndexB < b ? this.cycleStart + (this.nextIndexB / b) * duration : Infinity;
+    this.skipMissed(now);
+    const horizon = now + this.lookahead;
+    for (;;) {
+      const a = this.cycleA;
+      const b = this.cycleB;
+      const timeA = this.nextIndexA < a ? this.timeOf(this.nextIndexA, a) : Infinity;
+      const timeB = this.nextIndexB < b ? this.timeOf(this.nextIndexB, b) : Infinity;
       const nextTime = Math.min(timeA, timeB);
-      if (nextTime >= now + this.lookahead) break;
+
+      if (nextTime === Infinity) {
+        // This cycle is fully scheduled. Roll over (reading the pattern afresh) only once the
+        // next cycle's first event is inside the look-ahead window, so a ratio or tempo change
+        // is picked up as late as possible, and never mid-cycle.
+        const nextStart = this.cycleStart + this.cycleDur;
+        if (nextStart >= horizon) return;
+        this.cycleStart = nextStart;
+        this.cycleIndex++;
+        this.beginCycle();
+        continue;
+      }
+
+      if (nextTime >= horizon) return;
       if (timeA <= timeB) {
         this.opts.onEvent({
           time: timeA,
-          duration: duration / a,
+          duration: this.cycleDur / a,
           layer: 'A',
           index: this.nextIndexA,
           n: a,
@@ -108,7 +142,7 @@ export class PolyScheduler {
       } else {
         this.opts.onEvent({
           time: timeB,
-          duration: duration / b,
+          duration: this.cycleDur / b,
           layer: 'B',
           index: this.nextIndexB,
           n: b,
@@ -116,19 +150,6 @@ export class PolyScheduler {
         });
         this.nextIndexB++;
       }
-    }
-
-    if (this.nextIndexA >= a && this.nextIndexB >= b) {
-      this.cycleStart += duration;
-      this.cycleIndex++;
-      this.nextIndexA = 0;
-      this.nextIndexB = 0;
-      // Only dive into the next cycle within this same call if it has genuinely already begun
-      // (cycleStart <= now). A wide `lookahead` must not, by itself, pull a future cycle's events
-      // in early — that would let lookahead silently expose ratio changes ahead of the boundary
-      // and violate "one cycle worth of events per due call". A later tick() picks the rest up
-      // once that cycle is actually due.
-      if (this.cycleStart <= now) this.tick(now);
     }
   }
 }
