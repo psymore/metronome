@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { polygonVertices, polyStageLayout } from '../../src/viz/polyGeometry';
 
 describe('polygonVertices', () => {
-  it('places n vertices evenly spaced around a circle, starting at 12 o\'clock', () => {
+  it("places n vertices evenly spaced around a circle, starting at 12 o'clock", () => {
     const v = polygonVertices(4, 0, 0, 10);
     expect(v).toHaveLength(4);
     expect(v[0]?.x).toBeCloseTo(0);
@@ -16,9 +16,11 @@ describe('polygonVertices', () => {
     expect(v).toHaveLength(3);
     const dist = (p: { x: number; y: number }, q: { x: number; y: number }) =>
       Math.hypot(p.x - q.x, p.y - q.y);
-    const d01 = dist(v[0]!, v[1]!);
-    const d12 = dist(v[1]!, v[2]!);
-    const d20 = dist(v[2]!, v[0]!);
+    const [p0, p1, p2] = v;
+    if (!p0 || !p1 || !p2) throw new Error('expected 3 vertices');
+    const d01 = dist(p0, p1);
+    const d12 = dist(p1, p2);
+    const d20 = dist(p2, p0);
     expect(d01).toBeCloseTo(d12, 5);
     expect(d12).toBeCloseTo(d20, 5);
   });

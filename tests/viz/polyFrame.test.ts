@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computePolyFrame } from '../../src/viz/polyFrame';
 import type { PolyBeatEvent } from '../../src/engine/polyScheduler';
+import { computePolyFrame } from '../../src/viz/polyFrame';
 
 const event = (layer: 'A' | 'B', index: number, time: number, duration = 0.5): PolyBeatEvent => ({
   time,
@@ -28,7 +28,7 @@ describe('computePolyFrame', () => {
     expect(f.glowB).toBe(0);
   });
 
-  it('reports each layer\'s most recent event index and full glow right at its onset', () => {
+  it("reports each layer's most recent event index and full glow right at its onset", () => {
     const f = computePolyFrame({
       running: true,
       beatA: event('A', 1, 2),
