@@ -1,9 +1,11 @@
 import {
+  beatLayoutGrid,
   circularLayout,
   circularNodeSpacing,
+  linearGridX,
+  linearGridY,
   linearLayout,
   linearNodeSpacing,
-  linearNodeX,
   nodeAngle,
   nodeRadius,
   polar,
@@ -35,10 +37,18 @@ export function linearBeatAt(
   count: number,
 ): number {
   const track = linearLayout(width, height);
-  const hitR = nodeRadius(track.width / 2, linearNodeSpacing(count, track.width)) * 1.8;
+  const cells = beatLayoutGrid(count);
+  const rows = cells[0]?.rows ?? 1;
+  const nodeR = nodeRadius(track.width / 2, linearNodeSpacing(Math.min(count, 4), track.width));
+  const tick = Math.max(18, nodeR * 2);
+  const rowGap = tick * 3.2;
+  const hitR = nodeR * 1.8;
   for (let i = 0; i < count; i++) {
-    const nx = linearNodeX(i, count, track.left, track.width);
-    if (Math.hypot(x - nx, y - track.y) <= hitR) return i;
+    const cell = cells[i];
+    if (!cell) continue;
+    const nx = linearGridX(cell.col, cell.rowCount, track.left, track.width);
+    const ny = linearGridY(cell.row, rows, track.y, rowGap);
+    if (Math.hypot(x - nx, y - ny) <= hitR) return i;
   }
   return -1;
 }
