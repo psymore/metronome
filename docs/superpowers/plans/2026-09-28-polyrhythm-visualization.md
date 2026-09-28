@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fix the Line visualizer's positioning, reflow beat/rhythm spheres into rows/rings of at most 4, and add a new Polyrhythm mode (reachable from the Signature control) that plays and draws two audible, mathematically synchronized rhythmic layers sharing one cycle.
+**Goal:** Fix the Line visualizer's positioning, reflow Line's beat/rhythm spheres into rows of at most 4 (Circle is unchanged — see Task 3's correction note), and add a new Polyrhythm mode (reachable from the Signature control) that plays and draws two audible, mathematically synchronized rhythmic layers sharing one cycle.
 
 **Architecture:** Everything is additive within the existing layered structure — Canvas 2D drawing, a single look-ahead `Scheduler`-style engine driven by `AudioContext.currentTime`, a flat `Settings` store, and small `mount*` UI modules. Polyrhythm gets its own scheduler (`PolyScheduler`), its own pure frame/geometry functions, and its own dedicated canvas draw path — it does not force its data into the existing single-beat `VizFrame`/`Visualizer` abstractions, which are shaped for one beat grid, not two independent ones.
 
@@ -286,167 +286,21 @@ EOF
 
 ---
 
-## Task 3: Apply the multi-row/ring layout to the Circle and Line visualizers
+## Task 3: Apply the multi-row layout to the Line visualizer (Line only — not Circle)
+
+**Correction (ruled during implementation, 2026-09-28):** an earlier draft of this task also rewrote `circular.ts` into concentric rings. That was implemented, previewed, and explicitly rejected: it read as a spiral rather than a clean dial. **`src/viz/circular.ts` and `circularBeatAt` are out of scope for this plan and must not be modified.** Circle keeps its exact `master` behavior — one ring, all `n` beats, shrinking node size as `n` grows. `circularRingRadius` (from Task 2, already committed) stays in `geometry.ts` as a tested-but-currently-unused helper; do not remove it and do not wire it up anywhere.
 
 **Files:**
-- Modify: `src/viz/circular.ts`
 - Modify: `src/viz/linear.ts`
+- Modify: `src/viz/hitTest.ts` (its `linearBeatAt` only — leave `circularBeatAt` untouched)
 
 **Interfaces:**
-- Consumes: `beatLayoutGrid`, `linearGridX`, `linearGridY`, `circularRingRadius`, `MAX_PER_ROW` from `./geometry` (Task 2); `circularNodeSpacing`, `linearNodeSpacing`, `nodeRadius`, `nodeAngle`, `handAngle`, `polar`, `circularLayout`, `linearLayout` (all pre-existing, unchanged signatures).
-- Produces: no new exports — both files still implement `Visualizer` (`src/viz/types.ts`) with the same `draw(ctx, size, frame, theme, sprites)` signature, so `VizController` needs no changes for this task.
+- Consumes: `beatLayoutGrid`, `linearGridX`, `linearGridY` from `./geometry` (Task 2 — note `circularRingRadius`/`MAX_PER_ROW` are Task 2 exports too but are NOT consumed by this task); `linearNodeSpacing`, `nodeRadius`, `linearStickX`, `linearLayout` (all pre-existing, unchanged signatures).
+- Produces: no new exports — `linear.ts` still implements `Visualizer` (`src/viz/types.ts`) with the same `draw(ctx, size, frame, theme, sprites)` signature, so `VizController` needs no changes for this task.
 
-This task has no new pure logic to unit test (canvas drawing is manually verified per the project's existing split — see `tests/viz/geometry.test.ts` vs. the untested `circular.ts`/`linear.ts`). Replace each file's contents in full to keep the ring/row math consistent throughout.
+This task has no new pure logic to unit test (canvas drawing is manually verified per the project's existing split — see `tests/viz/geometry.test.ts` vs. the untested `linear.ts`). Replace the file's contents in full to keep the row math consistent throughout.
 
-- [ ] **Step 1: Replace `src/viz/circular.ts`**
-
-```ts
-import type { BeatLevel } from '../state/settings';
-import { drawNode } from './drawNode';
-import {
-  beatLayoutGrid,
-  circularLayout,
-  circularNodeSpacing,
-  circularRingRadius,
-  handAngle,
-  MAX_PER_ROW,
-  nodeAngle,
-  nodeRadius,
-  polar,
-} from './geometry';
-import { spriteSize } from './nodeSprite';
-import type { Visualizer } from './types';
-
-export const circularVisualizer: Visualizer = {
-  draw(ctx, { width, height }, frame, theme, sprites) {
-    ctx.clearRect(0, 0, width, height);
-    const n = frame.beatsPerBar;
-    const { cx, cy, r: maxR, hub } = circularLayout(width, height);
-    const cells = beatLayoutGrid(n);
-    const rows = cells[0]?.rows ?? 1;
-    // Innermost ring never shrinks past half the outer radius, so many-ring layouts stay legible.
-    const minR = rows > 1 ? maxR * 0.5 : maxR;
-    const ringRadii = Array.from({ length: rows }, (_, row) =>
-      circularRingRadius(row, rows, maxR, minR),
-    );
-    const rowCounts = Array.from(
-      { length: rows },
-      (_, row) => cells.find((c) => c.row === row)?.rowCount ?? 1,
-    );
-    // One node size for every ring: the tightest ring (usually the innermost) sets the limit.
-    const nodeR = Math.min(
-      ...ringRadii.map((ringR, row) =>
-        nodeRadius(ringR, circularNodeSpacing(rowCounts[row] ?? 1, ringR)),
-      ),
-    );
-
-    // Same fixed pixel gap for the ring and the spokes, so both cut off the
-    // same visible distance from the sphere edge regardless of radius.
-    const gap = 5;
-
-    ctx.lineCap = 'round';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = theme.ring;
-    for (let i = 0; i < n; i++) {
-      const cell = cells[i];
-      if (!cell) continue;
-      const ringR = ringRadii[cell.row] ?? maxR;
-      const gapAngle = Math.asin(Math.min(1, (nodeR + gap) / ringR));
-      const a = nodeAngle(cell.col, cell.rowCount);
-      const endAngle = a + gapAngle;
-      const nextCol = (cell.col + 1) % cell.rowCount;
-      const wrapped = nextCol === 0 ? Math.PI * 2 : 0;
-      const nextStartAngle = nodeAngle(nextCol, cell.rowCount) - gapAngle + wrapped;
-      ctx.beginPath();
-      ctx.arc(cx, cy, ringR, endAngle, nextStartAngle);
-      ctx.stroke();
-    }
-
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = theme.spoke;
-    for (let i = 0; i < n; i++) {
-      const cell = cells[i];
-      if (!cell) continue;
-      const ringR = ringRadii[cell.row] ?? maxR;
-      const a = nodeAngle(cell.col, cell.rowCount);
-      const from = polar(cx, cy, hub, a);
-      const to = polar(cx, cy, ringR - nodeR - gap, a);
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
-      ctx.stroke();
-    }
-
-    if (frame.activeBeat >= 0 && !frame.reducedMotion) {
-      const cell = cells[frame.activeBeat];
-      if (cell) {
-        const ringR = ringRadii[cell.row] ?? maxR;
-        const a = handAngle(cell.col, frame.phase, cell.rowCount);
-        const from = polar(cx, cy, hub, a);
-        const to = polar(cx, cy, ringR, a);
-        ctx.save();
-        ctx.strokeStyle = theme.hand;
-        ctx.lineWidth = 5;
-        ctx.shadowColor = theme.glow;
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-
-    ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const size = spriteSize(nodeR);
-    for (let i = 0; i < n; i++) {
-      const cell = cells[i];
-      if (!cell) continue;
-      const ringR = ringRadii[cell.row] ?? maxR;
-      const a = nodeAngle(cell.col, cell.rowCount);
-      const p = polar(cx, cy, ringR, a);
-      const level: BeatLevel = frame.levels[i] ?? (i === 0 ? 'accent' : 'normal');
-      const label = String(i + 1);
-      const glow = i === frame.activeBeat ? frame.glow : 0;
-      if (glow === 0) {
-        const sprite = sprites.get(level, label, nodeR);
-        if (sprite) {
-          ctx.drawImage(sprite, p.x - size / 2, p.y - size / 2, size, size);
-          continue;
-        }
-      }
-      drawNode(ctx, p.x, p.y, nodeR, level, glow, theme);
-      ctx.save();
-      ctx.shadowBlur = 3;
-      ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.fillStyle = level === 'mute' ? theme.accent : '#fff';
-      ctx.fillText(label, p.x, p.y);
-      ctx.restore();
-    }
-  },
-};
-
-void MAX_PER_ROW; // re-exported indirectly via geometry.ts defaults; referenced for clarity only.
-```
-
-Remove that last `void MAX_PER_ROW;` line — it exists in the draft above only to note that `MAX_PER_ROW` isn't otherwise referenced directly in this file (the default parameter values in `geometry.ts` cover it); since it's unused here, drop the import too. Final import line:
-
-```ts
-import {
-  beatLayoutGrid,
-  circularLayout,
-  circularNodeSpacing,
-  circularRingRadius,
-  handAngle,
-  nodeAngle,
-  nodeRadius,
-  polar,
-} from './geometry';
-```
-
-- [ ] **Step 2: Replace `src/viz/linear.ts`**
+- [ ] **Step 1: Replace `src/viz/linear.ts`**
 
 ```ts
 import type { BeatLevel } from '../state/settings';
@@ -573,31 +427,29 @@ Note the deliberate simplification: the moving "stick"/"hand" indicator animates
 - [ ] **Step 3: Type-check and lint**
 
 Run: `npm run build`
-Expected: no TypeScript errors. Fix any `unused import` or type mismatches revealed here (e.g. if `linearNodeX`/`circularNodeSpacing` imports become unused, remove them; both files above were written to only import what they use — double check against the actual diff).
+Expected: no TypeScript errors. Fix any `unused import` type mismatches revealed here.
 
 Run: `npm run lint`
 Expected: no Biome errors.
 
-- [ ] **Step 4: Manual verification**
+- [ ] **Step 3: Manual verification**
 
-Run: `npm run dev`, open the app, open Settings → Signature and set Beats to 1, 4, 6, 9, 12, and 16 in turn, for both Circle and Line visualizers (toggle via the Circle/Line pill). Confirm:
-- 1–4 beats look the same as before this change (single row/ring, same node size).
-- 5–16 beats wrap into additional rows (Line) or concentric rings (Circle) of at most 4 each, centered, without the spheres shrinking to illegible size.
-- The moving hand/stick still tracks the beat and doesn't visually break.
-- Tapping a beat node still cycles its accent/normal/mute level (uses `hitTest.ts`, unchanged by this task — confirms node positions used for hit-testing and drawing haven't diverged... actually `hitTest.ts` still uses the OLD single-row/ring formulas; note the following fix-up).
+Run: `npm run dev`, open the app, open Settings → Signature and set Beats to 1, 4, 6, 9, 12, and 16 in turn, on the **Line** visualizer only (leave Circle untouched/unverified here — it has no changes to check). Confirm:
+- 1–4 beats look the same as before this change (single row, same node size).
+- 5–16 beats wrap into additional rows of at most 4 each, centered, without the spheres shrinking to illegible size.
+- The moving stick still tracks the beat and doesn't visually break.
+- Also switch to **Circle** and confirm it looks and behaves identically to `master` for every beat count tested — this task must produce zero visible change there.
+- Tapping a beat node still cycles its accent/normal/mute level — but `hitTest.ts`'s `linearBeatAt` still uses the pre-reflow single-track formula, so for `beatsPerBar > 4` on Line the tap targets won't line up yet; fixed in the next step.
 
-**Note found during manual verification prep:** `src/viz/hitTest.ts`'s `circularBeatAt`/`linearBeatAt` still place hit-test targets using the pre-reflow single-row/single-ring formulas (`nodeAngle(i, count)` / `linearNodeX(i, count, ...)`), so for `beatsPerBar > 4` the tap targets will no longer line up with the reflowed drawn nodes. Fix this in the same task since it's the same "beat position" concept and ships broken otherwise:
+- [ ] **Step 4: Fix `src/viz/hitTest.ts`'s `linearBeatAt` to match the new layout**
 
-- [ ] **Step 5: Fix `src/viz/hitTest.ts` to match the new layout**
-
-Replace its contents:
+Modify only the `linearBeatAt` function; leave `circularBeatAt` and its imports byte-for-byte as they are today.
 
 ```ts
 import {
   beatLayoutGrid,
   circularLayout,
   circularNodeSpacing,
-  circularRingRadius,
   linearGridX,
   linearGridY,
   linearLayout,
@@ -615,16 +467,10 @@ export function circularBeatAt(
   height: number,
   count: number,
 ): number {
-  const { cx, cy, r: maxR } = circularLayout(width, height);
-  const cells = beatLayoutGrid(count);
-  const rows = cells[0]?.rows ?? 1;
-  const minR = rows > 1 ? maxR * 0.5 : maxR;
-  const hitR = nodeRadius(maxR, circularNodeSpacing(Math.min(count, 4), maxR)) * 1.8;
+  const { cx, cy, r } = circularLayout(width, height);
+  const hitR = nodeRadius(r, circularNodeSpacing(count, r)) * 1.8;
   for (let i = 0; i < count; i++) {
-    const cell = cells[i];
-    if (!cell) continue;
-    const ringR = circularRingRadius(cell.row, rows, maxR, minR);
-    const p = polar(cx, cy, ringR, nodeAngle(cell.col, cell.rowCount));
+    const p = polar(cx, cy, r, nodeAngle(i, count));
     if (Math.hypot(x - p.x, y - p.y) <= hitR) return i;
   }
   return -1;
@@ -656,23 +502,26 @@ export function linearBeatAt(
 }
 ```
 
-This duplicates the `nodeR`/`rowGap` derivation from `circular.ts`/`linear.ts` rather than importing it, matching the existing pattern where `hitTest.ts` already independently re-derives `nodeR` via the same `nodeRadius(...)` call the drawing code uses (see the original file) — it is not a new inconsistency, just the same existing duplication extended to the new layout.
+`circularBeatAt` above is reproduced verbatim from the current file (unchanged) so the full file can be pasted in one piece — confirm the diff shows zero changes to `circularBeatAt` and its supporting imports (`circularLayout`, `circularNodeSpacing`, `nodeAngle`) after this edit. This duplicates the `nodeR`/`rowGap` derivation from `linear.ts` rather than importing it, matching the existing pattern where `hitTest.ts` already independently re-derives `nodeR` via the same `nodeRadius(...)` call the drawing code uses — it is not a new inconsistency, just the same existing duplication extended to the new layout.
 
-- [ ] **Step 6: Re-run manual verification**
+- [ ] **Step 5: Re-run manual verification**
 
-Repeat Step 4's check, this time confirming tap-to-cycle-level works correctly on every node for 6, 9, and 16 beats in both visualizers.
+Repeat Step 3's check, this time confirming tap-to-cycle-level works correctly on every node for 6, 9, and 16 beats on Line, and that Circle's tap-to-cycle behavior is completely unaffected.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/viz/circular.ts src/viz/linear.ts src/viz/hitTest.ts
+git add src/viz/linear.ts src/viz/hitTest.ts
 git commit -m "$(cat <<'EOF'
-Reflow beat spheres into rows/rings of at most 4
+Reflow Line's beat spheres into rows of at most 4
 
-Circle and Line no longer shrink beat nodes indefinitely as the beat
-count grows — both wrap into additional rings/rows (max 4 per
-row/ring) at a consistent node size instead. hitTest.ts is updated to
-match so tap-to-cycle-level still lines up with the drawn nodes.
+Line no longer shrinks beat nodes indefinitely as the beat count
+grows — it wraps into additional rows (max 4 per row) at a consistent
+node size instead. hitTest.ts's linearBeatAt is updated to match so
+tap-to-cycle-level still lines up with the drawn nodes. Circle is
+deliberately untouched: an earlier draft of this task also reflowed
+Circle into concentric rings, which read as a spiral rather than a
+clean dial and was rejected — see the spec's section 6 correction.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 EOF
