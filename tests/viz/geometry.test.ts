@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  beatLayoutGrid,
   circularLayout,
   circularNodeSpacing,
+  circularRingRadius,
   glowIntensity,
   handAngle,
   linearLayout,
   linearNodeSpacing,
   linearNodeX,
   linearStickX,
+  linearGridX,
+  linearGridY,
   nodeAngle,
   nodeRadius,
   polar,
@@ -94,5 +98,73 @@ describe('glowIntensity and nodeRadius', () => {
     expect(nodeRadius(1000, circularNodeSpacing(4, 1000))).toBe(17);
     expect(nodeRadius(200, linearNodeSpacing(4, 400))).toBe(17);
     expect(nodeRadius(200, linearNodeSpacing(20, 400))).toBeLessThan(17);
+  });
+});
+
+describe('beatLayoutGrid', () => {
+  it('keeps 1-4 beats in a single row', () => {
+    const cells = beatLayoutGrid(4);
+    expect(cells).toEqual([
+      { row: 0, col: 0, rowCount: 4, rows: 1 },
+      { row: 0, col: 1, rowCount: 4, rows: 1 },
+      { row: 0, col: 2, rowCount: 4, rows: 1 },
+      { row: 0, col: 3, rowCount: 4, rows: 1 },
+    ]);
+  });
+
+  it('wraps 5-8 beats into two rows of at most 4', () => {
+    const cells = beatLayoutGrid(6);
+    expect(cells.map((c) => c.row)).toEqual([0, 0, 0, 0, 1, 1]);
+    expect(cells.map((c) => c.col)).toEqual([0, 1, 2, 3, 0, 1]);
+    expect(cells[0]?.rows).toBe(2);
+    expect(cells[0]?.rowCount).toBe(4);
+    expect(cells[4]?.rowCount).toBe(2); // the shorter second row
+  });
+
+  it('preserves beat order and produces one cell per beat for 1..16', () => {
+    for (let n = 1; n <= 16; n++) {
+      const cells = beatLayoutGrid(n);
+      expect(cells).toHaveLength(n);
+      cells.forEach((cell, i) => {
+        expect(cell.row * 4 + cell.col).toBe(i);
+      });
+    }
+  });
+
+  it('handles a single beat without dividing by zero', () => {
+    const cells = beatLayoutGrid(1);
+    expect(cells).toEqual([{ row: 0, col: 0, rowCount: 1, rows: 1 }]);
+  });
+});
+
+describe('linearGridX / linearGridY', () => {
+  it('centers a full row of 4 across the track width', () => {
+    // track from 0 to 400, cell width = 100, centers at 50, 150, 250, 350
+    expect(linearGridX(0, 4, 0, 400)).toBe(50);
+    expect(linearGridX(3, 4, 0, 400)).toBe(350);
+  });
+
+  it('centers a short row (fewer than 4) as a group, not stretched to full width', () => {
+    // 2 nodes, cell width 100: row is 200 wide, centered -> starts at 100
+    expect(linearGridX(0, 2, 0, 400)).toBe(150);
+    expect(linearGridX(1, 2, 0, 400)).toBe(250);
+  });
+
+  it('stacks rows symmetrically around the center', () => {
+    expect(linearGridY(0, 1, 160, 40)).toBe(160);
+    expect(linearGridY(0, 2, 160, 40)).toBeCloseTo(140);
+    expect(linearGridY(1, 2, 160, 40)).toBeCloseTo(180);
+  });
+});
+
+describe('circularRingRadius', () => {
+  it('returns maxR when there is only one ring', () => {
+    expect(circularRingRadius(0, 1, 120, 60)).toBe(120);
+  });
+
+  it('spaces rings evenly between minR (innermost) and maxR (outermost)', () => {
+    expect(circularRingRadius(0, 3, 120, 60)).toBe(120);
+    expect(circularRingRadius(2, 3, 120, 60)).toBe(60);
+    expect(circularRingRadius(1, 3, 120, 60)).toBe(90);
   });
 });

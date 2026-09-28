@@ -68,3 +68,54 @@ export function linearNodeSpacing(count: number, width: number): number {
 export function nodeRadius(span: number, spacing: number): number {
   return Math.max(5, Math.min(17, span * 0.14, spacing * 0.42));
 }
+
+export const MAX_PER_ROW = 4;
+
+export interface BeatCell {
+  row: number;
+  col: number;
+  /** Number of beats sharing this node's row (linear) or ring (circular). */
+  rowCount: number;
+  /** Total rows/rings for this beat count. */
+  rows: number;
+}
+
+/** Splits `count` beats into rows/rings of at most `maxPerRow`, in beat order; the last row may be shorter. */
+export function beatLayoutGrid(count: number, maxPerRow = MAX_PER_ROW): BeatCell[] {
+  const rows = Math.max(1, Math.ceil(count / maxPerRow));
+  return Array.from({ length: count }, (_, i) => {
+    const row = Math.floor(i / maxPerRow);
+    const rowStart = row * maxPerRow;
+    const rowCount = Math.min(maxPerRow, count - rowStart);
+    return { row, col: i - rowStart, rowCount, rows };
+  });
+}
+
+/**
+ * X position of column `col` (of `rowCount` nodes in that row) on a track of the given width.
+ * Cells are sized for a full row of `maxPerRow` so spacing stays consistent across rows; a
+ * shorter row is centered as a group rather than stretched to fill the full width.
+ */
+export function linearGridX(
+  col: number,
+  rowCount: number,
+  left: number,
+  width: number,
+  maxPerRow = MAX_PER_ROW,
+): number {
+  const cell = width / maxPerRow;
+  const rowWidth = cell * rowCount;
+  const rowLeft = left + (width - rowWidth) / 2;
+  return rowLeft + cell * (col + 0.5);
+}
+
+/** Y position of `row` (of `rows` total), stacked symmetrically around `centerY` with fixed spacing. */
+export function linearGridY(row: number, rows: number, centerY: number, rowGap: number): number {
+  return centerY + (row - (rows - 1) / 2) * rowGap;
+}
+
+/** Radius of ring `row` (of `rows` total, row 0 = outermost), evenly spaced between `maxR` and `minR`. */
+export function circularRingRadius(row: number, rows: number, maxR: number, minR: number): number {
+  if (rows <= 1) return maxR;
+  return maxR - (row * (maxR - minR)) / (rows - 1);
+}
