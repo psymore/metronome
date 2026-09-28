@@ -1121,14 +1121,39 @@ html.depth-25d .knob {
 }
 #polyBlock select {
   width: 100%;
-  padding: 8px 10px;
+  padding: 8px 10px 8px 32px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: var(--panel-lo);
+  background-color: var(--panel-lo);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f2ead9' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  background-size: 12px 8px;
   color: var(--text);
   font: inherit;
   margin-bottom: 10px;
   box-shadow: 0 0 4.2px var(--accent-glow);
+  appearance: none;
+  cursor: pointer;
+}
+#polyBlock select:focus,
+#polyBlock select:focus-visible {
+  outline: none;
+  border-color: var(--select);
+  box-shadow:
+    0 0 4.2px var(--accent-glow),
+    0 0 0 2px var(--select);
+}
+#polyBlock select option {
+  background-color: var(--panel-lo);
+  color: var(--text);
+  padding: 8px;
+}
+#polyBlock select option:checked {
+  background: linear-gradient(var(--select), var(--select));
+  background-color: var(--select);
+  color: var(--text);
 }
 /* A segmented control for presets: unlike free-floating chips, segments sit flush against
    each other in one continuous pill and scroll horizontally if they overflow. */
