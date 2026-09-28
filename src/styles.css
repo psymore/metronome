@@ -1128,6 +1128,7 @@ html.depth-25d .knob {
   color: var(--text);
   font: inherit;
   margin-bottom: 10px;
+  box-shadow: 0 0 4.2px var(--accent-glow);
 }
 /* A segmented control for presets: unlike free-floating chips, segments sit flush against
    each other in one continuous pill and scroll horizontally if they overflow. */
