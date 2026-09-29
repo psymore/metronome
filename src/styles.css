@@ -80,7 +80,8 @@
   --viz-spoke: #313a4d;
   --viz-node: #1f6feb;
   --viz-accent: #91cbff;
-  --viz-accent-alt: #f0be6a;
+  /* Polyrhythm layer A secondary color: teal instead of amber. */
+  --viz-accent-alt: #7fe0bb;
   --viz-node-idle: #313a4d;
   --viz-hand: #58a6ff;
   --viz-label: #8fa3c2;
@@ -102,7 +103,8 @@
   --viz-spoke: #3e4148;
   --viz-node: #6e737d;
   --viz-accent: #d8dce4;
-  --viz-accent-alt: #e0b072;
+  /* Polyrhythm layer A secondary color: teal instead of amber. */
+  --viz-accent-alt: #7fe0bb;
   --viz-node-idle: #3e4148;
   --viz-hand: #b0b4bc;
   --viz-label: #8e9199;
@@ -828,23 +830,15 @@ output {
   opacity: 0.85;
 }
 .sig-poly-fraction {
-  font-size: 22px;
+  /* 0.3x smaller than the plain "4/4" digits (22px) — the ":" layout reads fine tighter, and
+     the panel button has limited width for POLY + the tag text above it. */
+  font-size: 15.4px;
   display: inline-flex;
   align-items: baseline;
   line-height: 1;
 }
 .sig-poly-slash {
-  font-size: 26px;
   margin: 0 1px;
-  transform: translateY(2px);
-}
-.sig-poly-fraction span:first-child {
-  align-self: flex-start;
-  margin-right: -2px;
-}
-.sig-poly-fraction span:last-child {
-  align-self: flex-end;
-  margin-left: -2px;
 }
 .tap {
   font-weight: 700;

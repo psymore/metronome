@@ -80,31 +80,45 @@ export function drawPolyrhythm(
         combinedGlow,
         String(p.aIndex + 1),
       );
-    } else if (frac >= 0.5) {
-      // Once past halfway, the original vertex position is empty and becomes the "close"
-      // affordance — a small dimmed ×, sized so it fits in the gap without crowding either node.
-      drawCloseHint(ctx, p.x, p.y, 5, theme);
+    } else {
+      // Branching (or fully branched): the two split nodes stay tied to their shared origin by a
+      // neutral hub sphere sitting at the original (unshifted) vertex, with a stalk running out
+      // to each — reading as "these two belong together" instead of the old small dimmed × in
+      // the gap. Doubles as the (generously sized) tap-to-recombine target.
+      const va = vertsA[p.aIndex] ?? p;
+      const vb = vertsB[p.bIndex] ?? p;
+      drawPairHub(ctx, p, va, vb, NODE_RADIUS, theme);
     }
   }
 }
 
-function drawCloseHint(
+function drawPairHub(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  size: number,
+  hub: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  radius: number,
   theme: VizTheme,
 ): void {
   ctx.save();
-  ctx.globalAlpha = 0.6;
+  ctx.strokeStyle = theme.label;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(hub.x, hub.y);
+  ctx.lineTo(a.x, a.y);
+  ctx.moveTo(hub.x, hub.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const r = radius * 0.7;
+  ctx.fillStyle = theme.nodeIdle;
   ctx.strokeStyle = theme.label;
   ctx.lineWidth = 1.5;
-  ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(x - size, y - size);
-  ctx.lineTo(x + size, y + size);
-  ctx.moveTo(x + size, y - size);
-  ctx.lineTo(x - size, y + size);
+  ctx.arc(hub.x, hub.y, r, 0, Math.PI * 2);
+  ctx.fill();
   ctx.stroke();
   ctx.restore();
 }
@@ -132,7 +146,10 @@ function drawLayer(
   ctx.stroke();
   ctx.restore();
 
-  const layerTheme: VizTheme = { ...theme, accent: layerColor, glow: layerColor };
+  // Override both `node` (normal-level fill) and `accent` (accent-level fill) so every node in
+  // this layer reads as its layer's color — not just the accent-level ones — matching the
+  // connecting lines, which are already drawn in layerColor regardless of beat level.
+  const layerTheme: VizTheme = { ...theme, node: layerColor, accent: layerColor, glow: layerColor };
   for (const [i, v] of vertices.entries()) {
     if (skip.has(i)) continue;
     const configured: BeatLevel = levels[i] ?? 'normal';

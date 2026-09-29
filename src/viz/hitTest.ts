@@ -58,7 +58,7 @@ export function polyBeatAt(
   const skipB = new Set<number>();
   let bestPair: { pair: (typeof pairs)[number]; d: number } | null = null;
   let bestClose: { pair: (typeof pairs)[number]; d: number } | null = null;
-  const closeR = 11;
+  const closeR = 14;
   for (const p of pairs) {
     const frac = getSplitFrac(p.key);
     if (frac >= 0.5) {
