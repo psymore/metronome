@@ -1,11 +1,4 @@
-import {
-  accentProfile,
-  isBeatUnit,
-  isCompoundMeter,
-  isSubdivision,
-  type Settings,
-  withBeatsPerBar,
-} from '../state/settings';
+import { isBeatUnit, isSubdivision, type Settings, withSignature } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
 
@@ -21,14 +14,14 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   byId('signatureBtn').addEventListener('click', () => dialog.showModal());
   closeOnBackdropClick(dialog);
 
-  const setBeats = (n: number) => store.set(withBeatsPerBar(store.get(), n));
+  const setBeats = (n: number) => store.set(withSignature(n, store.get().beatUnit));
   byId('beatsDown').addEventListener('click', () => setBeats(store.get().beatsPerBar - 1));
   byId('beatsUp').addEventListener('click', () => setBeats(store.get().beatsPerBar + 1));
 
   for (const button of unitButtons) {
     button.addEventListener('click', () => {
       const unit = Number(button.dataset.unit);
-      if (isBeatUnit(unit)) store.set({ beatUnit: unit });
+      if (isBeatUnit(unit)) store.set(withSignature(store.get().beatsPerBar, unit));
     });
   }
 
@@ -43,11 +36,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
     button.addEventListener('click', () => {
       const [top, bottom] = (button.dataset.preset ?? '').split('/').map(Number);
       if (!top || !isBeatUnit(bottom)) return;
-      store.set({
-        ...withBeatsPerBar(store.get(), top),
-        beatUnit: bottom,
-        ...(isCompoundMeter(top, bottom) ? { levels: accentProfile(top, bottom) } : {}),
-      });
+      store.set(withSignature(top, bottom));
     });
   }
 

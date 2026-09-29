@@ -211,9 +211,14 @@ export function cycleBeatLevel(levels: readonly BeatLevel[], index: number): Bea
   return next;
 }
 
-export function withBeatsPerBar(s: Settings, n: number): Pick<Settings, 'beatsPerBar' | 'levels'> {
-  const beatsPerBar = Math.min(MAX_BEATS, Math.max(MIN_BEATS, Math.round(n)));
-  return { beatsPerBar, levels: resizeLevels(s.levels, beatsPerBar) };
+/** A signature change (preset, beats +/-, note-value chip) resets accents to the meter's
+ *  accent profile; per-beat taps afterwards are kept until the next signature change. */
+export function withSignature(
+  beatsPerBar: number,
+  beatUnit: BeatUnit,
+): Pick<Settings, 'beatsPerBar' | 'beatUnit' | 'levels'> {
+  const clamped = Math.min(MAX_BEATS, Math.max(MIN_BEATS, Math.round(beatsPerBar)));
+  return { beatsPerBar: clamped, beatUnit, levels: accentProfile(clamped, beatUnit) };
 }
 
 /** Clamps a song-length-in-bars value; 0 means no target. */

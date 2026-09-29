@@ -12,7 +12,7 @@ import {
   SETTINGS_KEY,
   sanitizeSettings,
   saveSettings,
-  withBeatsPerBar,
+  withSignature,
 } from '../../src/state/settings';
 
 function memoryStorage() {
@@ -250,14 +250,14 @@ describe('level helpers', () => {
     ]);
   });
 
-  it('withBeatsPerBar clamps and resizes', () => {
-    const s = defaultSettings();
-    expect(withBeatsPerBar(s, 6)).toEqual({
+  it('withSignature clamps beats and applies the accent profile for the new meter', () => {
+    expect(withSignature(6, 8)).toEqual({
       beatsPerBar: 6,
-      levels: ['accent', 'normal', 'medium', 'normal', 'normal', 'normal'],
+      beatUnit: 8,
+      levels: ['accent', 'normal', 'normal', 'medium', 'normal', 'normal'],
     });
-    expect(withBeatsPerBar(s, 0).beatsPerBar).toBe(1);
-    expect(withBeatsPerBar(s, 99).beatsPerBar).toBe(16);
+    expect(withSignature(0, 4).beatsPerBar).toBe(1);
+    expect(withSignature(99, 4).beatsPerBar).toBe(16);
   });
 });
 
