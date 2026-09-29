@@ -10,7 +10,7 @@ import {
   nodeRadius,
   polar,
 } from './geometry';
-import { polyPositions, polyStageLayout } from './polyGeometry';
+import { polyNodeRadius, polyPositions, polyStageLayout } from './polyGeometry';
 
 export type PolyHit =
   | { kind: 'node'; layer: 'A' | 'B'; index: number }
@@ -49,8 +49,13 @@ export function polyBeatAt(
   getSplitFrac: (key: string) => number,
 ): PolyHit | null {
   const { cx, cy, radius } = polyStageLayout(width, height);
-  const { vertsA, vertsB, pairs } = polyPositions(a, b, cx, cy, radius, 10, getSplitFrac);
-  const hitR = 18;
+  const nodeR = polyNodeRadius(a, b, radius);
+  const {
+    nodePosA: vertsA,
+    nodePosB: vertsB,
+    pairs,
+  } = polyPositions(a, b, cx, cy, radius, nodeR, getSplitFrac);
+  const hitR = nodeR * 1.8;
 
   // Coincident pairs still at rest (frac ≈ 0) act as a single combined target: tapping starts
   // the split animation instead of cycling either layer's level.
@@ -58,7 +63,7 @@ export function polyBeatAt(
   const skipB = new Set<number>();
   let bestPair: { pair: (typeof pairs)[number]; d: number } | null = null;
   let bestClose: { pair: (typeof pairs)[number]; d: number } | null = null;
-  const closeR = 14;
+  const closeR = nodeR * 1.4;
   for (const p of pairs) {
     const frac = getSplitFrac(p.key);
     if (frac >= 0.5) {
