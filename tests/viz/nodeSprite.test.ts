@@ -36,6 +36,15 @@ describe('spriteKey', () => {
       spriteKey('dark', 'classic', 'accent', '1', 12, 2),
     );
   });
+
+  it('separates polyrhythm layer variants from standard mode and from each other', () => {
+    const standard = spriteKey('dark', 'classic', 'accent', '1', 12, 2);
+    const layerA = spriteKey('dark', 'classic', 'accent', '1', 12, 2, 'A');
+    const layerB = spriteKey('dark', 'classic', 'accent', '1', 12, 2, 'B');
+    expect(layerA).not.toBe(standard);
+    expect(layerB).not.toBe(standard);
+    expect(layerA).not.toBe(layerB);
+  });
 });
 
 describe('NodeSpriteCache', () => {
@@ -76,6 +85,15 @@ describe('NodeSpriteCache', () => {
     expect(render).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps separate sprites per polyrhythm layer variant', () => {
+    const { cache, render } = makeCache();
+    cache.get('accent', '1', 12, 'A');
+    cache.get('accent', '1', 12, 'B');
+    cache.get('accent', '1', 12);
+    expect(render).toHaveBeenCalledTimes(3);
+    expect(cache.size).toBe(3);
+  });
+
   it('drops cached sprites when the node style changes', () => {
     const { cache, render } = makeCache();
     cache.get('accent', '1', 12);
@@ -92,11 +110,13 @@ describe('NodeSpriteCache', () => {
     expect(render).toHaveBeenCalledTimes(1);
   });
 
-  it('passes the current pixel ratio to the renderer', () => {
+  it('passes the current pixel ratio and variant to the renderer', () => {
     const { cache, render } = makeCache();
     cache.setContext('dark', 3, 'classic');
     cache.get('normal', '4', 9.5);
-    expect(render).toHaveBeenCalledWith('normal', '4', 9.5, 3);
+    expect(render).toHaveBeenCalledWith('normal', '4', 9.5, 3, '');
+    cache.get('normal', '5', 9.5, 'A');
+    expect(render).toHaveBeenCalledWith('normal', '5', 9.5, 3, 'A');
   });
 
   it('falls back to live drawing when the renderer returns null', () => {

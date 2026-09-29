@@ -15,13 +15,15 @@ export function spriteKey(
   label: string,
   radius: number,
   dpr: number,
+  variant = '',
 ): string {
-  return `${themeName}|${style}|${level}|${label}|${radius.toFixed(2)}|${dpr.toFixed(2)}`;
+  return `${themeName}|${style}|${level}|${label}|${radius.toFixed(2)}|${dpr.toFixed(2)}|${variant}`;
 }
 
 export interface NodeSprites {
-  /** A pre-painted idle (glow-free) node, or null when it must be drawn live instead. */
-  get(level: BeatLevel, label: string, radius: number): CanvasImageSource | null;
+  /** A pre-painted idle (glow-free) node, or null when it must be drawn live instead. `variant`
+   *  distinguishes a polyrhythm layer's own-color sprite ('A'/'B') from standard mode (''). */
+  get(level: BeatLevel, label: string, radius: number, variant?: string): CanvasImageSource | null;
 }
 
 export type SpriteRenderer = (
@@ -29,6 +31,7 @@ export type SpriteRenderer = (
   label: string,
   radius: number,
   dpr: number,
+  variant: string,
 ) => CanvasImageSource | null;
 
 /**
@@ -53,11 +56,11 @@ export class NodeSpriteCache implements NodeSprites {
     this.sprites.clear();
   }
 
-  get(level: BeatLevel, label: string, radius: number): CanvasImageSource | null {
-    const key = spriteKey(this.themeName, this.style, level, label, radius, this.dpr);
+  get(level: BeatLevel, label: string, radius: number, variant = ''): CanvasImageSource | null {
+    const key = spriteKey(this.themeName, this.style, level, label, radius, this.dpr, variant);
     const cached = this.sprites.get(key);
     if (cached !== undefined) return cached;
-    const sprite = this.render(level, label, radius, this.dpr);
+    const sprite = this.render(level, label, radius, this.dpr, variant);
     this.sprites.set(key, sprite);
     return sprite;
   }

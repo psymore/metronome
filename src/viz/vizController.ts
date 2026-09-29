@@ -9,7 +9,7 @@ import { circularBeatAt, linearBeatAt, polyBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
 import { NodeSpriteCache, spriteSize } from './nodeSprite';
 import { computePolyFrame } from './polyFrame';
-import { drawPolyrhythm } from './polyrhythm';
+import { drawPolyrhythm, polyLayerTheme } from './polyrhythm';
 import { shouldAnimate } from './renderPolicy';
 import type { VizTheme } from './types';
 
@@ -54,8 +54,8 @@ export class VizController {
   private polyPairAnim = new Map<string, { start: number; opening: boolean }>();
   /** Ratio for which polyPairAnim's keys are valid; resets when a or b changes. */
   private polyRatio = '';
-  private readonly sprites = new NodeSpriteCache((level, label, radius, dpr) =>
-    this.paintSprite(level, label, radius, dpr),
+  private readonly sprites = new NodeSpriteCache((level, label, radius, dpr, variant) =>
+    this.paintSprite(level, label, radius, dpr, variant),
   );
 
   constructor(
@@ -185,12 +185,15 @@ export class VizController {
     }
   };
 
-  /** Paints one idle node, label and all, into its own canvas so frames can blit it. */
+  /** Paints one idle node, label and all, into its own canvas so frames can blit it. `variant`
+   *  ('A'/'B') bakes a polyrhythm layer's own color instead of the standard theme, matching what
+   *  `drawLayer`'s live path paints via the same `polyLayerTheme`. */
   private paintSprite(
     level: BeatLevel,
     label: string,
     radius: number,
     dpr: number,
+    variant: string,
   ): CanvasImageSource | null {
     const size = spriteSize(radius);
     const canvas = document.createElement('canvas');
@@ -201,7 +204,13 @@ export class VizController {
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const mid = size / 2;
     const style = this.getSettings().nodeStyle;
-    drawNode(c, mid, mid, radius, level, 0, this.theme, style);
+    const theme =
+      variant === 'A'
+        ? polyLayerTheme(this.theme, this.theme.accentAlt)
+        : variant === 'B'
+          ? polyLayerTheme(this.theme, this.theme.accent)
+          : this.theme;
+    drawNode(c, mid, mid, radius, level, 0, theme, style);
     if (style === 'classic') {
       c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
       c.textAlign = 'center';

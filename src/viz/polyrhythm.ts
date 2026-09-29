@@ -1,6 +1,6 @@
 import type { BeatLevel, NodeStyleName } from '../state/settings';
 import { drawNode } from './drawNode';
-import type { NodeSprites } from './nodeSprite';
+import { type NodeSprites, spriteSize } from './nodeSprite';
 import { darken, getNodeStyleKit, lighten, metalDisc } from './nodeStyleKit';
 import type { PolyFrame } from './polyFrame';
 import { polyNodeRadius, polyPositions, polyStageLayout } from './polyGeometry';
@@ -25,12 +25,25 @@ function levelColor(layerColor: string, level: BeatLevel): string {
   return layerColor;
 }
 
+/** A poly layer's own node/accent/glow, derived from its layer color the same way a standalone
+ *  node's theme derives them — darker for normal, lighter for accent — instead of the flat shared
+ *  theme both layers would otherwise paint with. Shared with `VizController.paintSprite`, which
+ *  must bake a layer's idle sprites in this exact theme for the live and cached paths to match. */
+export function polyLayerTheme(theme: VizTheme, layerColor: string): VizTheme {
+  return {
+    ...theme,
+    node: darken(layerColor, 0.3),
+    accent: lighten(layerColor, 0.25),
+    glow: layerColor,
+  };
+}
+
 export function drawPolyrhythm(
   ctx: CanvasRenderingContext2D,
   size: { width: number; height: number },
   frame: PolyFrame,
   theme: VizTheme,
-  _sprites: NodeSprites,
+  sprites: NodeSprites,
   style: NodeStyleName,
 ): void {
   ctx.clearRect(0, 0, size.width, size.height);
@@ -73,6 +86,8 @@ export function drawPolyrhythm(
     theme,
     combinedA,
     style,
+    sprites,
+    'A',
   );
   drawLayer(
     ctx,
@@ -86,6 +101,8 @@ export function drawPolyrhythm(
     theme,
     combinedB,
     style,
+    sprites,
+    'B',
   );
 
   for (const p of pairs) {
@@ -196,6 +213,8 @@ function drawLayer(
   theme: VizTheme,
   skip: Set<number>,
   style: NodeStyleName,
+  sprites: NodeSprites,
+  layer: 'A' | 'B',
 ): void {
   if (outlineVerts.length === 0) return;
   ctx.save();
@@ -218,12 +237,8 @@ function drawLayer(
   // hard to tell apart, especially on style kits like Prism whose fill alpha is already subtle.
   // Connecting lines stay in the plain layerColor regardless of level, so a layer still reads as
   // one consistent hue across the ring.
-  const layerTheme: VizTheme = {
-    ...theme,
-    node: darken(layerColor, 0.3),
-    accent: lighten(layerColor, 0.25),
-    glow: layerColor,
-  };
+  const layerTheme = polyLayerTheme(theme, layerColor);
+  const size = spriteSize(nodeRadius);
   for (const [i, v] of nodeVerts.entries()) {
     if (skip.has(i)) continue;
     const configured: BeatLevel = levels[i] ?? 'normal';
@@ -232,8 +247,18 @@ function drawLayer(
     // mode's frame.ts, which damps mute to 25% rather than zeroing it — so muted beats read as
     // "ticking silently" instead of completely inert here too.
     const g = isActive ? (configured === 'mute' ? glow * 0.25 : glow) : 0;
+    const label = String(i + 1);
+    if (g === 0) {
+      // Position, not look, is all that changes for a mid-split node — the cached idle sprite is
+      // still valid while it's sliding apart from its former conjunction partner.
+      const sprite = sprites.get(configured, label, nodeRadius, layer);
+      if (sprite) {
+        ctx.drawImage(sprite, v.x - size / 2, v.y - size / 2, size, size);
+        continue;
+      }
+    }
     drawNode(ctx, v.x, v.y, nodeRadius, configured, g, layerTheme, style);
-    if (style === 'classic') paintLabel(ctx, v.x, v.y, nodeRadius, String(i + 1));
+    if (style === 'classic') paintLabel(ctx, v.x, v.y, nodeRadius, label);
   }
 }
 
