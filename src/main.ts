@@ -27,6 +27,7 @@ import { mountKnob } from './ui/knob';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountPolyrhythmControls } from './ui/polyrhythmDialog';
+import { createPwaReloadHandler } from './ui/pwaReload';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
 import { mountSoundDialog } from './ui/soundDialog';
@@ -507,7 +508,17 @@ if (new URLSearchParams(location.search).has('debug')) {
 
 if (!('__TAURI_INTERNALS__' in window)) {
   import('virtual:pwa-register')
-    .then(({ registerSW }) => registerSW({ immediate: true }))
+    .then(({ registerSW }) =>
+      registerSW({
+        immediate: true,
+        onNeedReload: createPwaReloadHandler({
+          isRunning: () => engine.running,
+          isHidden: () => document.hidden,
+          onVisibilityChange: (listener) => document.addEventListener('visibilitychange', listener),
+          reload: () => location.reload(),
+        }),
+      }),
+    )
     .catch(() => {
       // Offline support is a bonus; the app works without it.
     });
