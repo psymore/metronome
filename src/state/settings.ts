@@ -8,6 +8,8 @@ export const BEAT_UNITS = [2, 4, 8, 16] as const;
 export type BeatUnit = (typeof BEAT_UNITS)[number];
 export const THEMES = ['teal', 'amber', 'blue', 'chrome'] as const;
 export type ThemeName = (typeof THEMES)[number];
+export const NODE_STYLES = ['classic', 'flat', 'outline'] as const;
+export type NodeStyleName = (typeof NODE_STYLES)[number];
 export const LANGUAGES = ['en', 'tr'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
@@ -35,6 +37,7 @@ export interface Settings {
   accentSoundId: string;
   normalSoundId: string;
   theme: ThemeName;
+  nodeStyle: NodeStyleName;
   /** Whether tapping a beat node directly on the circular/linear visualizer cycles its level. */
   beatsClickable: boolean;
   /** Whether to vibrate briefly on each beat, on devices that support it. */
@@ -75,6 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accentSoundId: 'builtin:click-high',
   normalSoundId: 'builtin:click',
   theme: 'teal',
+  nodeStyle: 'classic',
   beatsClickable: true,
   haptics: false,
   targetBars: 0,
@@ -118,6 +122,10 @@ export function isBeatUnit(v: unknown): v is BeatUnit {
 
 export function isThemeName(v: unknown): v is ThemeName {
   return (THEMES as readonly unknown[]).includes(v);
+}
+
+export function isNodeStyleName(v: unknown): v is NodeStyleName {
+  return (NODE_STYLES as readonly unknown[]).includes(v);
 }
 
 export function isSubdivision(v: unknown): v is Subdivision {
@@ -228,6 +236,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     accentSoundId: isSoundId(r.accentSoundId) ? r.accentSoundId : d.accentSoundId,
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
     theme: isThemeName(r.theme) ? r.theme : d.theme,
+    nodeStyle: isNodeStyleName(r.nodeStyle) ? r.nodeStyle : d.nodeStyle,
     beatsClickable: typeof r.beatsClickable === 'boolean' ? r.beatsClickable : d.beatsClickable,
     haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
     targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,

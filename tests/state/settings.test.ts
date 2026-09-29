@@ -98,6 +98,7 @@ describe('sanitizeSettings', () => {
       accentSoundId: 'builtin:click-high',
       normalSoundId: 'builtin:click',
       theme: 'teal',
+      nodeStyle: 'classic',
       beatsClickable: true,
       haptics: false,
       targetBars: 0,
