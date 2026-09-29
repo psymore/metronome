@@ -1359,10 +1359,6 @@ select:not(.native-select) option:checked {
   background-color: var(--select);
   color: var(--text);
 }
-#polyBlock select {
-  width: 100%;
-  margin-bottom: 10px;
-}
 .slot-row select {
   margin-right: 4px;
 }

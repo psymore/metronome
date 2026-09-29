@@ -33,6 +33,7 @@ import { createPwaReloadHandler } from './ui/pwaReload';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
 import { mountSoundDialog } from './ui/soundDialog';
+import { createSoundPreview } from './ui/soundPreview';
 import { createToast } from './ui/toast';
 import { mountTransport } from './ui/transport';
 import { mountVizSwitch } from './ui/vizSwitch';
@@ -117,6 +118,7 @@ const library = new SoundLibrary({
   decode: (bytes) => engine.decode(bytes),
   loadBytes: async (id) => (await sounds.get(id))?.bytes,
 });
+const previewSound = createSoundPreview(engine, library, toast);
 
 const slotRequest: Record<SoundSlot, number> = { accent: 0, normal: 0 };
 
@@ -491,7 +493,7 @@ void Promise.all([
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
-mountPolyrhythmControls({ store, sounds });
+mountPolyrhythmControls({ store, sounds, previewSound });
 mountBarCounterDialog({ store, toast });
 mountSettingsDialog({
   store,
@@ -503,7 +505,7 @@ mountSettingsDialog({
     }
   },
 });
-mountSoundDialog({ store, engine, sounds, library, toast });
+mountSoundDialog({ store, engine, sounds, library, previewSound, toast });
 mountLanguageSwitch({ store });
 mountInfoButtons(showInfo);
 mountClickFx();

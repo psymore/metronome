@@ -7,6 +7,7 @@ import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
+import type { PreviewSound } from './soundPreview';
 import type { Toast } from './toast';
 
 type SlotKey = 'accentSoundId' | 'normalSoundId';
@@ -16,10 +17,18 @@ export interface SoundDialogDeps {
   engine: AudioEngine;
   sounds: SoundStore;
   library: SoundLibrary;
+  previewSound: PreviewSound;
   toast: Toast;
 }
 
-export function mountSoundDialog({ store, engine, sounds, library, toast }: SoundDialogDeps): void {
+export function mountSoundDialog({
+  store,
+  engine,
+  sounds,
+  library,
+  previewSound,
+  toast,
+}: SoundDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('soundDialog');
   const selects: Record<SlotKey, HTMLSelectElement> = {
     accentSoundId: byId<HTMLSelectElement>('accentSelect'),
@@ -85,7 +94,7 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
           smallButton(
             '▶',
             format('sound.previewNamed', { name: sound.name }),
-            () => void preview(sound.id),
+            () => void previewSound(sound.id),
           ),
           smallButton(
             '✕',
@@ -102,12 +111,6 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
     fillSelect(selects.accentSoundId, s.accentSoundId);
     fillSelect(selects.normalSoundId, s.normalSoundId);
     renderList();
-  }
-
-  async function preview(id: string): Promise<void> {
-    const result = await library.resolve(id, DEFAULT_SETTINGS.normalSoundId);
-    if (result.error) toast(format('toast.playError', { error: result.error }));
-    else await engine.preview(result.pcm);
   }
 
   async function remove(sound: SoundMeta): Promise<void> {
@@ -155,7 +158,7 @@ export function mountSoundDialog({ store, engine, sounds, library, toast }: Soun
   for (const button of dialog.querySelectorAll<HTMLButtonElement>('[data-preview]')) {
     button.addEventListener('click', () => {
       const key = button.dataset.preview as SlotKey;
-      void preview(store.get()[key]);
+      void previewSound(store.get()[key]);
     });
   }
 

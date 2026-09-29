@@ -5,15 +5,21 @@ import { clampPolyCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
+import type { PreviewSound } from './soundPreview';
 
 export interface PolyrhythmControlsDeps {
   store: Store<Settings>;
   sounds: SoundStore;
+  previewSound: PreviewSound;
 }
 
 /** Lives inside the existing #signatureDialog sheet (see signatureDialog.ts) — a separate
  *  module purely to keep each file focused on one concern within the shared dialog. */
-export function mountPolyrhythmControls({ store, sounds }: PolyrhythmControlsDeps): void {
+export function mountPolyrhythmControls({
+  store,
+  sounds,
+  previewSound,
+}: PolyrhythmControlsDeps): void {
   const modeButtons = Array.from(
     document.querySelectorAll<HTMLButtonElement>('#signatureDialog [data-sig-mode]'),
   );
@@ -68,6 +74,14 @@ export function mountPolyrhythmControls({ store, sounds }: PolyrhythmControlsDep
   );
   soundBSelect.addEventListener('change', () =>
     store.set({ polyrhythm: { ...store.get().polyrhythm, soundIdB: soundBSelect.value } }),
+  );
+  byId('polyPreviewA').addEventListener(
+    'click',
+    () => void previewSound(store.get().polyrhythm.soundIdA),
+  );
+  byId('polyPreviewB').addEventListener(
+    'click',
+    () => void previewSound(store.get().polyrhythm.soundIdB),
   );
 
   const refreshSoundSelects = async (): Promise<void> => {
