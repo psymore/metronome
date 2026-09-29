@@ -20,6 +20,9 @@ export interface Pattern {
   levels: readonly BeatLevel[];
   /** Clicks per beat interval: 1 = just the beat, 2/3/4 = 8th/triplet/16th subdivision clicks. */
   subdivision: 1 | 2 | 3 | 4;
+  /** Pulses per felt beat: 1 for simple meters, 3 for compound meters (BPM is the dotted quarter,
+   *  each pulse an eighth). */
+  pulsesPerBeat: 1 | 3;
 }
 
 export interface SchedulerOptions {
@@ -95,7 +98,7 @@ export class Scheduler {
         this.beatInBar = 0;
         this.barIndex++;
       }
-      const duration = secondsPerBeat(pattern.bpm);
+      const duration = secondsPerBeat(pattern.bpm) / pattern.pulsesPerBeat;
       const beat: BeatEvent = {
         time: this.nextTime,
         duration,
@@ -122,8 +125,8 @@ export class Scheduler {
 
   /** After a stall, jump forward on the same grid instead of playing a burst of late clicks. */
   private skipMissed(now: number): void {
-    const { bpm, beatsPerBar } = this.opts.getPattern();
-    const duration = secondsPerBeat(bpm);
+    const { bpm, beatsPerBar, pulsesPerBeat } = this.opts.getPattern();
+    const duration = secondsPerBeat(bpm) / pulsesPerBeat;
     const missed = Math.ceil((now - this.nextTime) / duration);
     this.nextTime += missed * duration;
     this.stats.skipped += missed;

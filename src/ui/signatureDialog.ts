@@ -1,4 +1,10 @@
-import { isBeatUnit, isSubdivision, type Settings, withSignature } from '../state/settings';
+import {
+  isBeatUnit,
+  isCompoundMeter,
+  isSubdivision,
+  type Settings,
+  withSignature,
+} from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
 
@@ -10,6 +16,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
     dialog.querySelectorAll<HTMLButtonElement>('[data-subdivision]'),
   );
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
+  const compoundHint = byId('subdivisionCompoundHint');
 
   byId('signatureBtn').addEventListener('click', () => dialog.showModal());
   closeOnBackdropClick(dialog);
@@ -45,12 +52,15 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
     for (const button of unitButtons) {
       button.setAttribute('aria-checked', String(Number(button.dataset.unit) === s.beatUnit));
     }
+    const compound = isCompoundMeter(s.beatsPerBar, s.beatUnit);
     for (const button of subdivisionButtons) {
       button.setAttribute(
         'aria-checked',
         String(Number(button.dataset.subdivision) === s.subdivision),
       );
+      button.disabled = compound;
     }
+    compoundHint.hidden = !compound;
     const current = `${s.beatsPerBar}/${s.beatUnit}`;
     for (const button of presetButtons) {
       button.setAttribute('aria-checked', String(button.dataset.preset === current));

@@ -1,3 +1,4 @@
+import type { Pattern } from '../engine/scheduler';
 import { clampBpm } from '../engine/timing';
 
 export type BeatLevel = 'accent' | 'medium' | 'normal' | 'mute';
@@ -150,6 +151,20 @@ export function resizeLevels(levels: readonly BeatLevel[], n: number): BeatLevel
 
 export function isCompoundMeter(beatsPerBar: number, beatUnit: BeatUnit): boolean {
   return beatUnit === 8 && beatsPerBar > 3 && beatsPerBar % 3 === 0;
+}
+
+/** Builds the scheduler's `Pattern` from settings: in a compound meter, BPM is the dotted
+ *  quarter so each pulse is a third of a beat, and the eighths already are the subdivision — the
+ *  configured subdivision is ignored (but kept in settings, so leaving the meter restores it). */
+export function patternFromSettings(s: Settings): Pattern {
+  const compound = isCompoundMeter(s.beatsPerBar, s.beatUnit);
+  return {
+    bpm: s.bpm,
+    beatsPerBar: s.beatsPerBar,
+    levels: s.levels,
+    subdivision: compound ? 1 : s.subdivision,
+    pulsesPerBeat: compound ? 3 : 1,
+  };
 }
 
 /**

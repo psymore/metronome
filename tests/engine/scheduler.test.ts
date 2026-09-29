@@ -7,6 +7,7 @@ function setup(pattern: Partial<Pattern> = {}, lookahead = 1) {
     beatsPerBar: 4,
     levels: ['accent', 'normal', 'normal', 'normal'],
     subdivision: 1,
+    pulsesPerBeat: 1,
     ...pattern,
   };
   const beats: BeatEvent[] = [];
@@ -163,5 +164,39 @@ describe('Scheduler', () => {
     expect(subdivisions).toHaveLength(2);
     expect(subdivisions[0]).toBeCloseTo(0.05 + 0.5 / 3, 9);
     expect(subdivisions[1]).toBeCloseTo(0.05 + (2 * 0.5) / 3, 9);
+  });
+
+  it('compound meter (pulsesPerBeat 3) schedules six pulses 1/3 s apart at 60 BPM', () => {
+    const { s, beats } = setup(
+      {
+        bpm: 60,
+        beatsPerBar: 6,
+        levels: ['accent', 'normal', 'normal', 'medium', 'normal', 'normal'],
+        pulsesPerBeat: 3,
+      },
+      1.8, // just enough window for exactly one bar (6 × 1/3 s = 2 s) of pulses
+    );
+    s.start(0);
+    expect(beats).toHaveLength(6);
+    beats.forEach((b, k) => {
+      expect(b.time).toBeCloseTo(0.05 + k * (1 / 3), 9);
+      expect(b.duration).toBeCloseTo(1 / 3, 9);
+      expect(b.beatInBar).toBe(k);
+    });
+    expect(beats.at(-1)?.barIndex).toBe(0);
+  });
+
+  it("skipMissed lands on the compound meter's 1/3 s grid after a stall", () => {
+    const { s, beats } = setup(
+      { bpm: 60, beatsPerBar: 6, levels: Array(6).fill('normal'), pulsesPerBeat: 3 },
+      0.35,
+    );
+    s.start(0); // only 0.05 fits in [0, 0.35) — the next pulse (0.383..) is outside it
+    expect(beats).toHaveLength(1);
+    s.tick(10.2); // stall, deliberately not a whole-second multiple
+    expect(beats).toHaveLength(2);
+    // missed = ceil((10.2 - 0.05) / (1/3)) = 31 pulses of 1/3 s each
+    expect(beats[1]?.time).toBeCloseTo(0.05 + 31 * (1 / 3), 9);
+    expect(beats[1]).toMatchObject({ beatInBar: 1, barIndex: 5 });
   });
 });

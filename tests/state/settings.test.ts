@@ -8,6 +8,7 @@ import {
   isCompoundMeter,
   loadSettings,
   nextLevel,
+  patternFromSettings,
   resizeLevels,
   SETTINGS_KEY,
   sanitizeSettings,
@@ -248,6 +249,38 @@ describe('level helpers', () => {
       'medium',
       'medium',
     ]);
+  });
+
+  it('patternFromSettings zeroes subdivision and sets pulsesPerBeat 3 in a compound meter', () => {
+    const s = {
+      ...defaultSettings(),
+      beatsPerBar: 6,
+      beatUnit: 8 as const,
+      subdivision: 3 as const,
+    };
+    expect(patternFromSettings(s)).toEqual({
+      bpm: s.bpm,
+      beatsPerBar: 6,
+      levels: s.levels,
+      subdivision: 1,
+      pulsesPerBeat: 3,
+    });
+  });
+
+  it('patternFromSettings keeps the configured subdivision and pulsesPerBeat 1 in 4/4', () => {
+    const s = { ...defaultSettings(), subdivision: 3 as const };
+    expect(patternFromSettings(s)).toEqual({
+      bpm: s.bpm,
+      beatsPerBar: 4,
+      levels: s.levels,
+      subdivision: 3,
+      pulsesPerBeat: 1,
+    });
+  });
+
+  it('patternFromSettings keeps pulsesPerBeat 1 for a non-compound 7/8', () => {
+    const s = { ...defaultSettings(), beatsPerBar: 7, beatUnit: 8 as const };
+    expect(patternFromSettings(s).pulsesPerBeat).toBe(1);
   });
 
   it('withSignature clamps beats and applies the accent profile for the new meter', () => {

@@ -1,5 +1,6 @@
 import './styles.css';
 import { AudioEngine, type SoundSlot } from './engine/audioEngine';
+import type { Pattern } from './engine/scheduler';
 import { applyLanguage, applyTranslations, format, t } from './i18n/i18n';
 import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
@@ -10,6 +11,7 @@ import {
   DEFAULT_SETTINGS,
   loadSettings,
   nextLevel,
+  patternFromSettings,
   resizePolyLevels,
   type Settings,
   saveSettings,
@@ -89,8 +91,19 @@ const errorFloor = mountErrorFloor({
   getMessage: () => t('toast.unexpectedError'),
   isBooted: () => document.documentElement.dataset.booted === 'true',
 });
+// Memoised on the settings object identity (the store replaces it wholesale on every `set`) so
+// this per-tick call doesn't recompute the pattern when nothing changed.
+let cachedSettings: Settings | null = null;
+let cachedPattern: Pattern | null = null;
 const engine = new AudioEngine({
-  getPattern: () => store.get(),
+  getPattern: () => {
+    const s = store.get();
+    if (s !== cachedSettings || !cachedPattern) {
+      cachedSettings = s;
+      cachedPattern = patternFromSettings(s);
+    }
+    return cachedPattern;
+  },
   getPolyPattern: () => store.get(),
 });
 engine.setVolume(store.get().volume);

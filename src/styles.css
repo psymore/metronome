@@ -1174,6 +1174,10 @@ html.depth-25d .knob {
     inset 0 2px 4px rgb(0 0 0 / 0.55),
     0 0 6px var(--accent-idle);
 }
+.chip:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
 .chip--preview {
   display: flex;
   flex-direction: column;
