@@ -567,7 +567,6 @@ output {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
-  box-shadow: 0 0 4.2px var(--accent-glow);
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 500;
@@ -575,6 +574,41 @@ output {
   color: var(--select);
   text-shadow: 0 0 6px var(--select-soft);
   z-index: 1;
+}
+/* The pill straddles the panel's top edge (`top: -16px`, half in/half out). The upper (floating)
+   half keeps its own border/glow above; the lower half — the part sitting inside the panel —
+   is redrawn here to read as part of the panel frame instead: the panel's own border color and
+   machined-edge highlight (`.panel::before`'s gradient), clipped to just that half so the seam
+   lines up exactly with the panel's top border. */
+.bar-counter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid var(--accent-idle);
+  background:
+    linear-gradient(var(--panel), var(--panel)) padding-box,
+    linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.22) 0%,
+      rgb(255 255 255 / 0.06) 30%,
+      rgb(0 0 0 / 0.25) 65%,
+      rgb(255 255 255 / 0.1) 100%
+    )
+    border-box;
+  clip-path: inset(50% 0 0 0);
+}
+/* The outer glow only belongs on the upper (floating) half — the lower half reads as panel frame,
+   not as a glowing readout. */
+.bar-counter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 4.2px var(--accent-glow);
+  clip-path: inset(-8px -8px 50% -8px);
 }
 .bar-counter:active {
   transform: scale(0.96);
