@@ -3,6 +3,7 @@ import { formatTimeLeft } from '../state/practiceTimer';
 import {
   clampPracticeSeconds,
   defaultSettings,
+  isNodeStyleName,
   isThemeName,
   type Settings,
 } from '../state/settings';
@@ -39,6 +40,9 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const depth25dToggle = byId<HTMLButtonElement>('depth25dToggle');
   const themeButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
+  );
+  const nodeStyleButtons = Array.from(
+    dialog.querySelectorAll<HTMLButtonElement>('[data-node-style-option]'),
   );
 
   const practiceConfirm = createConfirmGate(practiceTimerApply, {
@@ -91,6 +95,12 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
       if (isThemeName(theme)) store.set({ theme });
     });
   }
+  for (const button of nodeStyleButtons) {
+    button.addEventListener('click', () => {
+      const nodeStyle = button.dataset.nodeStyleOption;
+      if (isNodeStyleName(nodeStyle)) store.set({ nodeStyle });
+    });
+  }
   beatsClickableToggle.addEventListener('click', () => {
     store.set({ beatsClickable: !store.get().beatsClickable });
   });
@@ -121,6 +131,9 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     practiceTimerApply.disabled = s.practiceSeconds <= 0;
     offsetInput.value = String(s.syncOffsetMs);
     offsetValue.textContent = `${s.syncOffsetMs > 0 ? '+' : ''}${s.syncOffsetMs} ms`;
+    for (const button of nodeStyleButtons) {
+      button.setAttribute('aria-checked', String(button.dataset.nodeStyleOption === s.nodeStyle));
+    }
     for (const button of themeButtons) {
       button.setAttribute('aria-checked', String(button.dataset.themeOption === s.theme));
     }
