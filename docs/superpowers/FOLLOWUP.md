@@ -36,6 +36,7 @@ Phase A (performance) and most of Phase B (Android Play Store release) are done.
 - **Tasks 1-7 and 10: done, verified, committed, pushed to `master`.**
 - **Task 8 (signed AAB): Steps 1-3 done** (AAB built, signed, `jarsigner -verify` confirms `jar verified.` with the real cert, SDK levels re-confirmed 36/36). **Step 4 (real-device unplugged 10-minute soak test) is NOT done** — the user chose to run this themselves later, on their own phone, rather than connect one to this session.
 - **Task 9 (Play Console): Step 2 done** (privacy policy written and live). **Everything else is open**: Step 1 (personal-vs-org account type — user needs to check), Step 3 (draft store copy exists but hasn't been shown to the user for approval; screenshots not taken — need Task 8 Step 4's device), Steps 4-7 (create the app listing, upload the AAB, recruit testers, apply for production) are pure Play Console UI actions this agent has no access to (no browser tool was enabled this session) and cannot perform.
+- **New, found during the 2026-09-29 review-fixes plan**: once the app exists in Play Console (Step 4), there's one more thing needed before the Play-installed app will actually pass as a trusted TWA — the *Play App Signing* certificate. Google re-signs the AAB with its own key on upload, so `public/.well-known/assetlinks.json` (which only lists the local upload key's SHA-256 today) needs a **second** fingerprint added: *App integrity → App signing key certificate → SHA-256* in Play Console, added as a second entry in `sha256_cert_fingerprints`, then redeployed and re-verified with the `digitalassetlinks.googleapis.com` curl. Until then, a Play-installed (not side-loaded) app will show Chrome's URL bar instead of running as a real TWA. Fully documented as a checklist step in `docs/architecture/platforms.md` ("Play App Signing — a one-time step after the first Play Console upload") — the agent can add the second fingerprint entry and redeploy as soon as the user hands over that SHA-256; it cannot get it themselves (Play Console UI access needed).
 
 ### What's live right now
 
@@ -82,6 +83,7 @@ Unchanged from before this session — see the plan's own "Design Decisions" sec
 - Check and report the Play Console account type/creation date (Task 9 Step 1).
 - Approve/edit the draft store listing copy and supply screenshots (Task 9 Step 3).
 - Everything in the Play Console itself: create the app listing, complete App content, upload the AAB, recruit closed-testing testers, apply for production (Task 9 Steps 4-7) — each needs explicit confirmation before it happens, per the plan.
+- Once the app exists in Play Console: hand over the Play App Signing certificate's SHA-256 (*App integrity → App signing key certificate*) so it can be added as a second `assetlinks.json` fingerprint — see the new note above and `docs/architecture/platforms.md`.
 - Decide whether/when to do the final whole-branch review and formally close out the plan.
 
 ## Deferred from Phase A's final review — still not fixed, still not forgotten

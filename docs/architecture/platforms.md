@@ -39,9 +39,9 @@ Chrome loading the live site).
 
 ## No native-shell code for Android
 
-`main.ts` and `platform.ts` are untouched by the Android work — a TWA needs no
-JavaScript changes at all. Chrome is simply pointed at the real, deployed
-site; service-worker registration behaves exactly as it does for any browser
+`main.ts` is untouched by the Android work — a TWA needs no JavaScript
+changes at all. Chrome is simply pointed at the real, deployed site;
+service-worker registration behaves exactly as it does for any browser
 visitor. The only platform guard in the codebase is the pre-existing Tauri
 check, `'__TAURI_INTERNALS__' in window` (`src/main.ts`), which is unaffected.
 
@@ -98,6 +98,31 @@ first step):
    worker).
 8. Upload `app-release-bundle.aab` to the Play Console only if this is a
    native-shell change.
+
+### Play App Signing — a one-time step after the first Play Console upload
+
+Play App Signing is mandatory for new AAB apps: after the first upload, Google
+re-signs the app with its own key before distributing it, so the app the
+**Play Store** installs is signed with a different certificate than the AAB
+you built and signed locally. `public/.well-known/assetlinks.json` only lists
+the local upload key's SHA-256, so until this step is done the Play-installed
+app fails Digital Asset Links verification and shows Chrome's URL bar instead
+of running as a trusted TWA — a locally side-loaded APK still works, which
+hides the problem until release.
+
+**Not yet done** — needs a fingerprint only the Play Console can provide, see
+`docs/superpowers/FOLLOWUP.md`. Once available:
+
+1. In Play Console, after the app exists: *App integrity → App signing key
+   certificate → SHA-256 certificate fingerprint*.
+2. Add it as a **second** entry in `assetlinks.json`'s
+   `sha256_cert_fingerprints` — keep the existing upload-key entry too, since
+   that's still what a locally side-loaded APK is signed with.
+3. Deploy, then verify both fingerprints resolve with the
+   `digitalassetlinks.googleapis.com` curl in step 2 of the checklist above.
+
+This is a one-time step (redo only if the app signing key itself ever
+changes), not part of every release.
 
 ### A note on Bubblewrap's `build`/`init` commands in this environment
 
@@ -157,8 +182,9 @@ These must not be undone by future changes, Android or otherwise:
   `document.hidden` (`src/viz/renderPolicy.ts`, wired into
   `src/viz/vizController.ts`) and must resume on `visibilitychange`.
 - Idle beat nodes are drawn from cached sprites (`src/viz/nodeSprite.ts`), not
-  painted live every frame. The cache must be invalidated whenever theme or
-  device pixel ratio changes, or nodes keep the old look.
+  painted live every frame. The cache must be invalidated whenever theme,
+  device pixel ratio, or beat-sphere node style (`nodeStyle`) changes, or
+  nodes keep the old look.
 - `AudioEngine.stop()` must keep suspending the `AudioContext`
   (`src/engine/audioEngine.ts`) — a running context drains battery even in
   silence.
