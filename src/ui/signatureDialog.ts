@@ -7,6 +7,7 @@ import {
 } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
+import { mountHoldRepeat } from './holdRepeat';
 
 export function mountSignatureDialog({ store }: { store: Store<Settings> }): void {
   const dialog = byId<HTMLDialogElement>('signatureDialog');
@@ -22,8 +23,8 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   closeOnBackdropClick(dialog);
 
   const setBeats = (n: number) => store.set(withSignature(n, store.get().beatUnit));
-  byId('beatsDown').addEventListener('click', () => setBeats(store.get().beatsPerBar - 1));
-  byId('beatsUp').addEventListener('click', () => setBeats(store.get().beatsPerBar + 1));
+  mountHoldRepeat(byId('beatsDown'), () => setBeats(store.get().beatsPerBar - 1));
+  mountHoldRepeat(byId('beatsUp'), () => setBeats(store.get().beatsPerBar + 1));
 
   for (const button of unitButtons) {
     button.addEventListener('click', () => {

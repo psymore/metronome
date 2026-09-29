@@ -4,6 +4,7 @@ import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { clampPolyCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId } from './dom';
+import { mountHoldRepeat } from './holdRepeat';
 
 export interface PolyrhythmControlsDeps {
   store: Store<Settings>;
@@ -35,10 +36,10 @@ export function mountPolyrhythmControls({ store, sounds }: PolyrhythmControlsDep
     store.set({ polyrhythm: { ...store.get().polyrhythm, a: clampPolyCount(n) } });
   const setB = (n: number) =>
     store.set({ polyrhythm: { ...store.get().polyrhythm, b: clampPolyCount(n) } });
-  byId('polyADown').addEventListener('click', () => setA(store.get().polyrhythm.a - 1));
-  byId('polyAUp').addEventListener('click', () => setA(store.get().polyrhythm.a + 1));
-  byId('polyBDown').addEventListener('click', () => setB(store.get().polyrhythm.b - 1));
-  byId('polyBUp').addEventListener('click', () => setB(store.get().polyrhythm.b + 1));
+  mountHoldRepeat(byId('polyADown'), () => setA(store.get().polyrhythm.a - 1));
+  mountHoldRepeat(byId('polyAUp'), () => setA(store.get().polyrhythm.a + 1));
+  mountHoldRepeat(byId('polyBDown'), () => setB(store.get().polyrhythm.b - 1));
+  mountHoldRepeat(byId('polyBUp'), () => setB(store.get().polyrhythm.b + 1));
 
   async function fillSoundSelect(select: HTMLSelectElement, current: string): Promise<void> {
     const builtin = document.createElement('optgroup');

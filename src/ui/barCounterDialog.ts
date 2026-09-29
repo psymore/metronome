@@ -3,6 +3,7 @@ import { clampTargetBars, isLoopCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick } from './dom';
+import { mountHoldRepeat } from './holdRepeat';
 import type { Toast } from './toast';
 
 export function mountBarCounterDialog({
@@ -43,10 +44,8 @@ export function mountBarCounterDialog({
     confirmGate.disarm();
     renderTargetBars();
   };
-  byId('targetBarsDown').addEventListener('click', () =>
-    setPendingTargetBars(pendingTargetBars - 1),
-  );
-  byId('targetBarsUp').addEventListener('click', () => setPendingTargetBars(pendingTargetBars + 1));
+  mountHoldRepeat(byId('targetBarsDown'), () => setPendingTargetBars(pendingTargetBars - 1));
+  mountHoldRepeat(byId('targetBarsUp'), () => setPendingTargetBars(pendingTargetBars + 1));
 
   targetBarsApply.addEventListener('click', () => {
     if (pendingTargetBars <= 0) {

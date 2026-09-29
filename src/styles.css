@@ -1265,20 +1265,8 @@ html.depth-25d .knob {
   gap: 14px;
   justify-items: center;
 }
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.stepper + .wide-btn {
+.num-picker + .wide-btn {
   margin: 12px 0 14px;
-}
-.stepper-value {
-  font-family: var(--font-mono);
-  font-size: 36px;
-  font-weight: 600;
-  min-width: 2ch;
-  text-align: center;
 }
 .unit-row {
   display: flex;
@@ -1296,29 +1284,6 @@ html.depth-25d .knob {
 }
 .picker-block .sheet-sub {
   margin-top: 0;
-}
-.picker-block .stepper {
-  justify-content: center;
-}
-/* Polyrhythm's own ratio steppers/sound pickers read as sheet controls, not instrument-panel
-   hardware — override .nudge's metallic knob-disc look with a flat panel button (same recipe as
-   .small-btn) and style the plain <select>s like the Sound dialog's themed .slot-row select.
-   Metallic stays reserved for the main screen's BPM nudges. */
-#polyBlock .nudge {
-  background: linear-gradient(180deg, var(--panel), var(--panel-lo));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -2px 3px rgb(0 0 0 / 0.4);
-  border: 1px solid var(--line);
-  color: var(--text);
-  text-shadow: none;
-}
-#polyBlock .nudge::before {
-  content: none;
-}
-#polyBlock .nudge:active {
-  transform: scale(0.92);
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
 /* App-wide themed dropdown styling: every native <select> in the app follows this one recipe,
    so the Sound dialog, the Polyrhythm A/B selects, and any future select share the same look.
@@ -1465,13 +1430,28 @@ select:not(.native-select) option:checked {
   font: inherit;
   font-size: 14px;
 }
-/* Practice timer: stacked MM:SS fields (each labeled so it's never ambiguous which is which)
-   with hold-to-repeat +/- steppers (ui/holdRepeat.ts) below, instead of a single whole-minutes
-   input. */
-.time-picker {
+/* Shared "value box on top, round steppers below" format for every dialog's +/- number picker
+   (the practice timer's stacked MM:SS fields, and single-value pickers like Beats, the
+   polyrhythm layer counts, and Song length). Hold-to-repeat +/- steppers via ui/holdRepeat.ts. */
+.num-picker {
   display: grid;
   justify-items: center;
   gap: 8px;
+}
+/* A single-value picker's value box (Beats, polyrhythm layer counts, Song length) — same dark
+   box/border/tabular-nums look as .time-fields input, for a value that isn't itself editable. */
+.num-value {
+  min-width: 3.2em;
+  padding: 6px 10px;
+  text-align: center;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--edge);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 600;
 }
 .time-fields {
   display: flex;
@@ -1514,7 +1494,7 @@ select:not(.native-select) option:checked {
   display: flex;
   gap: 14px;
 }
-.time-step-btn {
+.round-step-btn {
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -1530,7 +1510,7 @@ select:not(.native-select) option:checked {
   line-height: 1;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
 }
-.time-step-btn:active {
+.round-step-btn:active {
   transform: scale(0.92);
 }
 /*
