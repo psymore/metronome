@@ -215,6 +215,36 @@ function ringPath(
  * lathed grooves, a glossy highlight, and a dark LCD-style face inset that lights up when the
  * node is active — matching the physical control the rest of the panel already uses.
  */
+/** The brushed-metal disc's color sweep. `createConicGradient` only exists from Safari 16.4 /
+ *  Chrome 99 — on an older browser (notably iOS 15.x, still in the wild), falling back to a plain
+ *  diagonal `createLinearGradient` (light -> ringColor -> dark, top-left to bottom-right) keeps
+ *  `metalDisc` usable everywhere instead of throwing a TypeError. */
+export function metalSweepGradient(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  ringColor: string,
+  light: string,
+  dark: string,
+): CanvasGradient {
+  if (typeof ctx.createConicGradient === 'function') {
+    const conic = ctx.createConicGradient((210 * Math.PI) / 180, x, y);
+    conic.addColorStop(0, dark);
+    conic.addColorStop(0.2, light);
+    conic.addColorStop(0.4, ringColor);
+    conic.addColorStop(0.6, light);
+    conic.addColorStop(0.8, dark);
+    conic.addColorStop(1, dark);
+    return conic;
+  }
+  const linear = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+  linear.addColorStop(0, light);
+  linear.addColorStop(0.5, ringColor);
+  linear.addColorStop(1, dark);
+  return linear;
+}
+
 export function metalDisc(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -236,13 +266,7 @@ export function metalDisc(
   const ringColor = boost > 0 ? lighten(color, 0.12) : color;
   const dark = darken(ringColor, 0.45);
   const light = lighten(ringColor, 0.3);
-  const conic = ctx.createConicGradient((210 * Math.PI) / 180, x, y);
-  conic.addColorStop(0, dark);
-  conic.addColorStop(0.2, light);
-  conic.addColorStop(0.4, ringColor);
-  conic.addColorStop(0.6, light);
-  conic.addColorStop(0.8, dark);
-  conic.addColorStop(1, dark);
+  const sweep = metalSweepGradient(ctx, x, y, r, ringColor, light, dark);
   // A whole-disc glow on the hit (not just the center LED's), matching how strongly Classic's
   // hit flash reads — previously only the small LED brightened, so Metallic's pulse felt much
   // weaker than Classic's next to it.
@@ -251,7 +275,7 @@ export function metalDisc(
     ctx.shadowBlur = 34 * glow;
   }
   ringPath(ctx, x, y, r, startAngle, endAngle);
-  ctx.fillStyle = conic;
+  ctx.fillStyle = sweep;
   ctx.fill();
   ctx.shadowBlur = 0;
 
