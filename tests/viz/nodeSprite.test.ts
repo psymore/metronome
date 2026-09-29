@@ -6,7 +6,7 @@ const marker = (tag: string) => ({ tag }) as unknown as CanvasImageSource;
 
 function makeCache(render = vi.fn(() => marker('sprite'))) {
   const cache = new NodeSpriteCache(render);
-  cache.setContext('dark', 1);
+  cache.setContext('dark', 1, 'classic');
   return { cache, render };
 }
 
@@ -22,16 +22,19 @@ describe('spriteSize', () => {
 
 describe('spriteKey', () => {
   it('separates every field that changes the painted pixels', () => {
-    const base = spriteKey('dark', 'accent', '1', 12, 2);
-    expect(spriteKey('light', 'accent', '1', 12, 2)).not.toBe(base);
-    expect(spriteKey('dark', 'normal', '1', 12, 2)).not.toBe(base);
-    expect(spriteKey('dark', 'accent', '2', 12, 2)).not.toBe(base);
-    expect(spriteKey('dark', 'accent', '1', 13, 2)).not.toBe(base);
-    expect(spriteKey('dark', 'accent', '1', 12, 1)).not.toBe(base);
+    const base = spriteKey('dark', 'classic', 'accent', '1', 12, 2);
+    expect(spriteKey('light', 'classic', 'accent', '1', 12, 2)).not.toBe(base);
+    expect(spriteKey('dark', 'flat', 'accent', '1', 12, 2)).not.toBe(base);
+    expect(spriteKey('dark', 'classic', 'normal', '1', 12, 2)).not.toBe(base);
+    expect(spriteKey('dark', 'classic', 'accent', '2', 12, 2)).not.toBe(base);
+    expect(spriteKey('dark', 'classic', 'accent', '1', 13, 2)).not.toBe(base);
+    expect(spriteKey('dark', 'classic', 'accent', '1', 12, 1)).not.toBe(base);
   });
 
   it('matches again for the same inputs', () => {
-    expect(spriteKey('dark', 'accent', '1', 12, 2)).toBe(spriteKey('dark', 'accent', '1', 12, 2));
+    expect(spriteKey('dark', 'classic', 'accent', '1', 12, 2)).toBe(
+      spriteKey('dark', 'classic', 'accent', '1', 12, 2),
+    );
   });
 });
 
@@ -59,7 +62,7 @@ describe('NodeSpriteCache', () => {
   it('drops cached sprites when the theme changes', () => {
     const { cache, render } = makeCache();
     cache.get('accent', '1', 12);
-    cache.setContext('light', 1);
+    cache.setContext('light', 1, 'classic');
     cache.get('accent', '1', 12);
     expect(render).toHaveBeenCalledTimes(2);
     expect(cache.size).toBe(1);
@@ -68,7 +71,15 @@ describe('NodeSpriteCache', () => {
   it('drops cached sprites when the pixel ratio changes', () => {
     const { cache, render } = makeCache();
     cache.get('accent', '1', 12);
-    cache.setContext('dark', 2);
+    cache.setContext('dark', 2, 'classic');
+    cache.get('accent', '1', 12);
+    expect(render).toHaveBeenCalledTimes(2);
+  });
+
+  it('drops cached sprites when the node style changes', () => {
+    const { cache, render } = makeCache();
+    cache.get('accent', '1', 12);
+    cache.setContext('dark', 1, 'flat');
     cache.get('accent', '1', 12);
     expect(render).toHaveBeenCalledTimes(2);
   });
@@ -76,14 +87,14 @@ describe('NodeSpriteCache', () => {
   it('keeps the cache when the context is set to the same values', () => {
     const { cache, render } = makeCache();
     cache.get('accent', '1', 12);
-    cache.setContext('dark', 1);
+    cache.setContext('dark', 1, 'classic');
     cache.get('accent', '1', 12);
     expect(render).toHaveBeenCalledTimes(1);
   });
 
   it('passes the current pixel ratio to the renderer', () => {
     const { cache, render } = makeCache();
-    cache.setContext('dark', 3);
+    cache.setContext('dark', 3, 'classic');
     cache.get('normal', '4', 9.5);
     expect(render).toHaveBeenCalledWith('normal', '4', 9.5, 3);
   });
@@ -91,14 +102,14 @@ describe('NodeSpriteCache', () => {
   it('falls back to live drawing when the renderer returns null', () => {
     const render = vi.fn(() => null);
     const cache = new NodeSpriteCache(render);
-    cache.setContext('dark', 1);
+    cache.setContext('dark', 1, 'classic');
     expect(cache.get('accent', '1', 12)).toBeNull();
   });
 
   it('does not retry a renderer that already failed', () => {
     const render = vi.fn(() => null);
     const cache = new NodeSpriteCache(render);
-    cache.setContext('dark', 1);
+    cache.setContext('dark', 1, 'classic');
     cache.get('accent', '1', 12);
     cache.get('accent', '1', 12);
     expect(render).toHaveBeenCalledTimes(1);

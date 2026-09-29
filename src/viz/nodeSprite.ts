@@ -1,4 +1,4 @@
-import type { BeatLevel } from '../state/settings';
+import type { BeatLevel, NodeStyleName } from '../state/settings';
 
 /** Extra room around the sphere so its idle shadow is not clipped by the sprite edge. */
 export const SPRITE_PAD = 8;
@@ -10,12 +10,13 @@ export function spriteSize(radius: number): number {
 
 export function spriteKey(
   themeName: string,
+  style: NodeStyleName,
   level: BeatLevel,
   label: string,
   radius: number,
   dpr: number,
 ): string {
-  return `${themeName}|${level}|${label}|${radius.toFixed(2)}|${dpr.toFixed(2)}`;
+  return `${themeName}|${style}|${level}|${label}|${radius.toFixed(2)}|${dpr.toFixed(2)}`;
 }
 
 export interface NodeSprites {
@@ -38,19 +39,22 @@ export class NodeSpriteCache implements NodeSprites {
   private readonly sprites = new Map<string, CanvasImageSource | null>();
   private themeName = '';
   private dpr = 1;
+  private style: NodeStyleName = 'classic';
 
   constructor(private readonly render: SpriteRenderer) {}
 
-  /** Every cached sprite is baked in one theme at one pixel ratio; a change invalidates them all. */
-  setContext(themeName: string, dpr: number): void {
-    if (themeName === this.themeName && dpr === this.dpr) return;
+  /** Every cached sprite is baked in one theme/style at one pixel ratio; a change invalidates
+   *  all of them. */
+  setContext(themeName: string, dpr: number, style: NodeStyleName): void {
+    if (themeName === this.themeName && dpr === this.dpr && style === this.style) return;
     this.themeName = themeName;
     this.dpr = dpr;
+    this.style = style;
     this.sprites.clear();
   }
 
   get(level: BeatLevel, label: string, radius: number): CanvasImageSource | null {
-    const key = spriteKey(this.themeName, level, label, radius, this.dpr);
+    const key = spriteKey(this.themeName, this.style, level, label, radius, this.dpr);
     const cached = this.sprites.get(key);
     if (cached !== undefined) return cached;
     const sprite = this.render(level, label, radius, this.dpr);
