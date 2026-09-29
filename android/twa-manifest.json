@@ -11,7 +11,7 @@
   "navigationDividerColor": "#000000",
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#141416",
-  "enableNotifications": true,
+  "enableNotifications": false,
   "startUrl": "/",
   "iconUrl": "https://metronome-delta-gold.vercel.app/pwa-512x512.png",
   "maskableIconUrl": "https://metronome-delta-gold.vercel.app/maskable-icon-512x512.png",

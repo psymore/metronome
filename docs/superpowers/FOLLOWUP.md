@@ -42,9 +42,14 @@ Check the plan's own checkboxes rather than trusting this summary.
   user's Xiaomi Redmi Note 10 Pro with a sideloaded release-signed APK
   (`android/app-release-signed.apk`, gitignored). **No signed AAB exists yet** — build
   `bundleRelease` + jarsigner per `docs/architecture/platforms.md` before uploading.
-- Before that rebuild, consider `enableNotifications: false` in `android/twa-manifest.json` and
-  dropping `POST_NOTIFICATIONS` from the manifest: the app uses no notifications and the privacy
-  policy says it requests no runtime permissions. Native-shell change → needs the new AAB anyway.
+- Notifications are off (2026-09-29): `enableNotifications: false` in `twa-manifest.json` and
+  `app/build.gradle`, `POST_NOTIFICATIONS` + `NotificationPermissionRequestActivity` removed from
+  `AndroidManifest.xml` — matches the privacy policy's "no runtime permissions". The sideloaded
+  test APK predates this; the AAB built next will include it. Web-side feature fixes don't need a
+  new AAB (the TWA loads live content from Vercel); only native-shell changes do.
+- Play Console account: the user is opening a **personal** account around 2026-10-01/02, so the
+  12-testers × 14-days closed-test rule applies. Testers are recruited by the user (Play doesn't
+  supply them).
 - Task 9: Step 2 (privacy policy) done; Steps 1, 3-7 open (account type, listing copy +
   screenshots, create app, upload AAB, closed testing, production). All Play Console UI —
   the agent has no access.
@@ -61,8 +66,9 @@ Check the plan's own checkboxes rather than trusting this summary.
 
 `C:\Users\4D\Keystores\metronome\release.keystore`, alias `metronome`, PKCS12 (store password =
 key password). Upload-key SHA-256 `6F:13:77:4F:…:46:E6` (full value in `assetlinks.json`). The
-password is still in plaintext at `C:\Users\4D\Keystores\metronome\PASSWORD-BACKUP-THEN-DELETE.txt`
-— **nudge the user to move it to a password manager and delete the file.** `android.keystore`
+plaintext password backup file has been deleted by the user; the user signs builds themselves in
+their own terminal (`! apksigner …` / `! jarsigner …`) so the agent never sees the password.
+`android.keystore`
 in the same folder is dead (password lost) — ignore. Losing `release.keystore` or its password
 ends the ability to update the Play listing.
 
@@ -83,11 +89,11 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. Nudge the user about the keystore password file.
-2. Ask about Task 9 Step 1 (Play Console account type / creation date) — it sets the earliest
-   production date (12 testers × 14 days for personal accounts created after 2023-11-13).
-3. Rebuild + sign the AAB (decide on `enableNotifications` first), then the user uploads it.
-4. After upload: Play App Signing fingerprint → `assetlinks.json`.
+1. The user plans a round of feature fixes, to be executed with Sonnet — help plan them if asked.
+2. Once the Play Console account exists: build the unsigned AAB (`gradlew bundleRelease`), the
+   user signs it with jarsigner in their own terminal, then uploads it to closed testing.
+3. After upload: Play App Signing fingerprint → `assetlinks.json`.
+4. Help the user line up 12+ testers for the 14-day closed test.
 5. iOS: wait for the user's decision; don't start a wrapper unilaterally.
 
 ## Design decisions already settled — do not re-open
