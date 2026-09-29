@@ -24,7 +24,7 @@ describe('spriteKey', () => {
   it('separates every field that changes the painted pixels', () => {
     const base = spriteKey('dark', 'classic', 'accent', '1', 12, 2);
     expect(spriteKey('light', 'classic', 'accent', '1', 12, 2)).not.toBe(base);
-    expect(spriteKey('dark', 'flat', 'accent', '1', 12, 2)).not.toBe(base);
+    expect(spriteKey('dark', 'metallic', 'accent', '1', 12, 2)).not.toBe(base);
     expect(spriteKey('dark', 'classic', 'normal', '1', 12, 2)).not.toBe(base);
     expect(spriteKey('dark', 'classic', 'accent', '2', 12, 2)).not.toBe(base);
     expect(spriteKey('dark', 'classic', 'accent', '1', 13, 2)).not.toBe(base);
@@ -79,7 +79,7 @@ describe('NodeSpriteCache', () => {
   it('drops cached sprites when the node style changes', () => {
     const { cache, render } = makeCache();
     cache.get('accent', '1', 12);
-    cache.setContext('dark', 1, 'flat');
+    cache.setContext('dark', 1, 'metallic');
     cache.get('accent', '1', 12);
     expect(render).toHaveBeenCalledTimes(2);
   });
