@@ -1,6 +1,8 @@
 /** Canvas angle of 12 o'clock. Canvas y grows downward, so increasing angles run clockwise. */
 export const TOP = -Math.PI / 2;
-export const GLOW_SECONDS = 0.35;
+const PHI = (1 + Math.sqrt(5)) / 2;
+/** The golden ratio's conjugate (1/PHI^2 ≈ 0.382), used as the glow's decay time in seconds. */
+export const GLOW_SECONDS = 2 - PHI;
 
 export function nodeAngle(index: number, count: number): number {
   return TOP + (2 * Math.PI * index) / count;

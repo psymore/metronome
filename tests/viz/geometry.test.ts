@@ -4,6 +4,7 @@ import {
   circularLayout,
   circularNodeSpacing,
   circularRingRadius,
+  GLOW_SECONDS,
   glowIntensity,
   handAngle,
   linearGridStickX,
@@ -88,7 +89,7 @@ describe('glowIntensity and nodeRadius', () => {
   it('peaks at the beat and fades quadratically to zero', () => {
     expect(glowIntensity(0)).toBe(1);
     expect(glowIntensity(0.175, 0.35)).toBeCloseTo(0.25);
-    expect(glowIntensity(0.35)).toBe(0);
+    expect(glowIntensity(GLOW_SECONDS)).toBe(0);
     expect(glowIntensity(-0.01)).toBe(0);
   });
 

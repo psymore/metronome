@@ -123,12 +123,14 @@ export const linearVisualizer: Visualizer = {
         }
       }
       drawNode(ctx, x, y, nodeR, level, glow, theme, style);
-      ctx.save();
-      ctx.shadowBlur = 3;
-      ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.fillStyle = '#fff';
-      ctx.fillText(label, x, y);
-      ctx.restore();
+      if (style === 'classic') {
+        ctx.save();
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(label, x, y);
+        ctx.restore();
+      }
     }
   },
 };

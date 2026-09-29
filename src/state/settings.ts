@@ -162,9 +162,9 @@ export function isCompoundMeter(beatsPerBar: number, beatUnit: BeatUnit): boolea
 }
 
 export function nextLevel(level: BeatLevel): BeatLevel {
-  if (level === 'accent') return 'normal';
-  if (level === 'normal') return 'mute';
-  return 'accent';
+  if (level === 'mute') return 'normal';
+  if (level === 'normal') return 'accent';
+  return 'mute';
 }
 
 /** Cycles a single beat's level, leaving the array untouched if the index is out of range. */

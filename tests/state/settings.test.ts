@@ -157,10 +157,10 @@ describe('level helpers', () => {
     expect(resizeLevels([], 2)).toEqual(['accent', 'normal']);
   });
 
-  it('cycles accent → normal → mute → accent', () => {
-    expect(nextLevel('accent')).toBe('normal');
-    expect(nextLevel('normal')).toBe('mute');
-    expect(nextLevel('mute')).toBe('accent');
+  it('cycles mute → normal → accent → mute', () => {
+    expect(nextLevel('mute')).toBe('normal');
+    expect(nextLevel('normal')).toBe('accent');
+    expect(nextLevel('accent')).toBe('mute');
   });
 
   it('accents the start of every group of 3 in a compound meter', () => {

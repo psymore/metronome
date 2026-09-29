@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BeatEvent } from '../../src/engine/scheduler';
 import type { BeatLevel } from '../../src/state/settings';
 import { computeFrame } from '../../src/viz/frame';
+import { GLOW_SECONDS } from '../../src/viz/geometry';
 
 const beat = (overrides: Partial<BeatEvent> = {}): BeatEvent => ({
   time: 10,
@@ -40,8 +41,10 @@ describe('computeFrame', () => {
     expect(computeFrame({ ...base, beat: beat(), heardTime: 10.25 }).phase).toBe(0.5);
   });
 
-  it('fades the glow out after 0.35 s', () => {
-    expect(computeFrame({ ...base, beat: beat(), heardTime: 10.36 }).glow).toBe(0);
+  it('fades the glow out after GLOW_SECONDS', () => {
+    expect(computeFrame({ ...base, beat: beat(), heardTime: 10 + GLOW_SECONDS + 0.01 }).glow).toBe(
+      0,
+    );
   });
 
   it('shortens the glow at fast tempos so flashes never blur together', () => {

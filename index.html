@@ -462,11 +462,23 @@
       </div>
       <div class="field">
         <span data-i18n="nodeStyle.label">Beat sphere</span>
-        <div class="unit-row" role="radiogroup" aria-label="Beat sphere style">
-          <button type="button" role="radio" class="chip" data-node-style-option="classic" aria-checked="false" data-i18n="nodeStyle.classic">Classic</button>
-          <button type="button" role="radio" class="chip" data-node-style-option="metallic" aria-checked="false" data-i18n="nodeStyle.metallic">Metallic</button>
-          <button type="button" role="radio" class="chip" data-node-style-option="wireframe" aria-checked="false" data-i18n="nodeStyle.wireframe">Wireframe</button>
-          <button type="button" role="radio" class="chip" data-node-style-option="frosted" aria-checked="false" data-i18n="nodeStyle.frosted">Frosted</button>
+        <div class="unit-row" role="radiogroup" aria-label="Beat style">
+          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="classic" aria-checked="false">
+            <canvas class="node-style-preview" data-node-style-preview="classic" width="96" height="32" aria-hidden="true"></canvas>
+            <span data-i18n="nodeStyle.classic">Classic</span>
+          </button>
+          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="metallic" aria-checked="false">
+            <canvas class="node-style-preview" data-node-style-preview="metallic" width="96" height="32" aria-hidden="true"></canvas>
+            <span data-i18n="nodeStyle.metallic">Metallic</span>
+          </button>
+          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="wireframe" aria-checked="false">
+            <canvas class="node-style-preview" data-node-style-preview="wireframe" width="96" height="32" aria-hidden="true"></canvas>
+            <span data-i18n="nodeStyle.wireframe">Wireframe</span>
+          </button>
+          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="frosted" aria-checked="false">
+            <canvas class="node-style-preview" data-node-style-preview="frosted" width="96" height="32" aria-hidden="true"></canvas>
+            <span data-i18n="nodeStyle.frosted">Frosted</span>
+          </button>
         </div>
       </div>
       <div class="field">

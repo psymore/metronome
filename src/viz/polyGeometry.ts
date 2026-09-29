@@ -1,4 +1,4 @@
-import { circularNodeSpacing, nodeRadius } from './geometry';
+import { circularNodeSpacing } from './geometry';
 
 export interface PolyVertex {
   x: number;
@@ -10,7 +10,10 @@ export interface PolyVertex {
  *  grows instead of using a fixed size that's cramped on large ratios and tiny on small ones. */
 export function polyNodeRadius(a: number, b: number, radius: number): number {
   const spacing = Math.min(circularNodeSpacing(a, radius), circularNodeSpacing(b, radius));
-  return nodeRadius(radius, spacing);
+  // Poly nodes render smaller than a standard-meter ring at the same spacing because prism/other
+  // style kits now draw taller, wider shapes than a plain disc — give poly a slightly bigger
+  // fraction of the available spacing so those shapes get comparable breathing room.
+  return Math.max(5, Math.min(19, radius * 0.16, spacing * 0.48));
 }
 
 /** Two vertices of layers A and B that share the same ring position (i/a === j/b). */

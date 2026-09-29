@@ -97,7 +97,20 @@ export class VizController {
         s.polyrhythm.b,
         (key) => this.currentSplitFrac(key),
       );
-      if (!hit) return;
+      if (!hit) {
+        // Tapping empty space (not any node, not the close button itself) also closes whatever
+        // pair is currently open — the small close-button hit area was easy to miss, so this
+        // gives a much bigger, more forgiving target for the same action.
+        let closedAny = false;
+        for (const [key, anim] of this.polyPairAnim) {
+          if (anim.opening) {
+            this.animatePair(key, false);
+            closedAny = true;
+          }
+        }
+        if (closedAny) this.invalidate();
+        return;
+      }
       if (hit.kind === 'pair') {
         // First tap on a still-coincident pair: start its branch-out animation, do NOT cycle
         // either layer's level. The user can then tap each half individually.
@@ -187,14 +200,17 @@ export class VizController {
     if (!c) return null;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const mid = size / 2;
-    drawNode(c, mid, mid, radius, level, 0, this.theme, this.getSettings().nodeStyle);
-    c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.shadowBlur = 3;
-    c.shadowColor = 'rgba(0,0,0,0.6)';
-    c.fillStyle = '#fff';
-    c.fillText(label, mid, mid);
+    const style = this.getSettings().nodeStyle;
+    drawNode(c, mid, mid, radius, level, 0, this.theme, style);
+    if (style === 'classic') {
+      c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.shadowBlur = 3;
+      c.shadowColor = 'rgba(0,0,0,0.6)';
+      c.fillStyle = '#fff';
+      c.fillText(label, mid, mid);
+    }
     return canvas;
   }
 

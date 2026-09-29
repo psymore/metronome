@@ -1,7 +1,7 @@
 import type { BeatLevel, NodeStyleName } from '../state/settings';
 import { drawNode } from './drawNode';
 import type { NodeSprites } from './nodeSprite';
-import { getNodeStyleKit } from './nodeStyleKit';
+import { darken, getNodeStyleKit, lighten, metalDisc } from './nodeStyleKit';
 import type { PolyFrame } from './polyFrame';
 import { polyNodeRadius, polyPositions, polyStageLayout } from './polyGeometry';
 import type { VizTheme } from './types';
@@ -9,6 +9,21 @@ import type { VizTheme } from './types';
 /** Warm red-coral used to hint "tap to close" on a branched pair's hub node — deliberately
  *  in-between red and white rather than a full alarm red, so it reads as a cue, not an error. */
 const CLOSE_HINT_COLOR = '#e0685c';
+
+/** Below this splitFrac, the pair hub fades out (rather than existing at full opacity right up
+ *  to the instant it's pruned) so a collapse settles smoothly instead of the hub/close-button
+ *  disappearing in a single frame. */
+const HUB_FADE_FRAC = 0.22;
+
+/** Normal/accent color for a poly layer node, derived from that layer's own hue the same way
+ *  `drawLayer` derives its per-level colors — darker for normal, lighter for accent — instead of
+ *  a flat layer color for both. Mute keeps the raw color (its kit paint uses `idleColor` for the
+ *  visible ring anyway; `color` there only tints the glow flash). */
+function levelColor(layerColor: string, level: BeatLevel): string {
+  if (level === 'accent') return lighten(layerColor, 0.25);
+  if (level === 'normal') return darken(layerColor, 0.3);
+  return layerColor;
+}
 
 export function drawPolyrhythm(
   ctx: CanvasRenderingContext2D,
@@ -82,13 +97,17 @@ export function drawPolyrhythm(
       const activeB = frame.activeIndexB === p.bIndex;
       const levelA: BeatLevel = frame.levelsA[p.aIndex] ?? 'normal';
       const levelB: BeatLevel = frame.levelsB[p.bIndex] ?? 'normal';
+      // Same darker-normal/lighter-accent split `drawLayer` applies to a layer's own split-out
+      // nodes — without it, this merged view passed the raw layer color for both levels, so
+      // normal and accent were only as different as each kit's own (often subtle) alpha bump,
+      // making the still-merged node look "always accented" regardless of its actual level.
       drawCombinedNode(
         ctx,
         p.x,
         p.y,
         NODE_RADIUS,
-        theme.accentAlt,
-        theme.accent,
+        levelColor(theme.accentAlt, levelA),
+        levelColor(theme.accent, levelB),
         levelA,
         levelB,
         activeA && levelA !== 'mute' ? glowA : 0,
@@ -105,7 +124,12 @@ export function drawPolyrhythm(
       // the gap. Doubles as the (generously sized) tap-to-recombine target.
       const va = nodePosA[p.aIndex] ?? p;
       const vb = nodePosB[p.bIndex] ?? p;
-      drawPairHub(ctx, p, va, vb, NODE_RADIUS, theme);
+      // Fade the hub (and its red close button) out over the final stretch of a collapse instead
+      // of letting it vanish the instant frac hits 0 — softens the pop into the merged conjunction
+      // sphere, which previously made closing read as an abrupt snap while opening (fading the hub
+      // in from nothing) already looked smooth.
+      const hubAlpha = Math.min(1, frac / HUB_FADE_FRAC);
+      drawPairHub(ctx, p, va, vb, NODE_RADIUS, theme, hubAlpha);
     }
   }
 }
@@ -117,10 +141,11 @@ function drawPairHub(
   b: { x: number; y: number },
   radius: number,
   theme: VizTheme,
+  alpha: number,
 ): void {
   ctx.save();
   ctx.strokeStyle = theme.label;
-  ctx.globalAlpha = 0.55;
+  ctx.globalAlpha = 0.55 * alpha;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(hub.x, hub.y);
@@ -128,7 +153,7 @@ function drawPairHub(
   ctx.moveTo(hub.x, hub.y);
   ctx.lineTo(b.x, b.y);
   ctx.stroke();
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = alpha;
 
   const r = radius * 0.7;
   ctx.fillStyle = theme.nodeIdle;
@@ -139,42 +164,23 @@ function drawPairHub(
   ctx.fill();
   ctx.stroke();
 
-  // A warm solid-filled disc inset from the edge hints "tap here to close this split" — styled
-  // like the panel's own physical buttons (gradient fill + soft glow + a bright highlight) rather
-  // than a thin outline, so it reads as a pressable control, not just a decorative ring.
+  // A red metallic disc inset from the edge hints "tap here to close this split" — same brushed
+  // -metal button look the rest of the panel's controls use (see metalDisc), just red-tinted, so
+  // it reads as a pressable control rather than a thin outline or a flat gradient dot.
   const closeR = r * 0.6;
-  ctx.shadowColor = CLOSE_HINT_COLOR;
-  ctx.shadowBlur = 6;
-  const fill = ctx.createRadialGradient(
-    hub.x - closeR * 0.35,
-    hub.y - closeR * 0.35,
-    0,
+  metalDisc(
+    ctx,
     hub.x,
     hub.y,
     closeR,
-  );
-  fill.addColorStop(0, '#ff9c8f');
-  fill.addColorStop(1, CLOSE_HINT_COLOR);
-  ctx.fillStyle = fill;
-  ctx.beginPath();
-  ctx.arc(hub.x, hub.y, closeR, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
-  const shine = ctx.createRadialGradient(
-    hub.x - closeR * 0.35,
-    hub.y - closeR * 0.35,
+    CLOSE_HINT_COLOR,
+    CLOSE_HINT_COLOR,
+    0.35,
     0,
-    hub.x,
-    hub.y,
-    closeR,
+    Math.PI * 2,
+    alpha,
+    0,
   );
-  shine.addColorStop(0, 'rgba(255,255,255,0.55)');
-  shine.addColorStop(0.5, 'rgba(255,255,255,0)');
-  ctx.fillStyle = shine;
-  ctx.beginPath();
-  ctx.arc(hub.x, hub.y, closeR, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
 }
 
@@ -204,20 +210,30 @@ function drawLayer(
   ctx.stroke();
   ctx.restore();
 
-  // Override both `node` (normal-level fill) and `accent` (accent-level fill) so every node in
-  // this layer reads as its layer's color — not just the accent-level ones — matching the
-  // connecting lines, which are already drawn in layerColor regardless of beat level.
-  // `nodeIdle` is deliberately left as the generic theme gray: a muted node's crisp ring
-  // (nodeIdle) plus its shadow-blur halo (glow, in layerColor) landing in two different colors
-  // is the same "two borders" look standard mode already has, and it reads well — keep it here.
-  const layerTheme: VizTheme = { ...theme, node: layerColor, accent: layerColor, glow: layerColor };
+  // Both `node` (normal-level fill) and `accent` (accent-level fill) are derived from this
+  // layer's own color — darker for normal, lighter for accent — the same darker/lighter
+  // relationship the app's own themes use between their `node` and `accent` colors (e.g. teal's
+  // dark node vs. its bright mint accent). A flat single layerColor for both levels (the previous
+  // approach) collapsed that brightness distinction, leaving normal and accent within one layer
+  // hard to tell apart, especially on style kits like Prism whose fill alpha is already subtle.
+  // Connecting lines stay in the plain layerColor regardless of level, so a layer still reads as
+  // one consistent hue across the ring.
+  const layerTheme: VizTheme = {
+    ...theme,
+    node: darken(layerColor, 0.3),
+    accent: lighten(layerColor, 0.25),
+    glow: layerColor,
+  };
   for (const [i, v] of nodeVerts.entries()) {
     if (skip.has(i)) continue;
     const configured: BeatLevel = levels[i] ?? 'normal';
     const isActive = i === activeIndex;
-    const g = isActive && configured !== 'mute' ? glow : 0;
+    // A muted beat still gets a (quieter) hit glow instead of none at all — matching standard
+    // mode's frame.ts, which damps mute to 25% rather than zeroing it — so muted beats read as
+    // "ticking silently" instead of completely inert here too.
+    const g = isActive ? (configured === 'mute' ? glow * 0.25 : glow) : 0;
     drawNode(ctx, v.x, v.y, nodeRadius, configured, g, layerTheme, style);
-    paintLabel(ctx, v.x, v.y, nodeRadius, String(i + 1));
+    if (style === 'classic') paintLabel(ctx, v.x, v.y, nodeRadius, String(i + 1));
   }
 }
 
@@ -267,6 +283,13 @@ function drawCombinedNode(
   // make the two halves mismatched sizes instead of each tracking its own beat.
   const r = radius * (1 + 0.25 * Math.max(glowA, glowB));
 
+  // Prism's cone geometry (apex height, base spread) itself scales with glow, unlike the other
+  // kits' flat discs — if the two halves swell by different amounts their apexes land at
+  // different heights and the shared centerline no longer lines up, leaving a visibly open seam.
+  // Syncing both halves to the louder of the two beats keeps the merged cone's geometry whole;
+  // the halves' own color/level still make each side's brightness distinct.
+  const glowForGeometry = style === 'wireframe' ? Math.max(glowA, glowB) : undefined;
+
   drawCombinedHalf(
     ctx,
     x,
@@ -276,7 +299,7 @@ function drawCombinedNode(
     (3 * Math.PI) / 2,
     colorA,
     levelA,
-    glowA,
+    glowForGeometry ?? glowA,
     idleColor,
     coreColor,
     style,
@@ -290,7 +313,7 @@ function drawCombinedNode(
     Math.PI / 2,
     colorB,
     levelB,
-    glowB,
+    glowForGeometry ?? glowB,
     idleColor,
     coreColor,
     style,
@@ -303,13 +326,15 @@ function drawCombinedNode(
   ctx.lineTo(x, y + r);
   ctx.stroke();
 
-  ctx.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowBlur = 3;
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(label, x, y);
+  if (style === 'classic') {
+    ctx.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(label, x, y);
+  }
   ctx.restore();
 }
 

@@ -111,12 +111,15 @@ const classicKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
+    // A muted beat still ticks — a very slight ring swell on the hit, much smaller than
+    // normal/accent's, keeps mute from feeling completely inert without making it read as "on".
+    const r = radius * (1 + 0.32 * glow);
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 4 + 8 * glow;
     ctx.lineWidth = 2;
     ctx.strokeStyle = idleColor;
     ctx.beginPath();
-    ctx.arc(x, y, radius, startAngle, endAngle);
+    ctx.arc(x, y, r, startAngle, endAngle);
     ctx.stroke();
     if (glow > 0) {
       ctx.globalAlpha = glow;
@@ -157,7 +160,7 @@ const classicKit: NodeStyleKit = {
 
 /** Lightens a `#rrggbb` color toward white by `amt` (0..1). Non-hex input passes through
  *  unchanged rather than throwing — a safe no-op if a future theme token isn't hex. */
-function lighten(hex: string, amt: number): string {
+export function lighten(hex: string, amt: number): string {
   const c = hex.replace('#', '');
   if (c.length !== 6) return hex;
   const num = Number.parseInt(c, 16);
@@ -169,7 +172,7 @@ function lighten(hex: string, amt: number): string {
 }
 
 /** Darkens a `#rrggbb` color toward black by `amt` (0..1). Same non-hex fallback as `lighten`. */
-function darken(hex: string, amt: number): string {
+export function darken(hex: string, amt: number): string {
   const c = hex.replace('#', '');
   if (c.length !== 6) return hex;
   const num = Number.parseInt(c, 16);
@@ -198,7 +201,7 @@ function ringPath(
  * lathed grooves, a glossy highlight, and a dark LCD-style face inset that lights up when the
  * node is active — matching the physical control the rest of the panel already uses.
  */
-function metalDisc(
+export function metalDisc(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -214,18 +217,29 @@ function metalDisc(
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  const dark = darken(color, 0.45);
-  const light = lighten(color, 0.3);
+  // `boost` (accent only) lightens the whole disc, not just the center LED — otherwise normal
+  // and accent read as the same brass disc with only a faint LED-color difference at rest.
+  const ringColor = boost > 0 ? lighten(color, 0.12) : color;
+  const dark = darken(ringColor, 0.45);
+  const light = lighten(ringColor, 0.3);
   const conic = ctx.createConicGradient((210 * Math.PI) / 180, x, y);
   conic.addColorStop(0, dark);
   conic.addColorStop(0.2, light);
-  conic.addColorStop(0.4, color);
+  conic.addColorStop(0.4, ringColor);
   conic.addColorStop(0.6, light);
   conic.addColorStop(0.8, dark);
   conic.addColorStop(1, dark);
+  // A whole-disc glow on the hit (not just the center LED's), matching how strongly Classic's
+  // hit flash reads — previously only the small LED brightened, so Metallic's pulse felt much
+  // weaker than Classic's next to it.
+  if (glow > 0) {
+    ctx.shadowColor = lighten(color, 0.15);
+    ctx.shadowBlur = 34 * glow;
+  }
   ringPath(ctx, x, y, r, startAngle, endAngle);
   ctx.fillStyle = conic;
   ctx.fill();
+  ctx.shadowBlur = 0;
 
   ctx.save();
   ringPath(ctx, x, y, r, startAngle, endAngle);
@@ -258,13 +272,19 @@ function metalDisc(
   ctx.beginPath();
   ctx.arc(x, y, faceR, 0, Math.PI * 2);
   if (litColor) {
+    // Dim (not off) at rest, so the LED itself already hints which phase this node is in;
+    // full brightness only kicks in on the hit (`glow > 0`).
+    ctx.fillStyle = 'rgba(5,10,7,0.9)';
+    ctx.fill();
+    ctx.globalAlpha = 0.4 + 0.15 * boost + 0.6 * glow;
     ctx.fillStyle = lighten(litColor, 0.1);
     ctx.shadowColor = litColor;
-    ctx.shadowBlur = 6 + 10 * glow;
+    ctx.shadowBlur = 6 + 4 * boost + 10 * glow;
   } else {
     ctx.fillStyle = 'rgba(5,10,7,0.9)';
   }
   ctx.fill();
+  ctx.globalAlpha = alpha;
   ctx.shadowBlur = 0;
 
   ringPath(ctx, x, y, r, startAngle, endAngle);
@@ -281,24 +301,31 @@ const metallicKit: NodeStyleKit = {
     y,
     radius,
     idleColor,
-    flashColor,
-    glowColor,
+    _flashColor,
+    _glowColor,
     glow,
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    metalDisc(ctx, x, y, radius, idleColor, null, glow, startAngle, endAngle, 0.45, 0);
-    if (glow > 0) {
-      ctx.save();
-      ctx.globalAlpha = glow;
-      ctx.strokeStyle = flashColor;
-      ctx.lineWidth = 2;
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 8 * glow;
-      ringPath(ctx, x, y, radius, startAngle, endAngle);
-      ctx.stroke();
-      ctx.restore();
-    }
+    // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
+    // ticks visibly without reading as "on". No separate flash-ring overlay here (unlike the
+    // other kits' mute) — Metallic's mute is already a solid filled disc, not a hollow outline,
+    // so stroking a flat-colored ring on top of its own reflective gradient/highlight/border
+    // didn't fade cleanly; it clashed instead of blending. `metalDisc`'s own whole-disc shadow
+    // glow (the same one normal/accent use) already gives it a smooth from-within brighten.
+    metalDisc(
+      ctx,
+      x,
+      y,
+      radius * (1 + 0.32 * glow),
+      idleColor,
+      null,
+      glow,
+      startAngle,
+      endAngle,
+      0.45,
+      0,
+    );
   },
   paintNormal(
     ctx,
@@ -312,9 +339,23 @@ const metallicKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    // Lit with a lightened version of the node's own color (the "brass" tone) rather than a
-    // separate accent color, so a normal beat's lit face stays visibly dimmer than an accent's.
-    metalDisc(ctx, x, y, radius, color, lighten(color, 0.35), glow, startAngle, endAngle, 1, 0);
+    // The LED face is lit with a lightly lightened version of the node's own color, so it stays
+    // recognizably the theme's hue instead of washing out toward white — dim at rest, full
+    // brightness only on the hit itself. The disc itself also swells on the hit (matching
+    // Classic's radius pulse), since the LED alone read as too subtle a hit cue on its own.
+    metalDisc(
+      ctx,
+      x,
+      y,
+      radius * (1 + 0.3 * glow),
+      color,
+      lighten(color, 0.15),
+      glow,
+      startAngle,
+      endAngle,
+      1,
+      0,
+    );
   },
   paintAccent(
     ctx,
@@ -323,14 +364,28 @@ const metallicKit: NodeStyleKit = {
     radius,
     color,
     _glowColor,
-    coreColor,
+    _coreColor,
     glow,
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    // Lit with the theme's white-hot core color (not a hardcoded gold) and boosted, so it reads
-    // as "hotter" than normal's dimmer brass-tone face while still tracking every theme.
-    metalDisc(ctx, x, y, radius, color, coreColor, glow, startAngle, endAngle, 1, 1);
+    // A more strongly lightened version of the same hue (not the theme's near-white core color),
+    // so accent reads as visibly "hotter" and brighter than normal's dim brass tone while staying
+    // a tinted color rather than turning into a plain white LED like the flash core does. Swells
+    // slightly more than normal on the hit, same reasoning as normal's pulse above.
+    metalDisc(
+      ctx,
+      x,
+      y,
+      radius * (1 + 0.3 * glow),
+      color,
+      lighten(color, 0.45),
+      glow,
+      startAngle,
+      endAngle,
+      1,
+      1,
+    );
   },
 };
 
@@ -373,14 +428,23 @@ function drawWireframeCone(
 ): void {
   ctx.save();
   if (startAngle !== FULL_START || endAngle !== FULL_END) {
-    ringPath(ctx, x, y, radius, startAngle, endAngle);
+    // The cone itself extends well past `radius` (taller and wider than the node's nominal
+    // bounding circle — see h/pr below), so clipping the half-split view to a circle of exactly
+    // `radius` chopped off the cone's apex/base. A much larger clip radius keeps the same
+    // half-plane cut (the two endpoints are always diametrically opposite, so the implicit
+    // chord is still a straight line through the center) without curving back in on the cone.
+    ringPath(ctx, x, y, radius * 3, startAngle, endAngle);
     ctx.clip();
   }
-  const h = radius * 1.3;
-  const pr = radius * 0.82;
+  const h = radius * 1.45;
+  const pr = radius * 0.88;
   const { apex, base } = coneProject(x, y, pr, h);
+  // The glow (shadowBlur) stays on through both the fill and the edge strokes below, instead of
+  // being zeroed before the edges — previously only the translucent fill pulsed with the hit
+  // while the crisp wireframe lines never glowed at all, which read as two mismatched effects
+  // (a soft blurry fill and static sharp lines) rather than one unified pulse.
   if (glowBlur > 0) {
-    ctx.shadowColor = lighten(color, 0.4);
+    ctx.shadowColor = lighten(color, 0.2);
     ctx.shadowBlur = glowBlur;
   }
   for (const [i, v] of base.entries()) {
@@ -396,9 +460,8 @@ function drawWireframeCone(
     ctx.globalAlpha = fillAlpha;
     ctx.fill();
   }
-  ctx.shadowBlur = 0;
   ctx.globalAlpha = edgeAlpha;
-  ctx.strokeStyle = lighten(color, 0.35);
+  ctx.strokeStyle = lighten(color, 0.28);
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (const [i, v] of base.entries()) {
@@ -414,6 +477,7 @@ function drawWireframeCone(
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
   ctx.restore();
 }
 
@@ -430,13 +494,15 @@ const wireframeKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    drawWireframeCone(ctx, x, y, radius, idleColor, 0.04, 0.28, 0, startAngle, endAngle);
+    drawWireframeCone(ctx, x, y, radius, idleColor, 0.07, 0.42, 0, startAngle, endAngle);
     if (glow > 0) {
+      // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
+      // ticks visibly without reading as "on".
       drawWireframeCone(
         ctx,
         x,
         y,
-        radius,
+        radius * (1 + 0.32 * glow),
         flashColor,
         0.04 + 0.08 * glow,
         0.28 + 0.4 * glow,
@@ -462,11 +528,11 @@ const wireframeKit: NodeStyleKit = {
       ctx,
       x,
       y,
-      radius,
+      radius * (1 + 0.3 * glow),
       color,
-      0.14 + 0.08 * glow,
-      0.7,
-      6 * glow,
+      0.32 + 0.08 * glow,
+      1,
+      30 * glow,
       startAngle,
       endAngle,
     );
@@ -487,11 +553,11 @@ const wireframeKit: NodeStyleKit = {
       ctx,
       x,
       y,
-      radius,
+      radius * (1 + 0.3 * glow),
       color,
-      0.26 + 0.1 * glow,
+      0.4 + 0.12 * glow,
       1,
-      10 + 14 * glow,
+      34 * glow,
       startAngle,
       endAngle,
     );
@@ -513,10 +579,17 @@ function frostBase(
   endAngle: number,
 ): void {
   ctx.save();
-  ctx.filter = `blur(${blur}px)`;
+  // `ctx.filter = blur(...)` (a full off-screen raster blur pass on every paint) used to stand in
+  // for the frosted-glass softness here. It's far costlier than `shadowBlur`, and since polyrhythm
+  // nodes mid-split are live-repainted every animation frame (not drawn from the idle sprite
+  // cache), that cost multiplied across every visible frosted node each frame — visible as a
+  // stutter while a conjunction opens/closes. `shadowBlur` gives a comparable soft edge much
+  // cheaper, so it replaces the filter entirely.
+  ctx.shadowColor = color;
+  ctx.shadowBlur = blur * 1.6;
   const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
   g.addColorStop(0, `rgba(255,255,255,${hotAlpha})`);
-  g.addColorStop(0.55, lighten(color, 0.1));
+  g.addColorStop(0.55, lighten(color, 0.28));
   g.addColorStop(1, color);
   ctx.globalAlpha = alpha;
   ringPath(ctx, x, y, radius * 0.92, startAngle, endAngle);
@@ -545,7 +618,9 @@ const frostedKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    frostBase(ctx, x, y, radius, idleColor, 0.28, 3, 0.3, startAngle, endAngle);
+    // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
+    // ticks visibly without reading as "on".
+    frostBase(ctx, x, y, radius * (1 + 0.32 * glow), idleColor, 0.28, 3, 0.3, startAngle, endAngle);
     if (glow > 0) {
       ctx.save();
       ctx.globalAlpha = glow;
@@ -570,15 +645,18 @@ const frostedKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
+    // `blur` scales with glow now (previously a flat 3, matching only the idle softness), so the
+    // hit reads as a comparably strong pulse to Classic's big `shadowBlur` swing instead of a
+    // much quieter one.
     frostBase(
       ctx,
       x,
       y,
-      radius,
+      radius * (1 + 0.3 * glow),
       color,
-      0.5 + 0.1 * glow,
-      4,
-      0.55 + 0.1 * glow,
+      0.88 + 0.1 * glow,
+      3 + 22 * glow,
+      0.88 + 0.1 * glow,
       startAngle,
       endAngle,
     );
@@ -595,22 +673,21 @@ const frostedKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    ctx.save();
-    ctx.shadowColor = lighten(color, 0.4);
-    ctx.shadowBlur = 10 + 10 * glow;
+    // The old outer shadowColor/shadowBlur set here was immediately overwritten by frostBase's
+    // own shadowBlur assignment, so it never actually did anything — rolled into frostBase's own
+    // `blur` param instead, same as normal above.
     frostBase(
       ctx,
       x,
       y,
-      radius,
+      radius * (1 + 0.3 * glow),
       color,
       0.78 + 0.15 * glow,
-      5,
+      5 + 26 * glow,
       0.82 + 0.15 * glow,
       startAngle,
       endAngle,
     );
-    ctx.restore();
   },
 };
 
