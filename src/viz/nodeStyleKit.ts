@@ -99,7 +99,18 @@ function classicFill(
 }
 
 const classicKit: NodeStyleKit = {
-  paintMute(ctx, x, y, radius, idleColor, flashColor, glowColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintMute(
+    ctx,
+    x,
+    y,
+    radius,
+    idleColor,
+    flashColor,
+    glowColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 4 + 8 * glow;
     ctx.lineWidth = 2;
@@ -114,16 +125,49 @@ const classicKit: NodeStyleKit = {
       ctx.globalAlpha = 1;
     }
   },
-  paintNormal(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintNormal(
+    ctx,
+    x,
+    y,
+    radius,
+    color,
+    glowColor,
+    coreColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     classicFill(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle, endAngle, false);
   },
-  paintAccent(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintAccent(
+    ctx,
+    x,
+    y,
+    radius,
+    color,
+    glowColor,
+    coreColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     classicFill(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle, endAngle, true);
   },
 };
 
 const flatKit: NodeStyleKit = {
-  paintMute(ctx, x, y, radius, idleColor, flashColor, glowColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintMute(
+    ctx,
+    x,
+    y,
+    radius,
+    idleColor,
+    flashColor,
+    glowColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = idleColor;
     ctx.beginPath();
@@ -139,7 +183,18 @@ const flatKit: NodeStyleKit = {
       ctx.shadowBlur = 0;
     }
   },
-  paintNormal(ctx, x, y, radius, color, glowColor, _coreColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintNormal(
+    ctx,
+    x,
+    y,
+    radius,
+    color,
+    glowColor,
+    _coreColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 4 + 10 * glow;
     ctx.fillStyle = color;
@@ -148,7 +203,18 @@ const flatKit: NodeStyleKit = {
     ctx.fill();
     ctx.shadowBlur = 0;
   },
-  paintAccent(ctx, x, y, radius, color, glowColor, _coreColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintAccent(
+    ctx,
+    x,
+    y,
+    radius,
+    color,
+    glowColor,
+    _coreColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 4 + 10 * glow;
     ctx.fillStyle = color;
@@ -166,7 +232,18 @@ const flatKit: NodeStyleKit = {
 };
 
 const outlineKit: NodeStyleKit = {
-  paintMute(ctx, x, y, radius, idleColor, flashColor, glowColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintMute(
+    ctx,
+    x,
+    y,
+    radius,
+    idleColor,
+    flashColor,
+    glowColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     ctx.globalAlpha = 0.6;
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = idleColor;
@@ -184,7 +261,18 @@ const outlineKit: NodeStyleKit = {
       ctx.shadowBlur = 0;
     }
   },
-  paintNormal(ctx, x, y, radius, color, glowColor, _coreColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintNormal(
+    ctx,
+    x,
+    y,
+    radius,
+    color,
+    glowColor,
+    _coreColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 6 * glow;
     ctx.lineWidth = 3;
@@ -194,7 +282,18 @@ const outlineKit: NodeStyleKit = {
     ctx.stroke();
     ctx.shadowBlur = 0;
   },
-  paintAccent(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle = FULL_START, endAngle = FULL_END) {
+  paintAccent(
+    ctx,
+    x,
+    y,
+    radius,
+    color,
+    glowColor,
+    coreColor,
+    glow,
+    startAngle = FULL_START,
+    endAngle = FULL_END,
+  ) {
     // The distinguishing mark: the ring fills solid instead of staying hollow.
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 6 + 20 * glow;
