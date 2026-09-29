@@ -1,3 +1,4 @@
+import type { BeatLevel } from '../state/settings';
 import { secondsPerBeat } from './timing';
 
 export interface PolyBeatEvent {
@@ -21,8 +22,8 @@ export interface PolyPattern {
     a: number;
     b: number;
     /** Optional per-node levels; the scheduler ignores them, but audioEngine reads them. */
-    levelsA?: readonly ('accent' | 'normal' | 'mute')[];
-    levelsB?: readonly ('accent' | 'normal' | 'mute')[];
+    levelsA?: readonly BeatLevel[];
+    levelsB?: readonly BeatLevel[];
   };
 }
 

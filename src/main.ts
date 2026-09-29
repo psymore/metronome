@@ -172,7 +172,7 @@ const viz = new VizController(
     void dialHub.offsetWidth; // restart the animation even if it's already mid-pulse
     dialHub.classList.add('pulse');
     if (store.get().haptics && level !== 'mute' && navigator.vibrate) {
-      navigator.vibrate(level === 'accent' ? 30 : 12);
+      navigator.vibrate(level === 'accent' ? 30 : level === 'medium' ? 20 : 12);
     }
     const { targetBars, loopCount } = store.get();
     barCounter.textContent = formatBarCounter(barIndex, targetBars, loopCount);

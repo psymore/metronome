@@ -197,6 +197,16 @@ export function darken(color: string, amt: number): string {
   return `rgb(${Math.round(r * mul)},${Math.round(g * mul)},${Math.round(b * mul)})`;
 }
 
+/** Blends two `#rrggbb`/`rgb(...)` colors, `t` (0..1) of the way from `a` to `b`. Falls back to
+ *  `a` unchanged if either color doesn't parse — same no-op fallback as `lighten`/`darken`. */
+export function mixColor(a: string, b: string, t: number): string {
+  const pa = parseRgb(a);
+  const pb = parseRgb(b);
+  if (!pa || !pb) return a;
+  const mix = (x: number, y: number) => Math.round(x + (y - x) * t);
+  return `rgb(${mix(pa[0], pb[0])},${mix(pa[1], pb[1])},${mix(pa[2], pb[2])})`;
+}
+
 function ringPath(
   ctx: CanvasRenderingContext2D,
   x: number,

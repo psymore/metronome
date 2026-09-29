@@ -231,15 +231,29 @@ export class AudioEngine {
   private playBeat(beat: BeatEvent): void {
     this.timeline.push(beat);
     if (beat.level === 'mute') return;
-    const buffer = this.buffers[beat.level];
+    // `medium` borrows the accent buffer (no separate sound slot) at a quieter gain, sitting
+    // between the unaccented click and a full accent.
+    const buffer = this.buffers[beat.level === 'medium' ? 'accent' : beat.level];
     if (!buffer) return;
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.master);
-    source.onended = () => {
-      this.active.delete(source);
-      source.disconnect();
-    };
+    if (beat.level === 'medium') {
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0.6; // tuned by ear: between mute (0) and a full accent (1)
+      source.connect(gain);
+      gain.connect(this.master);
+      source.onended = () => {
+        this.active.delete(source);
+        source.disconnect();
+        gain.disconnect();
+      };
+    } else {
+      source.connect(this.master);
+      source.onended = () => {
+        this.active.delete(source);
+        source.disconnect();
+      };
+    }
     this.active.add(source);
     source.start(beat.time);
   }
@@ -257,7 +271,8 @@ export class AudioEngine {
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
     const gain = this.ctx.createGain();
-    gain.gain.value = level === 'accent' ? 1.35 : 1;
+    // Tuned by ear: normal 1, medium 1.1 (between normal and accent), accent 1.35.
+    gain.gain.value = level === 'accent' ? 1.35 : level === 'medium' ? 1.1 : 1;
     source.connect(gain);
     gain.connect(this.master);
     source.onended = () => {

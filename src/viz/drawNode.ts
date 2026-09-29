@@ -1,5 +1,5 @@
 import type { BeatLevel, NodeStyleName } from '../state/settings';
-import { getNodeStyleKit } from './nodeStyleKit';
+import { getNodeStyleKit, mixColor } from './nodeStyleKit';
 import type { VizTheme } from './types';
 
 /** A beat sphere, painted in the given `style`. `glow` 0..1 swells/brightens it, style-dependent. */
@@ -19,6 +19,17 @@ export function drawNode(
     kit.paintMute(ctx, x, y, radius, theme.nodeIdle, theme.node, theme.glow, glow);
   } else if (level === 'accent') {
     kit.paintAccent(ctx, x, y, radius, theme.accent, theme.glow, theme.core, glow);
+  } else if (level === 'medium') {
+    kit.paintAccent(
+      ctx,
+      x,
+      y,
+      radius,
+      mixColor(theme.accent, theme.node, 0.5),
+      theme.glow,
+      theme.core,
+      glow,
+    );
   } else {
     kit.paintNormal(ctx, x, y, radius, theme.node, theme.glow, theme.core, glow);
   }

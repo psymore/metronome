@@ -1,6 +1,6 @@
 import { clampBpm } from '../engine/timing';
 
-export type BeatLevel = 'accent' | 'normal' | 'mute';
+export type BeatLevel = 'accent' | 'medium' | 'normal' | 'mute';
 export type VisualizerKind = 'circular' | 'linear';
 export const SUBDIVISIONS = [1, 2, 3, 4] as const;
 export type Subdivision = (typeof SUBDIVISIONS)[number];
@@ -71,7 +71,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bpm: 120,
   beatsPerBar: 4,
   beatUnit: 4,
-  levels: ['accent', 'normal', 'normal', 'normal'],
+  levels: accentProfile(4, 4),
   visualizer: 'circular',
   syncOffsetMs: 0,
   volume: 0.8,
@@ -113,7 +113,7 @@ export function defaultSettings(): Settings {
 }
 
 export function isBeatLevel(v: unknown): v is BeatLevel {
-  return v === 'accent' || v === 'normal' || v === 'mute';
+  return v === 'accent' || v === 'medium' || v === 'normal' || v === 'mute';
 }
 
 export function isBeatUnit(v: unknown): v is BeatUnit {
@@ -148,22 +148,57 @@ export function resizeLevels(levels: readonly BeatLevel[], n: number): BeatLevel
   return Array.from({ length: n }, (_, i) => levels[i] ?? defaultLevel(i));
 }
 
-/**
- * Canonical accent pattern for compound meters (6/8, 9/8, 12/8, ...): each
- * dotted-quarter group of 3 gets its own accent ("ONE-two-three FOUR-five-six"),
- * not just beat 1.
- */
-export function compoundAccentLevels(beatsPerBar: number): BeatLevel[] {
-  return Array.from({ length: beatsPerBar }, (_, i) => (i % 3 === 0 ? 'accent' : 'normal'));
-}
-
 export function isCompoundMeter(beatsPerBar: number, beatUnit: BeatUnit): boolean {
   return beatUnit === 8 && beatsPerBar > 3 && beatsPerBar % 3 === 0;
 }
 
+/**
+ * Splits a bar of `n` beats into accent groups. Compound meters (6/8, 9/8, 12/8, ...) group in
+ * 3s (one per dotted-quarter felt beat). Simple meters follow a small hand-picked table for the
+ * common cases (2..7) and fall back to groups of 2 with a trailing 3 when `n` is odd.
+ */
+export function groupSizes(n: number, beatUnit: BeatUnit): number[] {
+  if (isCompoundMeter(n, beatUnit)) {
+    return Array.from({ length: Math.max(1, Math.round(n / 3)) }, () => 3);
+  }
+  switch (n) {
+    case 2:
+      return [2];
+    case 3:
+      return [3];
+    case 4:
+      return [2, 2];
+    case 5:
+      return [3, 2];
+    case 6:
+      return [3, 3];
+    case 7:
+      return [2, 2, 3];
+    default: {
+      if (n <= 1) return [n];
+      const pairs = Math.floor(n / 2);
+      const groups = Array.from({ length: pairs }, () => 2);
+      if (n % 2 === 1) groups[groups.length - 1] = 3;
+      return groups;
+    }
+  }
+}
+
+/** First pulse `accent`, each later group head `medium`, everything else `normal`. */
+export function accentProfile(beatsPerBar: number, beatUnit: BeatUnit): BeatLevel[] {
+  const levels: BeatLevel[] = [];
+  groupSizes(beatsPerBar, beatUnit).forEach((size, groupIndex) => {
+    for (let i = 0; i < size; i++) {
+      levels.push(groupIndex === 0 && i === 0 ? 'accent' : i === 0 ? 'medium' : 'normal');
+    }
+  });
+  return levels;
+}
+
 export function nextLevel(level: BeatLevel): BeatLevel {
   if (level === 'mute') return 'normal';
-  if (level === 'normal') return 'accent';
+  if (level === 'normal') return 'medium';
+  if (level === 'medium') return 'accent';
   return 'mute';
 }
 
@@ -218,7 +253,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     : d.beatsPerBar;
   const levels = Array.isArray(r.levels)
     ? r.levels.map((l, i): BeatLevel => (isBeatLevel(l) ? l : defaultLevel(i)))
-    : [];
+    : d.levels;
   const rp =
     typeof r.polyrhythm === 'object' && r.polyrhythm !== null
       ? (r.polyrhythm as Record<string, unknown>)

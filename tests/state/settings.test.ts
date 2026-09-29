@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accentProfile,
   clampPolyCount,
-  compoundAccentLevels,
   DEFAULT_SETTINGS,
   defaultSettings,
+  groupSizes,
   isCompoundMeter,
   loadSettings,
   nextLevel,
@@ -157,29 +158,77 @@ describe('level helpers', () => {
     expect(resizeLevels([], 2)).toEqual(['accent', 'normal']);
   });
 
-  it('cycles mute → normal → accent → mute', () => {
+  it('cycles mute → normal → medium → accent → mute', () => {
     expect(nextLevel('mute')).toBe('normal');
-    expect(nextLevel('normal')).toBe('accent');
+    expect(nextLevel('normal')).toBe('medium');
+    expect(nextLevel('medium')).toBe('accent');
     expect(nextLevel('accent')).toBe('mute');
   });
 
-  it('accents the start of every group of 3 in a compound meter', () => {
-    expect(compoundAccentLevels(6)).toEqual([
+  it('groupSizes groups a bar per the accent-profile table', () => {
+    expect(groupSizes(2, 4)).toEqual([2]);
+    expect(groupSizes(3, 4)).toEqual([3]);
+    expect(groupSizes(4, 4)).toEqual([2, 2]);
+    expect(groupSizes(5, 4)).toEqual([3, 2]);
+    expect(groupSizes(6, 8)).toEqual([3, 3]);
+    expect(groupSizes(7, 8)).toEqual([2, 2, 3]);
+    expect(groupSizes(9, 8)).toEqual([3, 3, 3]);
+    expect(groupSizes(12, 8)).toEqual([3, 3, 3, 3]);
+    expect(groupSizes(6, 4)).toEqual([3, 3]);
+  });
+
+  it('accentProfile accents the first pulse and each later group head as medium', () => {
+    expect(accentProfile(2, 4)).toEqual(['accent', 'normal']);
+    expect(accentProfile(3, 4)).toEqual(['accent', 'normal', 'normal']);
+    expect(accentProfile(4, 4)).toEqual(['accent', 'normal', 'medium', 'normal']);
+    expect(accentProfile(5, 4)).toEqual(['accent', 'normal', 'normal', 'medium', 'normal']);
+    expect(accentProfile(6, 8)).toEqual([
       'accent',
       'normal',
       'normal',
-      'accent',
+      'medium',
       'normal',
       'normal',
     ]);
-    expect(compoundAccentLevels(9)).toEqual([
+    expect(accentProfile(7, 8)).toEqual([
+      'accent',
+      'normal',
+      'medium',
+      'normal',
+      'medium',
+      'normal',
+      'normal',
+    ]);
+    expect(accentProfile(9, 8)).toEqual([
       'accent',
       'normal',
       'normal',
+      'medium',
+      'normal',
+      'normal',
+      'medium',
+      'normal',
+      'normal',
+    ]);
+    expect(accentProfile(12, 8)).toEqual([
       'accent',
       'normal',
       'normal',
+      'medium',
+      'normal',
+      'normal',
+      'medium',
+      'normal',
+      'normal',
+      'medium',
+      'normal',
+      'normal',
+    ]);
+    expect(accentProfile(6, 4)).toEqual([
       'accent',
+      'normal',
+      'normal',
+      'medium',
       'normal',
       'normal',
     ]);
@@ -194,11 +243,18 @@ describe('level helpers', () => {
     expect(isCompoundMeter(7, 8)).toBe(false); // not evenly divisible into groups of 3
   });
 
+  it('sanitizeSettings keeps medium as a valid beat level', () => {
+    expect(sanitizeSettings({ beatsPerBar: 2, levels: ['medium', 'medium'] }).levels).toEqual([
+      'medium',
+      'medium',
+    ]);
+  });
+
   it('withBeatsPerBar clamps and resizes', () => {
     const s = defaultSettings();
     expect(withBeatsPerBar(s, 6)).toEqual({
       beatsPerBar: 6,
-      levels: ['accent', 'normal', 'normal', 'normal', 'normal', 'normal'],
+      levels: ['accent', 'normal', 'medium', 'normal', 'normal', 'normal'],
     });
     expect(withBeatsPerBar(s, 0).beatsPerBar).toBe(1);
     expect(withBeatsPerBar(s, 99).beatsPerBar).toBe(16);

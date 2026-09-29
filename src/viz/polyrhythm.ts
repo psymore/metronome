@@ -21,6 +21,7 @@ const HUB_FADE_FRAC = 0.22;
  *  visible ring anyway; `color` there only tints the glow flash). */
 function levelColor(layerColor: string, level: BeatLevel): string {
   if (level === 'accent') return lighten(layerColor, 0.25);
+  if (level === 'medium') return lighten(layerColor, 0.1);
   if (level === 'normal') return darken(layerColor, 0.3);
   return layerColor;
 }

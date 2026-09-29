@@ -1,5 +1,5 @@
 import {
-  compoundAccentLevels,
+  accentProfile,
   isBeatUnit,
   isCompoundMeter,
   isSubdivision,
@@ -46,7 +46,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
       store.set({
         ...withBeatsPerBar(store.get(), top),
         beatUnit: bottom,
-        ...(isCompoundMeter(top, bottom) ? { levels: compoundAccentLevels(top) } : {}),
+        ...(isCompoundMeter(top, bottom) ? { levels: accentProfile(top, bottom) } : {}),
       });
     });
   }
