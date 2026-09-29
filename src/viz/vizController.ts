@@ -49,6 +49,9 @@ export class VizController {
   private themeName: string | undefined;
   private theme: VizTheme;
   private lastGlow = 0;
+  /** Logs a broken render() only once, not every frame, while still keeping the rAF loop (and
+   *  the audio, which never depended on it) alive instead of dying silently on the first throw. */
+  private renderErrorLogged = false;
   /** In-flight or settled split animation per coincident pair. `opening` true = 0→1 (branch out),
    *  false = 1→0 (collapse back). Once a closing animation completes the entry is removed. */
   private polyPairAnim = new Map<string, { start: number; opening: boolean }>();
@@ -66,6 +69,9 @@ export class VizController {
     /** Fires once at the onset of each heard beat (glow rising from its prior decay). */
     private readonly onBeatStart?: (level: BeatLevel, barIndex: number) => void,
     private readonly onPolyBeatTap?: (layer: 'A' | 'B', index: number) => void,
+    /** Reported once (see `renderErrorLogged`) if `render()` throws, so the same log+toast
+     *  pipeline other uncaught errors go through also covers a broken render loop. */
+    private readonly onRenderError?: (err: unknown) => void,
   ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not supported in this browser.');
@@ -179,7 +185,15 @@ export class VizController {
 
   private readonly onFrame = (): void => {
     this.raf = 0;
-    this.render();
+    try {
+      this.render();
+    } catch (err) {
+      if (!this.renderErrorLogged) {
+        this.renderErrorLogged = true;
+        console.error(err);
+        this.onRenderError?.(err);
+      }
+    }
     if (shouldAnimate({ running: this.source.running(), hidden: document.hidden })) {
       this.invalidate();
     }

@@ -144,6 +144,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'toast.addedOne': 'Added "{name}". Choose it for Accent or Other beats.',
     'toast.addedMany': 'Added {count} sounds.',
     'toast.audioStartError': 'Audio could not start: {error}',
+    'toast.unexpectedError': 'Something went wrong. If the metronome misbehaves, reload the app.',
     'beat.ariaLabel': 'Beat {n}: {level}. Click to change.',
     'beatLevel.accent': 'accent',
     'beatLevel.normal': 'normal',
@@ -294,6 +295,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'toast.addedOne': '"{name}" eklendi. Vurgu veya Diğer vuruşlar için seçin.',
     'toast.addedMany': '{count} ses eklendi.',
     'toast.audioStartError': 'Ses başlatılamadı: {error}',
+    'toast.unexpectedError':
+      'Bir şeyler ters gitti. Metronom hatalı davranırsa uygulamayı yeniden yükleyin.',
     'beat.ariaLabel': 'Vuruş {n}: {level}. Değiştirmek için dokunun.',
     'beatLevel.accent': 'vurgu',
     'beatLevel.normal': 'normal',

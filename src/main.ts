@@ -20,6 +20,7 @@ import { mountClickFx } from './ui/clickFx';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
 import { byId } from './ui/dom';
+import { mountErrorFloor } from './ui/errorFloor';
 import { mountInfoButtons } from './ui/infoButtons';
 import { createInfoPopup } from './ui/infoPopup';
 import { mountKnob } from './ui/knob';
@@ -75,6 +76,17 @@ store.subscribe((s, prev) => {
 
 const toast = createToast(byId('toast'));
 const showInfo = createInfoPopup(byId('infoPopup'));
+// A floor under whatever the rest of the app didn't already catch — a broken render loop or a
+// stray rejection shouldn't fail silently with no visible signal to the user.
+const errorFloor = mountErrorFloor({
+  onError: (listener) => window.addEventListener('error', (e) => listener(e.error ?? e.message)),
+  onUnhandledRejection: (listener) =>
+    window.addEventListener('unhandledrejection', (e) => listener(e.reason)),
+  now: () => Date.now(),
+  logError: (reason) => console.error(reason),
+  showToast: (message) => toast(message),
+  getMessage: () => t('toast.unexpectedError'),
+});
 const engine = new AudioEngine({
   getPattern: () => store.get(),
   getPolyPattern: () => store.get(),
@@ -176,6 +188,7 @@ const viz = new VizController(
     next[index] = nextLevel(src[index] ?? 'normal');
     store.set({ polyrhythm: { ...p, ...(layer === 'A' ? { levelsA: next } : { levelsB: next }) } });
   },
+  (err) => errorFloor.report(err),
 );
 store.subscribe(() => viz.invalidate());
 // Keep per-node level arrays sized to the ratio: growing adds default entries, shrinking trims.
