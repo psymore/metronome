@@ -158,29 +158,43 @@ const classicKit: NodeStyleKit = {
   },
 };
 
-/** Lightens a `#rrggbb` color toward white by `amt` (0..1). Non-hex input passes through
- *  unchanged rather than throwing — a safe no-op if a future theme token isn't hex. */
-export function lighten(hex: string, amt: number): string {
-  const c = hex.replace('#', '');
-  if (c.length !== 6) return hex;
-  const num = Number.parseInt(c, 16);
-  if (Number.isNaN(num)) return hex;
-  const r = Math.min(255, (num >> 16) + Math.round(255 * amt));
-  const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(255 * amt));
-  const b = Math.min(255, (num & 0xff) + Math.round(255 * amt));
-  return `rgb(${r},${g},${b})`;
+const RGB_RE = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/;
+
+/** Parses `#rrggbb` or `rgb(r,g,b)` (whitespace-tolerant) into channels. Anything else — including
+ *  a color this module doesn't itself produce, like `hsl(...)` or a named color — is `null`, so
+ *  callers can no-op rather than throw. Accepting our own `rgb(...)` output is what lets
+ *  `lighten`/`darken` chain (e.g. `metalDisc`'s `ringColor`, or `polyrhythm.ts` deriving a color
+ *  via one of these before handing it to a kit that calls the other). */
+function parseRgb(color: string): [number, number, number] | null {
+  const rgbMatch = color.match(RGB_RE);
+  if (rgbMatch) {
+    return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])];
+  }
+  const hex = color.replace('#', '');
+  if (hex.length !== 6) return null;
+  const num = Number.parseInt(hex, 16);
+  if (Number.isNaN(num)) return null;
+  return [(num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff];
 }
 
-/** Darkens a `#rrggbb` color toward black by `amt` (0..1). Same non-hex fallback as `lighten`. */
-export function darken(hex: string, amt: number): string {
-  const c = hex.replace('#', '');
-  if (c.length !== 6) return hex;
-  const num = Number.parseInt(c, 16);
-  if (Number.isNaN(num)) return hex;
-  const r = Math.round((num >> 16) * (1 - amt));
-  const g = Math.round(((num >> 8) & 0xff) * (1 - amt));
-  const b = Math.round((num & 0xff) * (1 - amt));
-  return `rgb(${r},${g},${b})`;
+/** Lightens a `#rrggbb` or `rgb(...)` color toward white by `amt` (0..1). Unparseable input passes
+ *  through unchanged rather than throwing — a safe no-op if a future theme token isn't a color this
+ *  module understands. */
+export function lighten(color: string, amt: number): string {
+  const parsed = parseRgb(color);
+  if (!parsed) return color;
+  const [r, g, b] = parsed;
+  const add = Math.round(255 * amt);
+  return `rgb(${Math.min(255, r + add)},${Math.min(255, g + add)},${Math.min(255, b + add)})`;
+}
+
+/** Darkens a `#rrggbb` or `rgb(...)` color toward black by `amt` (0..1). Same fallback as `lighten`. */
+export function darken(color: string, amt: number): string {
+  const parsed = parseRgb(color);
+  if (!parsed) return color;
+  const [r, g, b] = parsed;
+  const mul = 1 - amt;
+  return `rgb(${Math.round(r * mul)},${Math.round(g * mul)},${Math.round(b * mul)})`;
 }
 
 function ringPath(
