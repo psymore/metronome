@@ -80,6 +80,30 @@ describe('mountErrorFloor', () => {
     expect(showToast).toHaveBeenCalledTimes(2);
   });
 
+  it('ignores the benign ResizeObserver loop window error entirely', () => {
+    const { deps, logError, showToast, fireError } = makeDeps();
+    mountErrorFloor(deps);
+
+    fireError('ResizeObserver loop completed with undelivered notifications.');
+
+    expect(logError).not.toHaveBeenCalled();
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it('logs but does not toast before boot finishes, and does not use up the throttle', () => {
+    let booted = false;
+    const { deps, logError, showToast, fireError } = makeDeps({ isBooted: () => booted });
+    mountErrorFloor(deps);
+
+    fireError(new Error('boot failed'));
+    expect(logError).toHaveBeenCalledTimes(1);
+    expect(showToast).not.toHaveBeenCalled();
+
+    booted = true;
+    fireError(new Error('later'));
+    expect(showToast).toHaveBeenCalledTimes(1);
+  });
+
   it('exposes report() so a caller with its own try/catch can go through the same pipeline', () => {
     const { deps, logError, showToast } = makeDeps();
     const floor = mountErrorFloor(deps);

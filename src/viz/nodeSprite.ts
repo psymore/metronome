@@ -1,7 +1,9 @@
 import type { BeatLevel, NodeStyleName } from '../state/settings';
 
-/** Extra room around the sphere so its idle shadow is not clipped by the sprite edge. */
-export const SPRITE_PAD = 8;
+/** Extra room around the sphere so its idle shadow is not clipped by the sprite edge. Sized for
+ *  the widest idle shadow any style paints: Frosted accent's `shadowBlur` 8 (5 × 1.6), whose
+ *  visible falloff reaches ~1.5× the blur value past the fill. */
+export const SPRITE_PAD = 12;
 
 /** Side length, in CSS pixels, of the square sprite holding a node of this radius. */
 export function spriteSize(radius: number): number {

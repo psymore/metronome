@@ -6,10 +6,20 @@ export interface ErrorFloorDeps {
   showToast(message: string): void;
   /** Resolved at throw time, not at mount time, so a language change afterward is reflected. */
   getMessage(): string;
+  /** False until boot finishes. A throw before then is a failed boot, which index.html's own
+   *  boot-failure screen already reports — a toast on top of it would just be a second message. */
+  isBooted?(): boolean;
   throttleMs?: number;
 }
 
 const DEFAULT_THROTTLE_MS = 10_000;
+
+/** Browser-generated window errors that don't mean anything is broken. Chrome reports "the
+ *  ResizeObserver loop completed with undelivered notifications" as a window `error` (with no
+ *  `error` object, only a message) when an observer callback's layout change needs another pass. */
+export function isBenignWindowError(reason: unknown): boolean {
+  return typeof reason === 'string' && reason.includes('ResizeObserver loop');
+}
 
 export interface ErrorFloor {
   /** Reports an error caught elsewhere (e.g. a render loop's own try/catch) through the same
@@ -28,6 +38,7 @@ export function mountErrorFloor(deps: ErrorFloorDeps): ErrorFloor {
 
   const report = (reason: unknown): void => {
     deps.logError(reason);
+    if (deps.isBooted && !deps.isBooted()) return;
     const now = deps.now();
     if (now - lastShown >= throttleMs) {
       lastShown = now;
@@ -35,7 +46,9 @@ export function mountErrorFloor(deps: ErrorFloorDeps): ErrorFloor {
     }
   };
 
-  deps.onError(report);
+  deps.onError((reason) => {
+    if (!isBenignWindowError(reason)) report(reason);
+  });
   deps.onUnhandledRejection(report);
 
   return { report };

@@ -87,6 +87,7 @@ const errorFloor = mountErrorFloor({
   logError: (reason) => console.error(reason),
   showToast: (message) => toast(message),
   getMessage: () => t('toast.unexpectedError'),
+  isBooted: () => document.documentElement.dataset.booted === 'true',
 });
 const engine = new AudioEngine({
   getPattern: () => store.get(),

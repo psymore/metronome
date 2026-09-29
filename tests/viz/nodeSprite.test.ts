@@ -12,11 +12,11 @@ function makeCache(render = vi.fn(() => marker('sprite'))) {
 
 describe('spriteSize', () => {
   it('leaves room on both sides for the idle shadow', () => {
-    expect(spriteSize(10)).toBe(36); // (10 + 8) * 2
+    expect(spriteSize(10)).toBe(44); // (10 + 12) * 2
   });
 
   it('rounds up so the sprite never clips', () => {
-    expect(spriteSize(10.2)).toBe(37);
+    expect(spriteSize(10.2)).toBe(45);
   });
 });
 
