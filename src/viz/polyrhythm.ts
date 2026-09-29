@@ -95,6 +95,7 @@ export function drawPolyrhythm(
         activeB && levelB !== 'mute' ? glowB : 0,
         String(p.aIndex + 1),
         theme.nodeIdle,
+        theme.core,
         style,
       );
     } else {
@@ -256,35 +257,42 @@ function drawCombinedNode(
   glowB: number,
   label: string,
   idleColor: string,
+  coreColor: string,
   style: NodeStyleName,
 ): void {
   ctx.save();
+  // Passing the base (unscaled) radius here, not a pre-swollen one, matters: each half's own
+  // style-kit call (e.g. Classic's paintAccent) already swells by its own glow, so scaling here
+  // too would double-swell it — and since glowA/glowB can differ, a shared pre-scale would also
+  // make the two halves mismatched sizes instead of each tracking its own beat.
   const r = radius * (1 + 0.25 * Math.max(glowA, glowB));
 
   drawCombinedHalf(
     ctx,
     x,
     y,
-    r,
+    radius,
     Math.PI / 2,
     (3 * Math.PI) / 2,
     colorA,
     levelA,
     glowA,
     idleColor,
+    coreColor,
     style,
   );
   drawCombinedHalf(
     ctx,
     x,
     y,
-    r,
+    radius,
     -Math.PI / 2,
     Math.PI / 2,
     colorB,
     levelB,
     glowB,
     idleColor,
+    coreColor,
     style,
   );
 
@@ -311,7 +319,9 @@ function drawCombinedNode(
  *  truthful about what each layer is actually doing, not a fixed two-tone regardless of level.
  *  `idleColor` (the generic theme gray, not the layer color) keeps a muted half's ring consistent
  *  with the standalone mute node's "two different borders" look — the ring in idleColor, the
- *  glow halo in the layer's own `color`. */
+ *  glow halo in the layer's own `color`. `coreColor` is `theme.core` — the same white-hot flash
+ *  core a standalone node's accent/normal fill uses — rather than the layer color, so a merged
+ *  conjunction's flash matches what a split node would show. */
 function drawCombinedHalf(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -323,6 +333,7 @@ function drawCombinedHalf(
   level: BeatLevel,
   glow: number,
   idleColor: string,
+  coreColor: string,
   style: NodeStyleName,
 ): void {
   const kit = getNodeStyleKit(style);
@@ -330,9 +341,9 @@ function drawCombinedHalf(
   if (level === 'mute') {
     kit.paintMute(ctx, x, y, r, idleColor, color, color, glow, startAngle, endAngle);
   } else if (level === 'accent') {
-    kit.paintAccent(ctx, x, y, r, color, color, color, glow, startAngle, endAngle);
+    kit.paintAccent(ctx, x, y, r, color, color, coreColor, glow, startAngle, endAngle);
   } else {
-    kit.paintNormal(ctx, x, y, r, color, color, color, glow, startAngle, endAngle);
+    kit.paintNormal(ctx, x, y, r, color, color, coreColor, glow, startAngle, endAngle);
   }
   ctx.restore();
 }
