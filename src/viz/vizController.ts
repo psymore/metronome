@@ -187,13 +187,13 @@ export class VizController {
     if (!c) return null;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const mid = size / 2;
-    drawNode(c, mid, mid, radius, level, 0, this.theme);
+    drawNode(c, mid, mid, radius, level, 0, this.theme, this.getSettings().nodeStyle);
     c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.shadowBlur = 3;
     c.shadowColor = 'rgba(0,0,0,0.6)';
-    c.fillStyle = level === 'mute' ? this.theme.accent : '#fff';
+    c.fillStyle = '#fff';
     c.fillText(label, mid, mid);
     return canvas;
   }
@@ -217,7 +217,7 @@ export class VizController {
       this.themeName = s.theme;
       this.theme = readTheme(this.canvas);
     }
-    this.sprites.setContext(s.theme, this.dpr);
+    this.sprites.setContext(s.theme, this.dpr, s.nodeStyle);
     const heard = this.source.heardTime();
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
@@ -246,7 +246,7 @@ export class VizController {
         splitFrac,
         reducedMotion: this.reducedMotion.matches,
       });
-      drawPolyrhythm(this.ctx, this.size, frame, this.theme, this.sprites);
+      drawPolyrhythm(this.ctx, this.size, frame, this.theme, this.sprites, s.nodeStyle);
       this.lastGlow = Math.max(frame.glowA, frame.glowB);
       // Keep the animation loop alive while any pair is still mid-split, even if the metronome
       // itself is stopped and shouldAnimate() would otherwise pause the frame loop.
@@ -264,7 +264,7 @@ export class VizController {
       reducedMotion: this.reducedMotion.matches,
     });
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
-    visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites);
+    visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites, s.nodeStyle);
     if (frame.glow > this.lastGlow) {
       const level =
         frame.levels[frame.activeBeat] ?? (frame.activeBeat === 0 ? 'accent' : 'normal');
