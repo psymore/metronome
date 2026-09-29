@@ -36,6 +36,9 @@ export class AudioEngine {
   };
   private readonly active = new Set<AudioBufferSourceNode>();
   private readonly silentUnlock: HTMLAudioElement;
+  /** The last volume `setVolume` was given, so `recoverContext()`'s fresh master gain starts at
+   *  the user's actual setting instead of the node default of 1.0 (full volume). */
+  private volume = 1;
 
   constructor(opts: AudioEngineOptions) {
     this.getPolyPattern = opts.getPolyPattern;
@@ -77,6 +80,7 @@ export class AudioEngine {
 
   private createMaster(): GainNode {
     const master = this._ctx.createGain();
+    master.gain.value = this.volume;
     master.connect(this._ctx.destination);
     return master;
   }
@@ -183,6 +187,7 @@ export class AudioEngine {
   }
 
   setVolume(volume: number): void {
+    this.volume = volume;
     this.master.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.01);
   }
 
