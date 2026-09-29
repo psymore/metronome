@@ -1,3 +1,4 @@
+import type { NodeStyleName } from '../state/settings';
 import type { VizFrame } from './frame';
 import type { NodeSprites } from './nodeSprite';
 
@@ -22,5 +23,6 @@ export interface Visualizer {
     frame: VizFrame,
     theme: VizTheme,
     sprites: NodeSprites,
+    style: NodeStyleName,
   ): void;
 }

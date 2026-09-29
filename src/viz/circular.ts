@@ -12,7 +12,7 @@ import { spriteSize } from './nodeSprite';
 import type { Visualizer } from './types';
 
 export const circularVisualizer: Visualizer = {
-  draw(ctx, { width, height }, frame, theme, sprites) {
+  draw(ctx, { width, height }, frame, theme, sprites, style) {
     ctx.clearRect(0, 0, width, height);
     const n = frame.beatsPerBar;
     const { cx, cy, r, hub } = circularLayout(width, height);
@@ -81,11 +81,11 @@ export const circularVisualizer: Visualizer = {
           continue;
         }
       }
-      drawNode(ctx, p.x, p.y, nodeR, level, glow, theme);
+      drawNode(ctx, p.x, p.y, nodeR, level, glow, theme, style);
       ctx.save();
       ctx.shadowBlur = 3;
       ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.fillStyle = level === 'mute' ? theme.accent : '#fff';
+      ctx.fillStyle = '#fff';
       ctx.fillText(label, p.x, p.y);
       ctx.restore();
     }
