@@ -468,7 +468,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     c2d.fillStyle = theme.brass;
     c2d.shadowColor = theme.brass;
     c2d.shadowBlur = running ? 5 : 2;
-    c2d.font = `700 ${Math.round(g.coreRadius * 0.52)}px "Roboto Mono", ui-monospace, monospace`;
+    c2d.font = `700 ${Math.round(g.coreRadius * 0.52)}px "Inter", system-ui, sans-serif`;
     c2d.fillText(String(bpm), 0, -g.coreRadius * 0.22);
     c2d.restore();
 

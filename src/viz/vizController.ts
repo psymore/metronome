@@ -183,6 +183,13 @@ export class VizController {
     if (this.raf === 0) this.raf = requestAnimationFrame(this.onFrame);
   }
 
+  /** Forces cached idle-node sprites to repaint (e.g. once a web font swap-in changes node
+   *  labels' rendered glyphs) and redraws. */
+  invalidateSprites(): void {
+    this.sprites.clear();
+    this.invalidate();
+  }
+
   private readonly onFrame = (): void => {
     this.raf = 0;
     try {
@@ -226,7 +233,7 @@ export class VizController {
           : this.theme;
     drawNode(c, mid, mid, radius, level, 0, theme, style);
     if (style === 'classic') {
-      c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px system-ui, sans-serif`;
+      c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px "Inter", system-ui, sans-serif`;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.shadowBlur = 3;

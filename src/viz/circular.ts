@@ -64,7 +64,7 @@ export const circularVisualizer: Visualizer = {
       ctx.restore();
     }
 
-    ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px system-ui, sans-serif`;
+    ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px "Inter", system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const size = spriteSize(nodeR);

@@ -70,4 +70,10 @@ export class NodeSpriteCache implements NodeSprites {
   get size(): number {
     return this.sprites.size;
   }
+
+  /** Forces every cached sprite to be repainted, even though theme/dpr/style haven't changed —
+   *  for a change `setContext` can't see itself, like a web font finishing its swap-in. */
+  clear(): void {
+    this.sprites.clear();
+  }
 }

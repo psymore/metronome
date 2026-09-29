@@ -1,5 +1,4 @@
-/* Self-hosted (OFL-licensed — see the OFL.txt next to each family below) rather than Google
-   Fonts' CDN:
+/* Self-hosted (OFL-licensed — see the OFL.txt next to it) rather than Google Fonts' CDN:
    public/privacy-policy.html promises "no third-party services" and "works fully offline", a
    third-party font stylesheet isn't precached by the service worker (so the fallback font shows
    offline), and the cross-origin round trip adds to first paint on mobile data. Only the latin +
@@ -27,28 +26,6 @@
     U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
     U+2C60-2C7F, U+A720-A7FF;
 }
-@font-face {
-  font-family: "Roboto Mono";
-  font-style: normal;
-  font-weight: 500 700;
-  font-display: swap;
-  src: url("./assets/fonts/roboto-mono/roboto-mono-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
-    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: "Roboto Mono";
-  font-style: normal;
-  font-weight: 500 700;
-  font-display: swap;
-  src: url("./assets/fonts/roboto-mono/roboto-mono-latin-ext.woff2") format("woff2");
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
-    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
-    U+2C60-2C7F, U+A720-A7FF;
-}
-
 :root {
   color-scheme: dark;
   /* Neutrals: identical across every theme — only the accent family below changes. */
@@ -62,8 +39,6 @@
   --muted: #a2967d;
   --radius: 4px;
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
   font-family: var(--font-sans);
   --confirm-safe: #57d38c;
   --confirm-danger: #ff5c5c;
@@ -562,7 +537,8 @@ output {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -882,7 +858,8 @@ output {
 .sig {
   display: grid;
   justify-items: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
@@ -897,7 +874,8 @@ output {
    dark button). Only one of .sig / .sig-poly is visible at any time. */
 .sig-poly {
   display: none;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: color-mix(in srgb, var(--select) 50%, var(--text));
   line-height: 1;
@@ -999,9 +977,8 @@ html.depth-25d .knob {
   width: min(296px, 72vw);
 }
 .tempo-marking {
-  font-family: var(--serif);
+  font-family: var(--font-sans);
   font-size: 13px;
-  font-style: italic;
   color: var(--muted);
 }
 .nudges {
@@ -1046,7 +1023,8 @@ html.depth-25d .knob {
      Must come *after* the background shorthand above, which otherwise resets it to border-box. */
   background-clip: padding-box;
   box-shadow: 0 0 4.2px var(--accent-glow);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 18px;
   font-weight: 700;
   line-height: 1;
@@ -1386,7 +1364,8 @@ select:not(.native-select) option:checked {
   background: transparent;
   padding: 7px 14px;
   border-radius: 999px;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
   color: var(--muted);
   white-space: nowrap;
@@ -1430,10 +1409,9 @@ select:not(.native-select) option:checked {
     inset 0 1px 0 rgb(255 255 255 / 0.06),
     inset 0 -2px 3px rgb(0 0 0 / 0.4);
   color: var(--pink);
-  font-family: var(--serif);
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 700;
-  font-style: italic;
   display: grid;
   place-items: center;
 }
@@ -1483,7 +1461,7 @@ select:not(.native-select) option:checked {
   border: 1px solid var(--line);
   background: var(--edge);
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 600;
@@ -1508,7 +1486,7 @@ select:not(.native-select) option:checked {
 .time-fields input[type="number"] {
   width: 3.2em;
   text-align: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   /* Custom +/- steppers make the native spin buttons redundant clutter. */
   -moz-appearance: textfield;
@@ -1522,7 +1500,7 @@ select:not(.native-select) option:checked {
   align-self: flex-end;
   margin-bottom: 6px;
   color: var(--muted);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 600;
 }
 .time-steppers {
@@ -1670,7 +1648,8 @@ select:not(.native-select) option:checked {
   }
 }
 .practice-time-left {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
   color: var(--text);
 }

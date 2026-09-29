@@ -515,7 +515,14 @@ fitColumnLabels();
 // font first, and its metrics can be narrower, so a label that fit at startup can overflow
 // once Inter actually swaps in. Re-check once web fonts have finished loading, and again on
 // any resize that might cross the desktop breakpoint (the column width itself changes there).
-document.fonts?.ready.then(() => fitColumnLabels());
+// The knob's BPM readout and the visualiser's node labels are canvas text, so they also keep the
+// fallback font until repainted — the knob repaints on its own invalidate(), but idle nodes come
+// from the sprite cache, which must be force-cleared or they'd keep the fallback font's glyphs.
+document.fonts?.ready.then(() => {
+  fitColumnLabels();
+  knob.invalidate();
+  viz.invalidateSprites();
+});
 window.addEventListener('resize', () => fitColumnLabels());
 
 if (new URLSearchParams(location.search).has('debug')) {
