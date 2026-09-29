@@ -89,7 +89,9 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. The user plans a round of feature fixes, to be executed with Sonnet — help plan them if asked.
+1. Feature batch planned in `docs/superpowers/plans/2026-09-29-meter-engine-and-ui-polish.md`
+   (11 tasks: compound-meter pulse, `medium` accent level + profiles, dialog/UI polish, one
+   font). The user runs it with Sonnet; review the resulting commit range afterwards.
 2. Once the Play Console account exists: build the unsigned AAB (`gradlew bundleRelease`), the
    user signs it with jarsigner in their own terminal, then uploads it to closed testing.
 3. After upload: Play App Signing fingerprint → `assetlinks.json`.
