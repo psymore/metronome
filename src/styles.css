@@ -1067,7 +1067,7 @@ html.depth-25d .knob {
 .nudge::before {
   content: "";
   position: absolute;
-  inset: 26.6%;
+  inset: 19.6%;
   border-radius: 4px;
   background: #050a07;
   box-shadow:
