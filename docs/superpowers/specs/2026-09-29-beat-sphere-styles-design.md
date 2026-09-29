@@ -98,6 +98,12 @@ other two:
   same ring but filled solid. Glow still adds a shadow-blur pulse on top of whichever ring/fill is
   current.
 
+The beat number label drawn on top of each node is always white (`#fff`), regardless of style or
+level — including mute, which today inconsistently colors the label with the layer/theme color
+instead of white. This is a small fix bundled into this work, not a new style-kit responsibility:
+the label-painting helpers (`paintLabel` in `drawNode.ts`, the equivalent in `polyrhythm.ts`) drop
+their `level === 'mute' ? color : '#fff'` branch in favor of always `'#fff'`.
+
 `polyrhythm.ts`'s per-layer color override (`layerColor` swapped in for `theme.node`/`accent`) is
 preserved: the kit's paint functions take an explicit `color` parameter rather than reading it off
 `VizTheme` internally, so the same kit serves both a themed standard node and a layer-colored
@@ -164,15 +170,11 @@ each mirroring the existing `themeButtons` block line-for-line (using `isNodeSty
 
 ## 6. Testing
 
-- Unit tests (`tests/state/settings.test.ts` or wherever the existing theme sanitize test lives):
-  `nodeStyle` defaults to `'classic'` on empty/malformed input, round-trips through
-  `sanitizeSettings` when valid, and falls back to default on an invalid string — mirroring the
-  existing theme test shape.
-- Unit test for `spriteKey`: two calls differing only in `style` produce different keys.
-- No new unit tests for the canvas painters themselves (consistent with `drawNode.ts` having none
-  today) — verified manually in the dev server: all 3 styles × all 3 levels (mute/normal/accent),
-  in circular, linear, and polyrhythm (both collapsed-conjunction and split-node cases), with and
-  without the active glow.
+No new unit tests for this feature — verified manually in the dev server instead: all 3 styles ×
+all 3 levels (mute/normal/accent), in circular, linear, and polyrhythm (both collapsed-conjunction
+and split-node cases), with and without the active glow, plus a check that the label stays white
+in every one of those combinations. Unless explicitly requested otherwise, implementation work in
+this repo skips writing unit tests for new work rather than adding them by default.
 
 ## 7. Error handling
 
