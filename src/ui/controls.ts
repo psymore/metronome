@@ -1,6 +1,11 @@
 import { clampBpm } from '../engine/timing';
-import { format } from '../i18n/i18n';
-import { cycleBeatLevel, type Settings } from '../state/settings';
+import { format, t } from '../i18n/i18n';
+import {
+  cycleBeatLevel,
+  isCompoundMeter,
+  type Settings,
+  type Subdivision,
+} from '../state/settings';
 import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
 import { tempoMarking } from '../state/tempoMarking';
@@ -11,6 +16,15 @@ export interface ControlsDeps {
   toggle: () => Promise<void>;
 }
 
+/** Badge text for each subdivision value (1 = off, never shown). */
+const SUBDIVISION_BADGE: Record<Subdivision, string> = { 1: '', 2: '8', 3: '3', 4: '16' };
+const SUBDIVISION_I18N_KEY: Record<Subdivision, string> = {
+  1: 'subdivision.off',
+  2: 'subdivision.eighths',
+  3: 'subdivision.triplets',
+  4: 'subdivision.sixteenths',
+};
+
 export function mountControls({ store, toggle }: ControlsDeps): void {
   const tempoMarkingEl = byId('tempoMarking');
   const beatRow = byId('beatRow');
@@ -19,6 +33,7 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   const sigPolyA = byId('sigPolyA');
   const sigPolyB = byId('sigPolyB');
   const signatureBtn = byId('signatureBtn');
+  const subdivisionBadge = byId('subdivisionBadge');
   const tapBtn = byId<HTMLButtonElement>('tapBtn');
   const tapper = new TapTempo();
 
@@ -84,6 +99,16 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
     sigPolyA.textContent = String(s.polyrhythm.a);
     sigPolyB.textContent = String(s.polyrhythm.b);
     signatureBtn.classList.toggle('is-polyrhythm', s.polyrhythm.enabled);
+    const showBadge =
+      !s.polyrhythm.enabled && s.subdivision !== 1 && !isCompoundMeter(s.beatsPerBar, s.beatUnit);
+    subdivisionBadge.hidden = !showBadge;
+    subdivisionBadge.textContent = showBadge ? SUBDIVISION_BADGE[s.subdivision] : '';
+    signatureBtn.setAttribute(
+      'aria-label',
+      showBadge
+        ? `${t('signature.ariaLabel')} (${t(SUBDIVISION_I18N_KEY[s.subdivision])})`
+        : t('signature.ariaLabel'),
+    );
     renderBeatsInto(beatRow, s);
   }
   render(store.get());

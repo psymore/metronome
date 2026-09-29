@@ -882,6 +882,30 @@ output {
 #signatureBtn.is-polyrhythm .sig-poly {
   display: inline-flex;
 }
+#signatureBtn {
+  position: relative;
+}
+/* Same recessed, unselected look as the Circle/Line tab track (.seg), overlapping the button's
+   top-right corner to hint the active subdivision without competing with the signature digits. */
+.subdivision-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #100f0c, #1a1812);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
 .sig-poly-tag {
   font-size: 9px;
   letter-spacing: 0.18em;
