@@ -31,7 +31,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Remove caches from previous SW versions so stale assets never get served.
         cleanupOutdatedCaches: true,
         // Ensure navigating to any route serves the shell (required for offline PWA).
