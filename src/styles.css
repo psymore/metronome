@@ -540,11 +540,6 @@ output {
   color: var(--select);
 }
 /* Switching tabs is shown by the sliding thumb alone — no extra press effects on these two. */
-/* Pressing the already-active tab moves neither the thumb nor its text color, so it still
-   needs its own tactile feedback — otherwise tapping it feels like the button did nothing. */
-.seg-btn:active {
-  transform: scale(0.95);
-}
 .seg-btn:active::after,
 .seg-btn.btn-flash::after {
   content: none;
