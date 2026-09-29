@@ -1268,7 +1268,7 @@ Expected: `jar verified`, and the certificate details shown match the keystore c
 
 Re-check `android/app/build.gradle` for `compileSdkVersion 36` / `targetSdkVersion 36` (Task 6, Step 4). An AAB below API 36 is rejected at Play upload as of 2026-08-31 — confirm this before spending a review cycle finding out the hard way.
 
-- [ ] **Step 4: Install the release build on a real device and soak-test it**
+- [x] **Step 4: Install the release build on a real device and soak-test it** (2026-09-29, Xiaomi Redmi Note 10 Pro, sideloaded release-signed APK: full-screen, 10-min high-BPM run warm but no warmer than fast charging, screen stayed on, click kept sounding in background, offline launch, polyrhythm in all 4 node styles, Turkish glyphs — all pass. Battery-usage screen not checked.)
 
 ```bash
 adb install -r android/app-release-signed.apk
@@ -1282,7 +1282,7 @@ Verify on the device, with the phone **unplugged from the computer**:
 - **Backgrounding:** press Home while playing. The click keeps sounding — this is correct, confirmed behavior, not a bug (see ledger). Nothing in `AudioEngine`/the scheduler reacts to visibility, and Chrome doesn't suspend a tab that's actively playing audio; only the visualiser's `requestAnimationFrame` loop pauses on `document.hidden` (Task 1, Phase A). Design Decision 1's "not *required* to keep sounding" was correct as written — it never meant "must stop." Reopening the app afterward should still show the visualiser back in sync with the (never-stopped) audio.
 - **Offline:** enable airplane mode, then reopen the app. It should still load and play, since the service worker cached it on first visit exactly as it does for the plain PWA — the TWA gets this for free by genuinely being Chrome loading the real site.
 
-- [ ] **Step 5: No commit — this task only verifies existing artifacts**
+- [x] **Step 5: No commit — this task only verifies existing artifacts**
 
 Nothing new is created in the repo by this task. If Step 4 surfaces a regression, fix it as its own task with its own test and commit, rather than folding a fix silently into this verification step.
 

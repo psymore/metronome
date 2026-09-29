@@ -38,13 +38,13 @@ softening, `AudioEngine.preview()` leaving the context running until the next st
 
 Check the plan's own checkboxes rather than trusting this summary.
 
-- Tasks 1-7 and 10 done. Task 8 Steps 1-3 were done, **but no signed AAB/APK exists on disk
-  any more** (`android/` has no `*.aab`/`*.apk` outside build intermediates) — rebuild and sign
-  per `docs/architecture/platforms.md` before uploading.
+- Tasks 1-8 and 10 done. Task 8 Step 4 (real-device soak test) passed on 2026-09-29 on the
+  user's Xiaomi Redmi Note 10 Pro with a sideloaded release-signed APK
+  (`android/app-release-signed.apk`, gitignored). **No signed AAB exists yet** — build
+  `bundleRelease` + jarsigner per `docs/architecture/platforms.md` before uploading.
 - Before that rebuild, consider `enableNotifications: false` in `android/twa-manifest.json` and
   dropping `POST_NOTIFICATIONS` from the manifest: the app uses no notifications and the privacy
   policy says it requests no runtime permissions. Native-shell change → needs the new AAB anyway.
-- Task 8 Step 4 (real-device unplugged soak test): not done, user runs it themselves.
 - Task 9: Step 2 (privacy policy) done; Steps 1, 3-7 open (account type, listing copy +
   screenshots, create app, upload AAB, closed testing, production). All Play Console UI —
   the agent has no access.
