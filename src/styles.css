@@ -1285,6 +1285,44 @@ html.depth-25d .knob {
 .picker-block .sheet-sub {
   margin-top: 0;
 }
+/* Beats + Note value merged into one card: two equal-width/height input columns, then the
+   resulting signature as a preview, set off from them by a thin divider (the panel's line color,
+   not a full third grid track of its own — it's a border on the result column). */
+.sig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+.sig-grid-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+}
+.sig-grid-col .sheet-sub {
+  margin-bottom: 0;
+}
+.sig-grid-result {
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+  font-size: 30px;
+}
+.unit-row--grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  justify-content: center;
+}
+/* At narrow widths (checked at 320px) three columns leave little room for two chips per row —
+   shrink the chip's usual 44px min-width so 2 4 / 8 16 still fit without wrapping oddly. */
+.sig-grid .chip {
+  min-width: 36px;
+  padding: 7px 6px;
+}
 /* App-wide themed dropdown styling: every native <select> in the app follows this one recipe,
    so the Sound dialog, the Polyrhythm A/B selects, and any future select share the same look.
    Opt out with .native-select if a bare browser control is ever needed. */
@@ -1344,6 +1382,12 @@ select:not(.native-select) option:checked {
 }
 .segmented::-webkit-scrollbar {
   display: none;
+}
+/* Hints that the presets strip keeps going past the visible edge: a fade on the right, removed
+   once scrolled to the end. signatureDialog.ts toggles this class; scoped to #presetsStrip only —
+   the Standard/Polyrhythm switch is also .segmented but never overflows. */
+#presetsStrip.has-more {
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
 }
 .segment {
   flex: 0 0 auto;

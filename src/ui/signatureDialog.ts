@@ -18,8 +18,21 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   );
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
   const compoundHint = byId('subdivisionCompoundHint');
+  const sigResultTop = byId('sigResultTop');
+  const sigResultBottom = byId('sigResultBottom');
+  const presetsStrip = byId('presetsStrip');
 
-  byId('signatureBtn').addEventListener('click', () => dialog.showModal());
+  const updatePresetsFade = () => {
+    const atEnd =
+      presetsStrip.scrollLeft + presetsStrip.clientWidth >= presetsStrip.scrollWidth - 1;
+    presetsStrip.classList.toggle('has-more', !atEnd);
+  };
+  presetsStrip.addEventListener('scroll', updatePresetsFade);
+
+  byId('signatureBtn').addEventListener('click', () => {
+    dialog.showModal();
+    updatePresetsFade();
+  });
   closeOnBackdropClick(dialog);
 
   const setBeats = (n: number) => store.set(withSignature(n, store.get().beatUnit));
@@ -50,6 +63,8 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
 
   const render = (s: Settings) => {
     beatsValue.textContent = String(s.beatsPerBar);
+    sigResultTop.textContent = String(s.beatsPerBar);
+    sigResultBottom.textContent = String(s.beatUnit);
     for (const button of unitButtons) {
       button.setAttribute('aria-checked', String(Number(button.dataset.unit) === s.beatUnit));
     }

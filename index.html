@@ -409,7 +409,7 @@
         <button type="button" role="radio" class="segment" data-sig-mode="standard" aria-checked="true" data-i18n="sigDialog.modeStandard">Standard</button>
         <button type="button" role="radio" class="segment" data-sig-mode="polyrhythm" aria-checked="false" data-i18n="sigDialog.modePolyrhythm">Polyrhythm</button>
       </div>
-      <div class="segmented" role="radiogroup" data-i18n-aria-label="presets.ariaLabel" aria-label="Time signature presets" data-standard-block>
+      <div id="presetsStrip" class="segmented" role="radiogroup" data-i18n-aria-label="presets.ariaLabel" aria-label="Time signature presets" data-standard-block>
         <button type="button" role="radio" class="segment" data-preset="2/4" aria-checked="false">2/4</button>
         <button type="button" role="radio" class="segment" data-preset="3/4" aria-checked="false">3/4</button>
         <button type="button" role="radio" class="segment" data-preset="4/4" aria-checked="false">4/4</button>
@@ -419,24 +419,27 @@
         <button type="button" role="radio" class="segment" data-preset="9/8" aria-checked="false">9/8</button>
         <button type="button" role="radio" class="segment" data-preset="12/8" aria-checked="false">12/8</button>
       </div>
-      <div class="picker-block" data-standard-block>
-        <h3 class="sheet-sub" data-i18n="sigDialog.beatsTitle">Beats</h3>
-        <div class="num-picker">
-          <output id="beatsValue" class="num-value">4</output>
-          <div class="time-steppers">
-            <button type="button" id="beatsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
-            <button type="button" id="beatsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
+      <div class="picker-block sig-grid" data-standard-block>
+        <div class="sig-grid-col">
+          <h3 class="sheet-sub" data-i18n="sigDialog.beatsTitle">Beats</h3>
+          <div class="num-picker">
+            <output id="beatsValue" class="num-value">4</output>
+            <div class="time-steppers">
+              <button type="button" id="beatsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
+              <button type="button" id="beatsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="picker-block" data-standard-block>
-        <h3 class="sheet-sub" data-i18n="sigDialog.noteValueTitle">Note value</h3>
-        <div class="unit-row" role="radiogroup" data-i18n-aria-label="unit.ariaLabel" aria-label="Note value">
-          <button type="button" role="radio" class="chip" data-unit="2" aria-checked="false">2</button>
-          <button type="button" role="radio" class="chip" data-unit="4" aria-checked="false">4</button>
-          <button type="button" role="radio" class="chip" data-unit="8" aria-checked="false">8</button>
-          <button type="button" role="radio" class="chip" data-unit="16" aria-checked="false">16</button>
+        <div class="sig-grid-col">
+          <h3 class="sheet-sub" data-i18n="sigDialog.noteValueTitle">Note value</h3>
+          <div class="unit-row unit-row--grid" role="radiogroup" data-i18n-aria-label="unit.ariaLabel" aria-label="Note value">
+            <button type="button" role="radio" class="chip" data-unit="2" aria-checked="false">2</button>
+            <button type="button" role="radio" class="chip" data-unit="4" aria-checked="false">4</button>
+            <button type="button" role="radio" class="chip" data-unit="8" aria-checked="false">8</button>
+            <button type="button" role="radio" class="chip" data-unit="16" aria-checked="false">16</button>
+          </div>
         </div>
+        <span class="sig sig-grid-result" aria-hidden="true"><span id="sigResultTop">4</span><span id="sigResultBottom">4</span></span>
       </div>
       <h3 class="sheet-sub" data-i18n="subdivision.title" data-standard-block>Subdivision</h3>
       <div class="unit-row" role="radiogroup" data-i18n-aria-label="subdivision.ariaLabel" aria-label="Click subdivision" data-standard-block>
