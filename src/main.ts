@@ -545,6 +545,10 @@ function setBootLoaderHidden(hidden: boolean): void {
   bootLoader.classList.toggle('is-hidden', hidden);
 }
 setBootLoaderHidden(true);
+// A signal the index.html boot-failure script can check that isn't the loader's own opacity —
+// that gets set back to '1' every time the title button below reopens it as a preview, which
+// would otherwise make a later, unrelated window error look exactly like a failed boot.
+document.documentElement.dataset.booted = 'true';
 
 // Clicking the "Metronome" title replays the boot loading screen — just a fun way to see it
 // again without reloading the page. It stays open until closed (no auto-hide timer), and

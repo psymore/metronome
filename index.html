@@ -199,7 +199,11 @@
       (() => {
         window.addEventListener('error', () => {
           var loader = document.getElementById('bootLoader');
-          if (!loader || loader.style.opacity === '0') return; // already booted fine
+          // main.ts sets data-booted once boot succeeds. Checking the loader's own opacity
+          // instead would misfire here: opacity goes back to '1' every time the title button
+          // reopens the loader as an on-demand preview, so a later, unrelated window error while
+          // that preview happened to be open would look exactly like a failed boot.
+          if (!loader || document.documentElement.dataset.booted) return;
           var lang = 'en';
           var raw, saved;
           try {

@@ -22,7 +22,8 @@ describe('computePolyFrame', () => {
       b: 4,
       reducedMotion: false,
       levelsA: [],
-      levelsB: [], splitFrac: {},
+      levelsB: [],
+      splitFrac: {},
     });
     expect(f.activeIndexA).toBe(-1);
     expect(f.activeIndexB).toBe(-1);
@@ -40,7 +41,8 @@ describe('computePolyFrame', () => {
       b: 4,
       reducedMotion: false,
       levelsA: [],
-      levelsB: [], splitFrac: {},
+      levelsB: [],
+      splitFrac: {},
     });
     expect(f.activeIndexA).toBe(1);
     expect(f.activeIndexB).toBe(3);
@@ -58,7 +60,8 @@ describe('computePolyFrame', () => {
       b: 4,
       reducedMotion: false,
       levelsA: [],
-      levelsB: [], splitFrac: {},
+      levelsB: [],
+      splitFrac: {},
     });
     expect(f.glowA).toBe(0);
   });
@@ -73,7 +76,8 @@ describe('computePolyFrame', () => {
       b: 4,
       reducedMotion: false,
       levelsA: [],
-      levelsB: [], splitFrac: {},
+      levelsB: [],
+      splitFrac: {},
     });
     expect(f.activeIndexA).toBe(2);
     expect(f.activeIndexB).toBe(2);

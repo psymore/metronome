@@ -72,6 +72,26 @@ function lighten([r, g, b]: [number, number, number], amount: number): [number, 
   return [mix(r), mix(g), mix(b)];
 }
 
+/** `createConicGradient` only exists from Safari 16.4 / Chrome 99 — falls back to a diagonal
+ *  `createLinearGradient` with the same stops on older browsers (notably iOS 15.x) instead of
+ *  throwing a TypeError. This runs synchronously during the knob's initial `resize()`, before
+ *  `setBootLoaderHidden(true)`, so an unhandled throw here would fail the whole app's boot, not
+ *  just this texture. Same fallback shape as `metalSweepGradient` in `viz/nodeStyleKit.ts`. */
+export function conicOrLinearGradient(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  stops: readonly [number, string][],
+): CanvasGradient {
+  const gradient =
+    typeof ctx.createConicGradient === 'function'
+      ? ctx.createConicGradient(Math.PI / 4, x, y)
+      : ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+  for (const [offset, color] of stops) gradient.addColorStop(offset, color);
+  return gradient;
+}
+
 /** Pre-rendered once per (radius, theme): the conic brushed-steel face, sampled and rotated
  *  live instead of recomputing its gradient every frame. */
 function renderMetalTexture(
@@ -93,9 +113,7 @@ function renderMetalTexture(
   ctx.scale(dpr, dpr);
   const c = radius;
 
-  const conic = ctx.createConicGradient(Math.PI / 4, c, c);
-  for (const [offset, color] of stops) conic.addColorStop(offset, color);
-  ctx.fillStyle = conic;
+  ctx.fillStyle = conicOrLinearGradient(ctx, c, c, radius, stops);
   ctx.beginPath();
   ctx.arc(c, c, radius, 0, Math.PI * 2);
   ctx.fill();

@@ -7,40 +7,44 @@
    match Google Fonts' own subset split so a Latin/Turkish page never has to parse the
    cyrillic/greek/vietnamese subsets it will never use. */
 @font-face {
-  font-family: 'Inter';
+  font-family: "Inter";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('./assets/fonts/inter/inter-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+  src: url("./assets/fonts/inter/inter-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
     U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Inter';
+  font-family: "Inter";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('./assets/fonts/inter/inter-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+  src: url("./assets/fonts/inter/inter-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
     U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
     U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
-  font-family: 'Roboto Mono';
+  font-family: "Roboto Mono";
   font-style: normal;
   font-weight: 500 700;
   font-display: swap;
-  src: url('./assets/fonts/roboto-mono/roboto-mono-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+  src: url("./assets/fonts/roboto-mono/roboto-mono-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
     U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Roboto Mono';
+  font-family: "Roboto Mono";
   font-style: normal;
   font-weight: 500 700;
   font-display: swap;
-  src: url('./assets/fonts/roboto-mono/roboto-mono-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+  src: url("./assets/fonts/roboto-mono/roboto-mono-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
     U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
     U+2C60-2C7F, U+A720-A7FF;
 }
@@ -58,11 +62,8 @@
   --muted: #a2967d;
   --radius: 4px;
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono:
-    "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --serif:
-    "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif",
-    serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
   font-family: var(--font-sans);
   --confirm-safe: #57d38c;
   --confirm-danger: #ff5c5c;
@@ -713,13 +714,13 @@ output {
   background:
     linear-gradient(var(--panel), var(--panel)) padding-box,
     linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.22) 0%,
-        rgb(255 255 255 / 0.06) 30%,
-        rgb(0 0 0 / 0.25) 65%,
-        rgb(255 255 255 / 0.1) 100%
-      )
-      border-box;
+      135deg,
+      rgb(255 255 255 / 0.22) 0%,
+      rgb(255 255 255 / 0.06) 30%,
+      rgb(0 0 0 / 0.25) 65%,
+      rgb(255 255 255 / 0.1) 100%
+    )
+    border-box;
   z-index: -1;
 }
 .bolt {
@@ -772,24 +773,14 @@ output {
 }
 .beat.level-accent {
   background:
-    radial-gradient(
-      circle at 32% 26%,
-      rgb(255 255 255 / 0.75),
-      rgb(255 255 255 / 0) 45%
-    ),
-    radial-gradient(circle at 50% 60%, transparent 55%, rgb(0 0 0 / 0.4) 100%),
-    var(--brass);
+    radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0) 45%),
+    radial-gradient(circle at 50% 60%, transparent 55%, rgb(0 0 0 / 0.4) 100%), var(--brass);
   box-shadow: 0 0 12px var(--brass-soft);
 }
 .beat.level-normal {
   background:
-    radial-gradient(
-      circle at 32% 26%,
-      rgb(255 255 255 / 0.55),
-      rgb(255 255 255 / 0) 45%
-    ),
-    radial-gradient(circle at 50% 60%, transparent 55%, rgb(0 0 0 / 0.4) 100%),
-    var(--copper);
+    radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0) 45%),
+    radial-gradient(circle at 50% 60%, transparent 55%, rgb(0 0 0 / 0.4) 100%), var(--copper);
 }
 .beat.level-mute {
   background: transparent;
@@ -831,8 +822,7 @@ output {
   /* Explicit padding-box clip: without it the background's corner curve and the border's own
      curve are rasterized via slightly different paths on some mobile browsers, especially with
      a semi-transparent border-color, and the two arcs visibly don't quite line up. */
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%)
-    padding-box;
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
   box-shadow: 0 0 4.2px var(--accent-glow);
   display: grid;
   place-items: center;
@@ -973,15 +963,8 @@ html.depth-25d .knob {
   height: 44px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
-  /* padding-box: with 3 comma-separated background layers, this is simpler than appending
-     padding-box to each one — see the note on .square-btn's background for why it's needed. */
-  background-clip: padding-box;
   background:
-    radial-gradient(
-      circle at 33% 28%,
-      rgb(255 255 255 / 0.65),
-      rgb(255 255 255 / 0) 42%
-    ),
+    radial-gradient(circle at 33% 28%, rgb(255 255 255 / 0.65), rgb(255 255 255 / 0) 42%),
     repeating-radial-gradient(
       circle at 50% 50%,
       rgb(255 255 255 / 0.1) 0px,
@@ -998,6 +981,10 @@ html.depth-25d .knob {
       var(--copper),
       var(--copper)
     );
+  /* padding-box: with 3 comma-separated background layers, this is simpler than appending
+     padding-box to each one — see the note on .square-btn's background for why it's needed.
+     Must come *after* the background shorthand above, which otherwise resets it to border-box. */
+  background-clip: padding-box;
   box-shadow: 0 0 4.2px var(--accent-glow);
   font-family: var(--font-mono);
   font-size: 18px;
@@ -1108,13 +1095,13 @@ html.depth-25d .knob {
   background:
     linear-gradient(var(--panel), var(--panel)) padding-box,
     linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.22) 0%,
-        rgb(255 255 255 / 0.06) 30%,
-        rgb(0 0 0 / 0.25) 65%,
-        rgb(255 255 255 / 0.1) 100%
-      )
-      border-box;
+      135deg,
+      rgb(255 255 255 / 0.22) 0%,
+      rgb(255 255 255 / 0.06) 30%,
+      rgb(0 0 0 / 0.25) 65%,
+      rgb(255 255 255 / 0.1) 100%
+    )
+    border-box;
   z-index: -1;
 }
 .sheet::backdrop {
@@ -1742,8 +1729,7 @@ select:not(.native-select) option:checked {
   padding: 10px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%)
-    padding-box;
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
   box-shadow: 0 0 4.2px var(--accent-glow);
 }
 .wide-btn.danger {
