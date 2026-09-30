@@ -542,15 +542,17 @@ const wireframeKit: NodeStyleKit = {
     startAngle = FULL_START,
     endAngle = FULL_END,
   ) {
-    drawWireframeCone(ctx, x, y, radius, idleColor, 0.07, 0.42, 0, startAngle, endAngle);
+    // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
+    // ticks visibly without reading as "on". The idle cone swells too, not just the flash
+    // overlay: drawn at two different radii they read as two separate, offset cones.
+    const r = radius * (1 + 0.32 * glow);
+    drawWireframeCone(ctx, x, y, r, idleColor, 0.07, 0.42, 0, startAngle, endAngle);
     if (glow > 0) {
-      // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
-      // ticks visibly without reading as "on".
       drawWireframeCone(
         ctx,
         x,
         y,
-        radius * (1 + 0.32 * glow),
+        r,
         flashColor,
         0.04 + 0.08 * glow,
         0.28 + 0.4 * glow,
@@ -667,8 +669,10 @@ const frostedKit: NodeStyleKit = {
     endAngle = FULL_END,
   ) {
     // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
-    // ticks visibly without reading as "on".
-    frostBase(ctx, x, y, radius * (1 + 0.32 * glow), idleColor, 0.28, 3, 0.3, startAngle, endAngle);
+    // ticks visibly without reading as "on". The flash ring follows the same swollen radius as
+    // the base; at the unswollen radius it read as a second, separate ring inside the disc.
+    const r = radius * (1 + 0.32 * glow);
+    frostBase(ctx, x, y, r, idleColor, 0.28, 3, 0.3, startAngle, endAngle);
     if (glow > 0) {
       ctx.save();
       ctx.globalAlpha = glow;
@@ -676,7 +680,7 @@ const frostedKit: NodeStyleKit = {
       ctx.lineWidth = 1.5;
       ctx.shadowColor = glowColor;
       ctx.shadowBlur = 6 * glow;
-      ringPath(ctx, x, y, radius, startAngle, endAngle);
+      ringPath(ctx, x, y, r, startAngle, endAngle);
       ctx.stroke();
       ctx.restore();
     }
