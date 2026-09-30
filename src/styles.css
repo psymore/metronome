@@ -328,12 +328,6 @@ output {
 .label-sm {
   font-size: 9px;
 }
-/* Invisible placeholder the same height as .label, keeping the tap/settings column's
-   rows aligned with the signature/sound column now that the redundant "Tap" text is gone. */
-.label-spacer {
-  height: 11px;
-}
-
 /* Locked to exactly one viewport height (dvh accounts for mobile browser chrome) and never
    scrolls. The stage row is the only flexible one (minmax(0, 1fr)): it absorbs whatever space
    the fixed-size rows around it (topbar, controls) don't need, so the visualiser shrinks
@@ -420,12 +414,14 @@ output {
   position: relative;
   margin-left: 4px;
 }
-.lang-btn {
+/* Round header icon button (language, settings). Same subtle accent-tinted border as the panel
+   buttons (.square-btn), but no box-shadow at rest — only :active gets one, for the press
+   feedback. */
+.icon-btn {
+  position: relative;
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  /* Same subtle accent-tinted border as the panel buttons (.square-btn), but no box-shadow at
-     rest — only :active gets one, for the press feedback. */
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   color: var(--pink);
@@ -434,16 +430,23 @@ output {
   justify-content: center;
   padding: 0;
 }
-.lang-btn svg {
+/* Invisible 44×44px hit area around the 30px visual button — mobile touch-target minimum
+   without making the header's icons visually bigger. */
+.icon-btn::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+.icon-btn svg {
   width: 16px;
   height: 16px;
   display: block;
 }
-.lang-btn[aria-expanded="true"] {
+.icon-btn[aria-expanded="true"] {
   color: var(--select);
   box-shadow: inset 0 0 0 1px var(--select);
 }
-.lang-btn:active {
+.icon-btn:active {
   transform: scale(0.92);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
@@ -827,8 +830,7 @@ output {
   gap: 6px;
   width: 64px;
 }
-.col .label + .square-btn,
-.col .label-spacer + .square-btn {
+.col .label + .square-btn {
   margin-top: 10px;
 }
 .square-btn {
