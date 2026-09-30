@@ -158,6 +158,13 @@ describe('Scheduler', () => {
     expect(subdivisions).toEqual([0.05 + 0.25]);
   });
 
+  it('skips subdivision clicks switched off in the pattern', () => {
+    // 16ths, beat 0 keeps only k = 2 (the "&"): off = [k1, k2, k3] = [true, false, true]
+    const { s, subdivisions } = setup({ subdivision: 4, subOff: [true, false, true] }, 0.3);
+    s.start(0);
+    expect(subdivisions).toEqual([0.05 + 0.25]);
+  });
+
   it('places two extra clicks per beat for a triplet subdivision', () => {
     const { s, subdivisions } = setup({ subdivision: 3 }, 0.3);
     s.start(0);

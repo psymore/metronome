@@ -1,4 +1,4 @@
-import type { BeatLevel } from '../state/settings';
+import { isSubOn, type BeatLevel } from '../state/settings';
 import { secondsPerBeat } from './timing';
 
 export interface BeatEvent {
@@ -114,6 +114,7 @@ export class Scheduler {
       this.opts.onBeat(beat);
       const subdivision = Math.max(1, pattern.subdivision);
       for (let k = 1; k < subdivision; k++) {
+        if (!isSubOn(pattern.subOff ?? [], subdivision, this.beatInBar, k)) continue;
         this.opts.onSubdivision?.(this.nextTime + (duration * k) / subdivision);
       }
       this.nextTime += duration;
