@@ -399,9 +399,10 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     c2d.rotate(rotation);
     c2d.beginPath();
-    // Tail extended inward (tip position unchanged) for a ~1.5x longer, more visible indicator.
-    c2d.moveTo(0, -g.innerRadius + g.innerRadius * 0.005);
-    c2d.lineTo(0, -g.innerRadius + g.innerRadius * 0.17);
+    // Both ends pulled inward, toward the BPM readout, so the bright tip sits clear of the bezel
+    // ring and the gear teeth just outside it instead of nearly touching them.
+    c2d.moveTo(0, -g.innerRadius + g.innerRadius * 0.08);
+    c2d.lineTo(0, -g.innerRadius + g.innerRadius * 0.25);
     c2d.lineWidth = Math.max(2, g.outerRadius * 0.03);
     c2d.lineCap = 'round';
     c2d.strokeStyle = theme.brass;

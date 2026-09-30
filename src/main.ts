@@ -26,6 +26,7 @@ import { mountErrorFloor } from './ui/errorFloor';
 import { mountInfoButtons } from './ui/infoButtons';
 import { createInfoPopup } from './ui/infoPopup';
 import { mountKnob } from './ui/knob';
+import { mountKnobHint } from './ui/knobHint';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountMenuDrawer } from './ui/menuDrawer';
 import { mountPolyrhythmControls } from './ui/polyrhythmDialog';
@@ -483,6 +484,7 @@ const knob = mountKnob(byId<HTMLCanvasElement>('knob'), {
   isRunning: () => engine.running,
   toggle: () => void transport.toggle(),
 });
+mountKnobHint(byId('knobHint'), storage);
 // Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
 // mobile), buffers are null and beats would play silently. Block the knob's center tap until
 // they're ready.

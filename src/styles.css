@@ -433,8 +433,11 @@ output {
   padding: 0;
 }
 /* Invisible 44×44px hit area around the 30px visual button — mobile touch-target minimum
-   without making the header's icons visually bigger. */
-.header-btn::after {
+   without making the header's icons visually bigger. Must be ::before, not ::after: the global
+   button:active::after press-glow rule (below) also targets ::after and outranks this one on
+   specificity, so on :active it was overwriting inset: -7px back to inset: 0 — shrinking the hit
+   area back to 30px the instant a touch registered, before pointerup could still land inside it. */
+.header-btn::before {
   content: "";
   position: absolute;
   inset: -7px;
@@ -505,8 +508,8 @@ output {
    itself: absolutely positioned so it floats above the panel's top-right corner, over the
    Tap/Settings column, without taking up any layout space of its own — nothing else in the
    panel (or the grid rows around it) has to move or shrink to make room for it.
-   The pill itself is back to its plain panel-colored chrome; only the digits glow, via
-   text-shadow + a themed color, to read as a small digital readout without turning the whole
+   A plain pill in front of the panel, not blended into its top border — only the digits glow,
+   via text-shadow + a themed color, to read as a small digital readout without turning the whole
    button into an LCD panel. */
 .bar-counter {
   position: absolute;
@@ -518,6 +521,7 @@ output {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
+  box-shadow: 0 0 4.2px var(--accent-glow);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   font-size: 14px;
@@ -526,42 +530,6 @@ output {
   color: var(--select);
   text-shadow: 0 0 6px var(--select-soft);
   z-index: 1;
-}
-/* The pill straddles the panel's top edge (`top: -16px`, half in/half out). The upper (floating)
-   half keeps its own border/glow above; the lower half — the part sitting inside the panel —
-   is redrawn here to read as part of the panel frame instead: the panel's own border color and
-   machined-edge highlight (`.panel::before`'s gradient), clipped to just that half so the seam
-   lines up exactly with the panel's top border. */
-.bar-counter::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;
-  border: 1px solid var(--accent-idle);
-  background:
-    linear-gradient(var(--panel), var(--panel)) padding-box,
-    linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.22) 0%,
-      rgb(255 255 255 / 0.06) 30%,
-      rgb(0 0 0 / 0.25) 65%,
-      rgb(255 255 255 / 0.1) 100%
-    )
-    border-box;
-  clip-path: inset(50% 0 0 0);
-}
-/* The outer glow only belongs on the upper (floating) half — the lower half reads as panel frame,
-   not as a glowing readout. */
-.bar-counter::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: 0 0 4.2px var(--accent-glow);
-  clip-path: inset(-8px -8px 50% -8px);
 }
 .bar-counter:active {
   transform: scale(0.96);
@@ -942,6 +910,55 @@ output {
   gap: 10px;
   min-width: 0;
 }
+/* Wraps just the knob canvas (not the tempo marking / nudges below it) so .knob-hint can be
+   absolutely positioned over it without disturbing .dial-col's row layout — .knob-hint isn't a
+   sibling grid item of the canvas, so it never competes for a grid cell. Shrinks to the canvas's
+   own rendered size (no explicit width/height here) the same way the bare canvas did before. */
+.knob-wrap {
+  position: relative;
+}
+/* A one-time "this turns" cue, shown once (knobHint.ts, gated on localStorage) then removed from
+   the DOM for good. */
+.knob-hint {
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  height: 42%;
+  margin: auto;
+  pointer-events: none;
+  opacity: 0;
+}
+.knob-hint.show {
+  animation: knob-hint-cue 2.4s ease-in-out 1;
+}
+.knob-hint svg {
+  width: 100%;
+  height: 100%;
+  color: var(--select);
+  filter: drop-shadow(0 0 4px var(--select-soft));
+}
+@keyframes knob-hint-cue {
+  0% {
+    opacity: 0;
+    transform: rotate(-16deg);
+  }
+  20% {
+    opacity: 0.9;
+    transform: rotate(12deg);
+  }
+  40% {
+    opacity: 0.9;
+    transform: rotate(-8deg);
+  }
+  65% {
+    opacity: 0.6;
+    transform: rotate(6deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(0deg);
+  }
+}
 /* The BPM dial and play/pause are now one canvas-rendered "knob" (see ui/knob.ts) instead of
    layered DOM elements — drag anywhere on the ring to change tempo, tap the center LCD to
    start/stop. Sized with headroom around the drawn disc so its drop-shadow isn't clipped. */
@@ -1151,11 +1168,13 @@ html.depth-25d .knob {
   color: var(--muted);
   font-weight: 600;
 }
-/* Left side menu (☰). A modal <dialog> like .sheet, so focus trapping, Esc and Android Back all
-   close it for free. The dialog itself has no padding: closeOnBackdropClick() closes on clicks
-   whose target is the <dialog> element, and padding on the dialog would count as that too — all
-   content and spacing live in .drawer-body instead. Opening is button-only (no edge swipe):
-   edge swipes are Android's system Back gesture. */
+/* Left side menu (☰). A modal <dialog> like .sheet, so focus trapping comes for free; Esc and
+   Android Back still close it too, but menuDrawer.ts intercepts their native 'cancel' event to
+   route through the same animated close as every other path (see .drawer.closing below) instead
+   of the instant native close. The dialog itself has no padding: menuDrawer.ts's own backdrop
+   click handler closes on clicks whose target is the <dialog> element, and padding on the dialog
+   would count as that too — all content and spacing live in .drawer-body instead. Opening is
+   button-only (no edge swipe): edge swipes are Android's system Back gesture. */
 .drawer {
   position: fixed;
   inset: 0 auto 0 0;
@@ -1173,7 +1192,13 @@ html.depth-25d .knob {
   box-shadow: 20px 0 60px rgb(0 0 0 / 0.6);
   overflow: hidden;
 }
-.drawer[open] {
+/* menuDrawer.ts adds this once, on showModal(), and removes it once the animation finishes —
+   not a plain `.drawer[open]` rule: `[open]` stays true for the dialog's whole lifetime, so any
+   later class toggle that briefly overrides `animation` (`.dragging`, `.snapping-open`,
+   `.closing`) and then gets removed would make `animation-name` read as "drawer-in" again and
+   restart it from scratch — a visible jump back to translateX(-100%) and a second slide-in,
+   mid-interaction, well after the drawer actually opened. */
+.drawer.opening {
   animation: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes drawer-in {
@@ -1181,8 +1206,41 @@ html.depth-25d .knob {
     transform: translateX(-100%);
   }
 }
+/* menuDrawer.ts adds this class and waits for the animation to finish before actually calling
+   dialog.close() — otherwise the dialog leaves the top layer instantly with no exit transition.
+   Same easing as drawer-in, reversed, and slightly quicker since a close should feel snappier
+   than an open. */
+.drawer.closing {
+  animation: drawer-out 180ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes drawer-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+/* menuDrawer.ts sets transform directly (inline) on every pointermove while dragging, tracking
+   the finger 1:1 — no CSS animation/transition here, that would fight the per-frame inline
+   updates and lag behind the touch. */
+.drawer.dragging {
+  animation: none;
+  transition: none;
+}
+/* Released past the 50% mark without crossing it into a close: springs back to fully open from
+   wherever the drag left off, the same implicit-`from` trick as drawer-out. */
+.drawer.snapping-open {
+  animation: drawer-snap-open 180ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes drawer-snap-open {
+  to {
+    transform: translateX(0);
+  }
+}
 .drawer::backdrop {
   background: rgb(0 0 0 / 0.6);
+  transition: opacity 180ms ease;
+}
+.drawer.closing::backdrop {
+  opacity: 0;
 }
 .drawer-body {
   box-sizing: border-box;
@@ -1480,6 +1538,15 @@ html.depth-25d .knob {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
+}
+/* Sets the sound dialog's top Volume field apart as the master control, above the per-slot
+   Accent/Medium/Normal volumes below it — bigger, bolder, spaced-out caps instead of a divider
+   line (this dialog doesn't otherwise use dividers between sections). */
+.field-master > span {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .field input[type="number"] {
   width: 100%;

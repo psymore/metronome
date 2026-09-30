@@ -10,6 +10,7 @@ import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
 import { tempoMarking } from '../state/tempoMarking';
 import { byId } from './dom';
+import { mountHoldRepeat } from './holdRepeat';
 
 export interface ControlsDeps {
   store: Store<Settings>;
@@ -43,8 +44,13 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   };
   const nudge = (delta: number) => setBpm(store.get().bpm + delta);
 
-  byId('bpmUp').addEventListener('click', () => nudge(1));
-  byId('bpmDown').addEventListener('click', () => nudge(-1));
+  // A steeper ramp than the default stepper: BPM is a much larger range (20-400) than a bar
+  // count or a beat count, so holding +/- should reach its 25ms floor faster to actually feel
+  // like it's accelerating. The fixed 400ms initial delay (see mountHoldRepeat) is untouched, so
+  // a genuine single tap still only ever fires one nudge.
+  const bpmHoldInterval = (n: number): number => (n > 8 ? 25 : n > 3 ? 70 : 150);
+  mountHoldRepeat(byId('bpmUp'), () => nudge(1), bpmHoldInterval);
+  mountHoldRepeat(byId('bpmDown'), () => nudge(-1), bpmHoldInterval);
 
   function tap(): void {
     const bpm = tapper.tap(performance.now());

@@ -1,13 +1,20 @@
+const DEFAULT_INTERVAL_FOR = (n: number): number => (n > 10 ? 60 : n > 4 ? 120 : 300);
+
 /**
  * Wires a stepper button so a tap fires `step` once and holding it down repeats `step` on an
- * accelerating interval — starts at a comfortable 300ms, tightens to 120ms after a few ticks
- * and 60ms after that — until the pointer is released, instead of one step per manual click.
+ * accelerating interval — by default starts at a comfortable 300ms, tightens to 120ms after a few
+ * ticks and 60ms after that — until the pointer is released, instead of one step per manual click.
+ * `intervalFor` can override that ramp (e.g. a steeper one for a fast-moving value like BPM)
+ * without touching the fixed 400ms initial delay, which is what keeps a genuine single tap from
+ * ever firing a second step.
  */
-export function mountHoldRepeat(button: HTMLElement, step: () => void): void {
+export function mountHoldRepeat(
+  button: HTMLElement,
+  step: () => void,
+  intervalFor: (ticks: number) => number = DEFAULT_INTERVAL_FOR,
+): void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let ticks = 0;
-
-  const intervalFor = (n: number): number => (n > 10 ? 60 : n > 4 ? 120 : 300);
 
   function tick(): void {
     step();

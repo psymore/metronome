@@ -21,3 +21,6 @@ cloud-patches/
 .vercel
 .env*
 .playwright-mcp/
+
+# Temporary screenshots
+/*.png

@@ -363,7 +363,12 @@
           </div>
 
           <div class="dial-col">
-            <canvas id="knob" class="knob" aria-label="Tempo in BPM. Tap the center to start or stop."></canvas>
+            <div class="knob-wrap">
+              <canvas id="knob" class="knob" aria-label="Tempo in BPM. Tap the center to start or stop."></canvas>
+              <div id="knobHint" class="knob-hint" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true"><path d="M18.4 8A8 8 0 1 1 16 5.6" /><path d="M18.4 3v5h-5" /></svg>
+              </div>
+            </div>
             <span id="tempoMarking" class="tempo-marking"></span>
             <div class="nudges">
               <button type="button" id="bpmDown" class="nudge" data-i18n-aria-label="nudge.slower" aria-label="Slower">−</button>
@@ -625,8 +630,8 @@
         <h2 id="soundTitle" data-i18n="soundDialog.title">Sounds</h2>
         <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
-      <label class="field">
-        <span><span data-i18n="volume.label">Volume</span> <span class="field-value"><input type="number" id="volumeValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="80" data-i18n-aria-label="volume.ariaLabel" aria-label="Volume percent" />%</span></span>
+      <label class="field field-master">
+        <span><span data-i18n="volume.label">Master Volume</span> <span class="field-value"><input type="number" id="volumeValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="80" data-i18n-aria-label="volume.ariaLabel" aria-label="Master volume percent" />%</span></span>
         <input id="volumeInput" type="range" min="0" max="100" step="1" />
       </label>
       <div class="slot">
