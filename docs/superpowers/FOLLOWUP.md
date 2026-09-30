@@ -2,65 +2,73 @@
 
 If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step" immediately.
 
-## Where things stand (2026-09-30)
+## Where things stand (2026-09-30, later same day as the previous entry)
 
-`master` = `origin/master` (`92407b5`), pushed; Vercel auto-deploys `master` to production. No
+`master` = `origin/master` (`92407b5`), unchanged this session. This session's work lives on local
+branch `per-level-beat-volume` (4 commits ahead of `master`, **not merged, not pushed**). No
 worktree is open.
 
 ### Done this session
 
-- Plan `docs/superpowers/plans/2026-09-29-meter-engine-and-ui-polish.md`, all 12 tasks (Task 12,
-  the themed sound picker, was added this session — see its own section in the plan file).
-  Tasks 1-11 were implemented in an earlier session inside a git worktree; that worktree and its
-  branch were deleted this session per the standing instructions below, after preserving its 11
-  commits by branching `feat/meter-engine-and-ui-polish` from the worktree branch's tip before
-  deleting it. Task 12 was implemented directly on that branch, no worktree. A fresh-context
-  review (Opus subagent, isolated worktree) found 1 Critical + 2 Important; all three fixed and
-  verified (`b97b3c6`). 9 Minor findings deferred: polyrhythm trigger label can go stale on a
-  decode-failure fallback, sound-picker a11y polish (accessible name, arrow-key nav, focus-on-open),
-  signature card column width off by a few px at 320px, merged-vs-split polyrhythm node color for
-  `medium`, a legacy-data `levels` fallback edge case, re-selecting the active signature resets
-  custom accents, bar-counter lower-half double border in some themes, an undisconnected
-  MutationObserver in `soundPicker.ts` (harmless at today's 4-call-sites scale).
-- After that merge, a second round of live phone-testing feedback (Chrome on Android, against the
-  dev server) produced three more commits, all pushed:
-  - `2bfd48e` — Beats/Layer A/Layer B/Song length pickers become real
-    `<input type="number" inputmode="numeric">` (tap opens the device numeric keyboard) flanked by
-    −/+ buttons in one row (new `.num-picker--row`), instead of a plain `<output>` only movable by
-    the buttons. The Beats+Note-value card drops from 3 grid columns to 2 (Note value now stacks
-    below Beats in the same column). Also lengthened the BPM knob's rotating indicator tick ~1.5x.
-  - `5ccf381` — Volume and Visual-sync-offset sliders get a real left-filled/right-empty progress
-    track in Chrome/WebKit (via a JS-set `--range-fill` custom property feeding a
-    `::-webkit-slider-runnable-track` gradient — Firefox already had this via
-    `::-moz-range-progress`). Their "80%"/"0 ms" readouts become small tappable number inputs too
-    (new `.field-value`/`.field-value-input`). Note-value chips go back to one row instead of a 2x2
-    grid. Layer A/B's sound-trigger row gets a top margin so it doesn't look glued to the count
-    stepper. The language-switch button's idle state gets a subtle border like the panel buttons,
-    no box-shadow until pressed.
-  - `92407b5` — **Not implemented**, just a plan document:
-    `docs/superpowers/plans/2026-09-30-per-level-beat-volume.md`. Written after a brainstorm with
-    the user about giving Accent/Medium/Normal beat levels their own adjustable volume (medium's
-    gain is currently a hardcoded `0.6` in `audioEngine.ts`'s `playBeat`). Settled: three fully
-    independent 0–100% sliders (no ordering constraint — user explicitly declined a
-    accent≥medium≥normal clamp), no new sound slots (medium keeps borrowing the accent buffer),
-    defaults matching today's hardcoded mix exactly so nothing changes until a user touches a
-    slider. Polyrhythm is out of scope (no beat-level concept there). **Open question the plan
-    itself flags**: whether the 3 sliders live in the Sounds dialog or the Settings dialog's beat
-    row — not decided, note the choice in the plan's ledger when it's picked up.
-- Net effect of the whole session: BPM now means the felt beat in compound meters (6/8/9/8/12/8
-  pulse at BPM/3 per eighth), a `medium` accent level with automatic grouping (H-L-L-M-L-L for
-  6/8, etc.), a themed popover replaces all 4 native `<select>` sound pickers, one font (Inter)
-  everywhere, every dialog's numeric picker is now directly typeable, both sliders in Settings show
-  a real fill, and a batch of smaller CSS/UX polish.
+Implemented `docs/superpowers/plans/2026-09-30-per-level-beat-volume.md` in full, using the
+`executing-plans` skill (inline, no worktree — see standing instructions below), on branch
+`per-level-beat-volume`:
 
-### Standing instructions from this session (apply going forward)
+- **Task 1** (`eb554d6`): `accentGain`/`mediumGain`/`normalGain` added to `Settings`
+  (`src/state/settings.ts`), defaults 1/0.6/1 (matches the old hardcoded mix exactly), clamped in
+  `sanitizeSettings` the same way `volume` is.
+- **Task 2** (`a8b5bf6`): `AudioEngine.playBeat` (`src/engine/audioEngine.ts`) now routes accent
+  and normal beats through a `GainNode` too (previously a direct source→master connect), all three
+  levels read their gain from new `setAccentGain`/`setMediumGain`/`setNormalGain` instance setters
+  (mirrors the existing `setVolume` pattern). `main.ts` pushes settings changes into the engine the
+  same way it already does for `volume`. `playPolyBeat` untouched (out of scope per the plan).
+- **Task 3, reworked mid-review**: originally built as three sliders in the Settings dialog
+  (`b2b7edf`), per an executor ruling that picked one of the plan's two open-question options. The
+  user then asked (outside the plan, after seeing that layout) to move them into the **Sound**
+  dialog instead, next to the sound each level uses. Confirmed via `AskUserQuestion` where Medium's
+  slider should go (no sound picker of its own — it borrows the Accent buffer): user chose "own
+  separate row" over "grouped under Accent's slider". Final layout (`eb7f4d7`): Accent's slider
+  under the Accent sound picker, Normal's under the Other-beats picker, Medium as its own labelled
+  row ("Uses the Accent sound") between them. `updateRangeFill` moved from `settingsDialog.ts` to
+  the shared `ui/dom.ts` so both dialogs use it; `soundDialog.ts`'s render is split into
+  `renderGains()`/`render()` so a slider drag doesn't rebuild the sound `<select>`s on every tick.
+  Settings dialog no longer has these sliders at all.
+- **Final review**: dispatched a fresh `general-purpose` subagent (model: opus) against the
+  pre-rework diff. Verdict "Ready to merge: with fixes" — 0 Critical, 1 Important, 7 Minor. Fixed:
+  strengthened `settings.ts`'s "keeps valid values" test with distinct non-default gains (the old
+  test couldn't have caught a copy-paste mistake between the three `clampNumber` calls); added
+  `aria-label`s to the new range inputs. Ruled as out-of-scope-for-this-plan and left as-is:
+  `playSubdivision`'s fixed `0.4` gain ignoring `normalGain` (only `playBeat` was in scope), no
+  polyrhythm-mode hint on the sliders (polyrhythm is explicitly out of scope), the
+  `store.set({[key]: ...})` cast pattern (matches existing `soundDialog.ts` precedent). Deferred as
+  minor: "Medium volume" label wording, `#volumeInput`/`#offsetInput` still lacking `aria-label`
+  (pre-existing, untouched), doc staleness (this file, now refreshed).
+- **Outstanding before merge — the plan's own Final Check step, not yet done**: nobody has actually
+  *listened* to the change. `npx tsc --noEmit`, `npx vitest run` (218/218), `npm run lint`, and
+  `npm run build` all pass, and a Playwright session confirmed the UI/store/persistence behave
+  correctly (defaults, moving sliders, a deliberately "backwards" Normal-louder-than-Accent mix
+  without the UI fighting it) — but this agent has no audio output. **The user needs to, on a
+  cleared-`localStorage` install: confirm it sounds identical to before this branch, then confirm
+  Accent/Medium/Normal are each audibly distinct and independently adjustable.**
+- Mid-session correction, worth flagging: this agent added `Co-Authored-By` trailers to the first
+  4 commits despite this repo's own standing no-attribution instruction (below, and in this agent's
+  memory) — caught before anything was pushed and fixed via `git filter-branch` (all 4 commits were
+  local-only, safe to rewrite; new SHAs are the ones listed above). If a fresh session finds itself
+  about to commit here, double-check CLAUDE.md/this file's standing instructions against whatever
+  the harness's own attribution reminder says — the repo's own instruction wins.
+- Full decision ledger (including all rulings and their reasoning) is at
+  `.superpowers/sdd/2026-09-30-per-level-beat-volume/progress.md`; delete that workspace once the
+  branch is merged.
+
+### Standing instructions from previous sessions (apply going forward)
 
 - **Never work in a git worktree for this project.** Use plain local branches in the main working
   directory. (The `executing-plans`/`subagent-driven-development` skills default to worktrees —
   skip that step and just `git checkout -b` instead.)
 - **Never add `Co-Authored-By` or any attribution line to any commit in this repo**, overriding
-  the harness's default attribution reminder. This is standing, not one-time.
-- The 11 commits from the earlier worktree session (`65a8edb..339b714`, now part of `master`'s
+  the harness's default attribution reminder. This is standing, not one-time. (See the correction
+  noted above — this was nearly violated this session.)
+- The 11 commits from an earlier worktree session (`65a8edb..339b714`, now part of `master`'s
   history) still carry `Co-Authored-By: Claude Sonnet 5` trailers — the user said they'll clean
   those up themselves later. Don't rewrite them unasked.
 - The user tests live on a physical Android phone (Chrome) against the dev server's Network URL
@@ -89,8 +97,8 @@ Check the plan's own checkboxes rather than trusting this summary.
 - Tasks 1-8 and 10 done. Task 8 Step 4 (real-device soak test) passed on 2026-09-29 on the
   user's Xiaomi Redmi Note 10 Pro with a sideloaded release-signed APK
   (`android/app-release-signed.apk`, gitignored). **No signed AAB exists yet** — build
-  `bundleRelease` + jarsigner per `docs/architecture/platforms.md` before uploading. That AAB
-  should be built from current `master` (already includes this session's whole batch, pushed).
+  `bundleRelease` + jarsigner per `docs/architecture/platforms.md` before uploading. Build the AAB
+  from `master` after this session's branch is merged (not yet, as of this entry).
 - Notifications are off (2026-09-29): `enableNotifications: false` in `twa-manifest.json` and
   `app/build.gradle`, `POST_NOTIFICATIONS` + `NotificationPermissionRequestActivity` removed from
   `AndroidManifest.xml` — matches the privacy policy's "no runtime permissions". The sideloaded
@@ -109,8 +117,7 @@ Check the plan's own checkboxes rather than trusting this summary.
 ### Live
 
 - `https://metronome-delta-gold.vercel.app/` (Vercel GitHub integration from `master`; no local
-  `vercel` CLI login exists), `/.well-known/assetlinks.json`, `/privacy-policy.html`. Now serving
-  this session's whole batch once Vercel's build finishes.
+  `vercel` CLI login exists), `/.well-known/assetlinks.json`, `/privacy-policy.html`.
 
 ### Keystore — read before touching anything Android
 
@@ -139,11 +146,13 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. Pick up `docs/superpowers/plans/2026-09-30-per-level-beat-volume.md` in a fresh Sonnet session
-   (the user's plan for this handoff) — resolve its one open question (Sounds dialog vs. Settings
-   dialog placement) before or during Task 3, then execute per the plan's own task breakdown.
-2. Once the Play Console account exists: build the unsigned AAB (`gradlew bundleRelease`), the
-   user signs it with jarsigner in their own terminal, then uploads it to closed testing.
+1. **User does the audible Final Check** on branch `per-level-beat-volume` (see "Outstanding
+   before merge" above), then this branch merges to `master` via
+   `superpowers:finishing-a-development-branch` (or the user's own preferred flow) and
+   `.superpowers/sdd/2026-09-30-per-level-beat-volume/` gets deleted.
+2. Once merged and the Play Console account exists: build the unsigned AAB
+   (`gradlew bundleRelease`), the user signs it with jarsigner in their own terminal, then uploads
+   it to closed testing.
 3. After upload: Play App Signing fingerprint → `assetlinks.json`.
 4. Help the user line up 12+ testers for the 14-day closed test.
 5. iOS: wait for the user's decision; don't start a wrapper unilaterally.
@@ -151,4 +160,7 @@ macOS build service), Apple Developer Program membership.
 ## Design decisions already settled — do not re-open
 
 Foreground-only playback, TWA on Vercel (not Capacitor) for Android, Bubblewrap (not Tauri
-Android), no new runtime dependencies without a strong reason.
+Android), no new runtime dependencies without a strong reason. Per-level beat volume: three
+independent 0-100% sliders with no ordering constraint, Medium keeps borrowing the Accent sound
+buffer (no third sound slot), sliders live in the Sound dialog next to the sound picker each level
+uses (not Settings) — see this entry's "Done this session" for the exact layout.
