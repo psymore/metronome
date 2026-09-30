@@ -1,5 +1,5 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode, drawSubDot } from './drawNode';
+import { drawNode } from './drawNode';
 import {
   circularLayout,
   circularNodeSpacing,
@@ -9,7 +9,7 @@ import {
   polar,
 } from './geometry';
 import { spriteSize } from './nodeSprite';
-import { subDotLayout } from './subDots';
+import { drawSubdivisionDots, drawSubFan } from './subDotsDraw';
 import type { Visualizer } from './types';
 
 export const circularVisualizer: Visualizer = {
@@ -52,13 +52,8 @@ export const circularVisualizer: Visualizer = {
     // Subdivision dots, spread evenly along each visible ring arc between two nodes (the same
     // gapAngle cut-off the ring uses, so a dot never sits on a node). Drawn before the hand so it
     // sweeps over them.
-    const sub = frame.subdivision;
-    if (sub > 1) {
-      const layout = subDotLayout('circular', width, height, n, sub);
-      for (const dot of layout.dots) {
-        const glow = dot.beat === frame.activeBeat && dot.k === frame.activeSub ? frame.subGlow : 0;
-        drawSubDot(ctx, dot.x, dot.y, dot.r, glow, theme);
-      }
+    if (frame.subdivision > 1) {
+      drawSubdivisionDots(ctx, 'circular', width, height, frame, theme);
     }
 
     if (frame.activeBeat >= 0 && !frame.reducedMotion) {
@@ -103,6 +98,10 @@ export const circularVisualizer: Visualizer = {
         ctx.fillText(label, p.x, p.y);
         ctx.restore();
       }
+    }
+
+    if (frame.subdivision > 1) {
+      drawSubFan(ctx, 'circular', width, height, frame, theme);
     }
   },
 };

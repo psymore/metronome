@@ -36,24 +36,33 @@ export function drawNode(
   ctx.restore();
 }
 
-/** A subdivision dot between beat nodes: a dim idle disc that lights up in the theme's node color
- *  with a soft glow while `glow` > 0. Base and flash share one radius so it reads as one dot. */
+/** A subdivision dot. On: a solid disc in the theme's node color that flashes (brighter core +
+ *  soft glow) while `glow` > 0. Off: a hollow ring like a muted beat, never flashing. One radius
+ *  for base and flash, so it always reads as one dot. */
 export function drawSubDot(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   radius: number,
+  on: boolean,
   glow: number,
   theme: VizTheme,
 ): void {
   ctx.save();
-  ctx.fillStyle = theme.nodeIdle;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
+  if (!on) {
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = theme.nodeIdle;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  ctx.fillStyle = theme.node;
   ctx.fill();
   if (glow > 0) {
     ctx.globalAlpha = glow;
-    ctx.fillStyle = theme.node;
+    ctx.fillStyle = theme.core;
     ctx.shadowColor = theme.glow;
     ctx.shadowBlur = 12 * glow;
     ctx.fill();

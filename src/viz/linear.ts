@@ -1,8 +1,8 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode, drawSubDot } from './drawNode';
+import { drawNode } from './drawNode';
 import { linearGridStickX, linearMetrics } from './geometry';
 import { spriteSize } from './nodeSprite';
-import { subDotLayout } from './subDots';
+import { drawSubdivisionDots, drawSubFan } from './subDotsDraw';
 import type { Visualizer } from './types';
 
 export const linearVisualizer: Visualizer = {
@@ -68,13 +68,8 @@ export const linearVisualizer: Visualizer = {
     // Subdivision dots, spread evenly along the visible line between two nodes (inside the same
     // `gap` the line itself stops at, so a dot never sits on a node). A row's last beat has only
     // half a cell to the bar line; its dots shrink to fit there, capped at the full-size ones.
-    const sub = frame.subdivision;
-    if (sub > 1) {
-      const layout = subDotLayout('linear', width, height, n, sub);
-      for (const dot of layout.dots) {
-        const glow = dot.beat === frame.activeBeat && dot.k === frame.activeSub ? frame.subGlow : 0;
-        drawSubDot(ctx, dot.x, dot.y, dot.r, glow, theme);
-      }
+    if (frame.subdivision > 1) {
+      drawSubdivisionDots(ctx, 'linear', width, height, frame, theme);
     }
 
     if (frame.activeBeat >= 0 && !frame.reducedMotion) {
@@ -123,6 +118,10 @@ export const linearVisualizer: Visualizer = {
         ctx.fillText(label, x, y);
         ctx.restore();
       }
+    }
+
+    if (frame.subdivision > 1) {
+      drawSubFan(ctx, 'linear', width, height, frame, theme);
     }
   },
 };

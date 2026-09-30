@@ -310,6 +310,7 @@ export class VizController {
       reducedMotion: this.reducedMotion.matches,
       // Effective clicks per beat, exactly as the scheduler plays them (1 in compound meters).
       subdivision: patternFromSettings(s).subdivision,
+      subOff: patternFromSettings(s).subOff ?? [],
     });
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
     visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites, s.nodeStyle);

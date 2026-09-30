@@ -1,6 +1,6 @@
 import { beatPhase } from '../engine/beatTimeline';
 import type { BeatEvent } from '../engine/scheduler';
-import type { BeatLevel } from '../state/settings';
+import { type BeatLevel, isSubOn } from '../state/settings';
 import { GLOW_SECONDS, glowIntensity, MUTE_GLOW_SCALE } from './geometry';
 
 export interface VizFrame {
@@ -21,6 +21,9 @@ export interface VizFrame {
   /** 0..1 flash intensity of that subdivision's dot. */
   subGlow: number;
   reducedMotion: boolean;
+  subOff: readonly boolean[];
+  /** The one subdivision group currently fanned out, if any; set by VizController. */
+  subFan?: { beat: number; frac: number };
 }
 
 export interface FrameInput {
@@ -32,6 +35,7 @@ export interface FrameInput {
   reducedMotion: boolean;
   /** Effective clicks per beat (1 when off, and always 1 in compound meters). */
   subdivision: number;
+  subOff: readonly boolean[];
 }
 
 export function computeFrame(input: FrameInput): VizFrame {
@@ -49,6 +53,7 @@ export function computeFrame(input: FrameInput): VizFrame {
       activeSub: -1,
       subGlow: 0,
       reducedMotion: input.reducedMotion,
+      subOff: input.subOff,
     };
   }
   const since = input.heardTime - beat.time;
@@ -64,7 +69,9 @@ export function computeFrame(input: FrameInput): VizFrame {
     const k = Math.min(subdivision - 1, Math.floor(since / pulse + 1e-9));
     if (k >= 1) {
       activeSub = k;
-      subGlow = glowIntensity(Math.max(0, since - k * pulse), Math.min(GLOW_SECONDS, pulse * 0.9));
+      subGlow = isSubOn(input.subOff, subdivision, beat.beatInBar, k)
+        ? glowIntensity(Math.max(0, since - k * pulse), Math.min(GLOW_SECONDS, pulse * 0.9))
+        : 0;
     }
   }
   return {
@@ -78,5 +85,6 @@ export function computeFrame(input: FrameInput): VizFrame {
     activeSub,
     subGlow,
     reducedMotion: input.reducedMotion,
+    subOff: input.subOff,
   };
 }

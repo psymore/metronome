@@ -20,6 +20,7 @@ const base = {
   levels: ['accent', 'normal', 'normal', 'normal'] as BeatLevel[],
   reducedMotion: false,
   subdivision: 1,
+  subOff: [] as boolean[],
 };
 
 describe('computeFrame', () => {
@@ -89,6 +90,17 @@ describe('computeFrame', () => {
     it('never lights a dot without a subdivision', () => {
       const f = computeFrame({ ...base, beat: beat(), heardTime: 10.25 });
       expect(f).toMatchObject({ subdivision: 1, activeSub: -1, subGlow: 0 });
+    });
+
+    it('never lights a switched-off dot', () => {
+      const f = computeFrame({
+        ...base,
+        subdivision: 2,
+        subOff: [false, false, true, false], // beat 2's "&" is off
+        beat: beat(), // beatInBar 2
+        heardTime: 10.25,
+      });
+      expect(f).toMatchObject({ activeSub: 1, subGlow: 0 });
     });
 
     it('keeps the dots unlit while stopped', () => {
