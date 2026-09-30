@@ -1,7 +1,6 @@
-import { format, t } from '../i18n/i18n';
+import { t } from '../i18n/i18n';
 import { clampTargetBars, isLoopCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
-import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
 import type { Toast } from './toast';
@@ -20,19 +19,14 @@ export function mountBarCounterDialog({
 
   byId('barCounter').addEventListener('click', () => {
     pendingTargetBars = store.get().targetBars;
-    confirmGate.disarm();
     renderTargetBars();
     dialog.showModal();
   });
   closeOnBackdropClick(dialog);
 
-  // Song length needs an explicit Apply (+ a confirm tap for a nonzero target) before it commits:
-  // the stepper only adjusts a local pending value until then.
+  // Song length needs an explicit Apply before it commits: the stepper only adjusts a local
+  // pending value until then.
   let pendingTargetBars = store.get().targetBars;
-  const confirmGate = createConfirmGate(targetBarsApply, {
-    idleText: () => t('songLength.apply'),
-    armedText: () => format('songLength.confirm', { n: pendingTargetBars }),
-  });
 
   const renderTargetBars = () => {
     targetBarsValue.value = String(pendingTargetBars);
@@ -40,7 +34,6 @@ export function mountBarCounterDialog({
 
   const setPendingTargetBars = (n: number) => {
     pendingTargetBars = clampTargetBars(n);
-    confirmGate.disarm();
     renderTargetBars();
   };
   mountHoldRepeat(byId('targetBarsDown'), () => setPendingTargetBars(pendingTargetBars - 1));
@@ -49,15 +42,23 @@ export function mountBarCounterDialog({
     if (targetBarsValue.value !== '') setPendingTargetBars(Number(targetBarsValue.value));
   });
 
+  const barCounterBtn = byId('barCounter');
+  const flashCounter = () => {
+    barCounterBtn.classList.remove('just-set');
+    void barCounterBtn.offsetWidth; // restart the animation if it's already running
+    barCounterBtn.classList.add('just-set');
+  };
+  barCounterBtn.addEventListener('animationend', () => barCounterBtn.classList.remove('just-set'));
+
   targetBarsApply.addEventListener('click', () => {
-    if (pendingTargetBars <= 0) {
-      // Turning an existing target off is a real action; tapping Apply while it's already
-      // off (and staying off) has nothing to do, so say why instead of silently no-op'ing.
-      if (store.get().targetBars > 0) store.set({ targetBars: 0 });
-      else toast(t('songLength.needsLength'));
+    const current = store.get().targetBars;
+    if (pendingTargetBars <= 0 && current <= 0) {
+      toast(t('songLength.needsLength'));
       return;
     }
-    if (confirmGate.tap()) store.set({ targetBars: pendingTargetBars });
+    store.set({ targetBars: Math.max(0, pendingTargetBars) });
+    dialog.close();
+    flashCounter();
   });
 
   for (const button of loopButtons) {
@@ -70,7 +71,6 @@ export function mountBarCounterDialog({
   const render = (s: Settings) => {
     if (!dialog.open) {
       pendingTargetBars = s.targetBars;
-      confirmGate.disarm();
       renderTargetBars();
     }
     for (const button of loopButtons) {

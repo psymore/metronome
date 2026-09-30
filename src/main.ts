@@ -4,7 +4,7 @@ import type { Pattern } from './engine/scheduler';
 import { applyLanguage, applyTranslations, format, t } from './i18n/i18n';
 import { SoundLibrary } from './sounds/soundLibrary';
 import { SoundStore } from './sounds/soundStore';
-import { barCounterFinished, formatBarCounter } from './state/barCounter';
+import { barCounterFinished, formatBarCounter, formatIdleBarCounter } from './state/barCounter';
 import { formatTimeLeft, practiceProgressPercent } from './state/practiceTimer';
 import {
   cycleBeatLevel,
@@ -56,7 +56,8 @@ store.subscribe((s) => saveSettings(storage, s));
 
 const barCounter = byId('barCounter');
 const showIdleBarCounter = (): void => {
-  barCounter.textContent = t('barCounter.idle');
+  const s = store.get();
+  barCounter.textContent = formatIdleBarCounter(s.targetBars, s.loopCount);
 };
 
 const applyTheme = (s: Settings) => {
@@ -239,6 +240,12 @@ store.subscribe((s, prev) => {
   // Swap schedulers in place on the running context: no stop/start cycle, so nothing here
   // bypasses Transport's busy guard, resume() timeout or error toast, or needs a user gesture.
   if (s.polyrhythm.enabled !== prev.polyrhythm.enabled) engine.switchMode();
+});
+
+store.subscribe((s, prev) => {
+  if (!engine.running && (s.targetBars !== prev.targetBars || s.loopCount !== prev.loopCount)) {
+    showIdleBarCounter();
+  }
 });
 
 const wakeLock = createWakeLock();
