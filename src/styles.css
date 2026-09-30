@@ -557,6 +557,7 @@ output {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
+  z-index: -1;
   border: 1px solid var(--accent-idle);
   background:
     linear-gradient(var(--panel), var(--panel)) padding-box,

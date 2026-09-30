@@ -76,7 +76,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
       );
       button.disabled = compound;
     }
-    compoundHint.hidden = !compound;
+    compoundHint.hidden = !compound || s.polyrhythm.enabled;
     const current = `${s.beatsPerBar}/${s.beatUnit}`;
     for (const button of presetButtons) {
       button.setAttribute('aria-checked', String(button.dataset.preset === current));

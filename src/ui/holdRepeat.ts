@@ -27,8 +27,16 @@ export function mountHoldRepeat(button: HTMLElement, step: () => void): void {
     timer = undefined;
   }
 
+  // detail === 0 means the click was synthesized by the keyboard or assistive tech (no
+  // pointerdown preceded it, so `start` above never fired for it) rather than a real pointer
+  // click, which `start` already handled.
+  function click(e: MouseEvent): void {
+    if (e.detail === 0) step();
+  }
+
   button.addEventListener('pointerdown', start);
   button.addEventListener('pointerup', stop);
   button.addEventListener('pointerleave', stop);
   button.addEventListener('pointercancel', stop);
+  button.addEventListener('click', click);
 }
