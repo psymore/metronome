@@ -421,8 +421,8 @@ output {
    feedback. */
 .header-btn {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
@@ -432,7 +432,7 @@ output {
   justify-content: center;
   padding: 0;
 }
-/* Invisible 44×44px hit area around the 30px visual button — mobile touch-target minimum
+/* Invisible 44×44px hit area around the 36px visual button — mobile touch-target minimum
    without making the header's icons visually bigger. Must be ::before, not ::after: the global
    button:active::after press-glow rule (below) also targets ::after and outranks this one on
    specificity, so on :active it was overwriting inset: -7px back to inset: 0 — shrinking the hit
@@ -440,11 +440,11 @@ output {
 .header-btn::before {
   content: "";
   position: absolute;
-  inset: -7px;
+  inset: -4px;
 }
 .header-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   display: block;
 }
 .header-btn[aria-expanded="true"] {
@@ -1318,6 +1318,13 @@ html.depth-25d .knob {
 }
 .chip--preview span {
   font-size: 11px;
+}
+/* No generic press ring on the Beat style chips: tapping the preview already plays the style's
+   own hit-glow on its nodes, and the selected chip keeps its [aria-checked] glow — a third,
+   generic glow on top only muddied which of those was the actual preview. */
+.chip--preview:active::after,
+.chip--preview.btn-flash::after {
+  content: none;
 }
 .chip--preview .node-style-preview {
   cursor: pointer;
