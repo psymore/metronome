@@ -5,7 +5,7 @@ If you are a fresh session: read `CLAUDE.md` first, then this file, then act on 
 ## Where things stand (2026-09-30)
 
 `master` = `c6ec1b1`, unchanged this session. This session's work lives on local branch
-`settings-to-header` (11 commits ahead of `master`, **not merged, not pushed**). No worktree is
+`settings-to-header` (12 commits ahead of `master`, **not merged, not pushed**). No worktree is
 open.
 
 ### Done this session
@@ -31,15 +31,31 @@ skill (inline, no worktree, per this repo's standing instructions below), on bra
   header — the gear and the language globe both left the header. Fixed a bug Task 2 had introduced
   (`.icon-btn` collision between the header buttons and every dialog's ✕ close button) by renaming
   the header's rule to `.header-btn`.
-- **Task 6** (this step; no code changes needed): verified with Playwright at 320/360/390/412px
-  in English and Turkish, and the full acceptance walkthrough at 390px and 1024px desktop —
-  drawer open/close (✕, backdrop, Esc, left-swipe, field-padding clicks don't close it, dragging
-  the sync-offset slider doesn't close it), language switch, theme/beat-sphere/2.5D/sync-offset
-  live-apply, two-tap Reset, panel row alignment (Timer/Signature and Tap/Sound line up at both
-  64px and 52px button sizes), Tap's stronger resting glow, Timer dialog start flow (0:30 practice
-  timer, two-tap Start, ⏸⏹✕ appear top-left without covering the Timer button), Signature dialog's
-  Beats field (visible in Standard, hidden in Polyrhythm), Sound dialog's Volume/Vibrate placement,
-  every dialog's ✕ back to its pre-`8127427` look (34px, no pink tint), Circle/Line switch.
+- **Task 6**: verified with Playwright at 320/360/390/412px in English and Turkish, and the full
+  acceptance walkthrough at 390px and 1024px desktop — drawer open/close (✕, backdrop, Esc,
+  field-padding clicks don't close it, dragging the sync-offset slider doesn't close it), language
+  switch, theme/beat-sphere/2.5D/sync-offset live-apply, two-tap Reset, panel row alignment
+  (Timer/Signature and Tap/Sound line up at both 64px and 52px button sizes), Tap's stronger
+  resting glow, Timer dialog start flow (0:30 practice timer, two-tap Start, ⏸⏹✕ appear top-left
+  without covering the Timer button), Signature dialog's Beats field (visible in Standard, hidden
+  in Polyrhythm), Sound dialog's Volume/Vibrate placement, every dialog's ✕ back to its
+  pre-`8127427` look (34px, no pink tint), Circle/Line switch. **Left-swipe-to-close was initially
+  checked with a mouse only** (Playwright's default input), which doesn't exercise touch-action or
+  gesture handling at all — the final review (below) caught that this understated what was
+  actually verified, and found a real bug underneath it.
+- **Final review** (`314a448`): a fresh subagent (opus) reviewed the whole branch. Verdict "Ready
+  to merge: with fixes" — 0 Critical, 1 Important, 6 Minor. Fixed the Important finding: swipe-to-
+  close didn't work on touch devices because `touch-action: pan-y` sat on `.drawer`, but
+  `.drawer-body` (the scrollable element) is the nearest scroll-container ancestor for any touch
+  inside the drawer, so `.drawer`'s `touch-action` was never consulted — the browser claimed the
+  gesture as its own scroll before `menuDrawer.ts`'s swipe handler could see it. Moved the
+  declaration onto `.drawer-body`; verified under Playwright CDP touch emulation that swipe-close
+  now works and the sync-offset slider still drags correctly without closing the drawer. Six Minor
+  findings were deferred (dead `aria-expanded` CSS rule, `closeOnBackdropClick` also closing on a
+  sheet's own padding — pre-existing on every `.sheet`, not just the drawer — untested Tauri
+  `target="_blank"` behavior for the privacy link, missing `lang` attributes on the language chips,
+  a duplicated "Practice timer" label, a stale code comment). Full findings and rulings in the
+  ledger.
 - **One finding, not fixed (reported here per the plan's own instruction rather than shrinking
   things further)**: at exactly **320px width**, the header's Circle/Line `.seg` pill (fixed
   168px) overflows past the intended right margin by ~32px (`segRight` 336 vs a 304px limit) —
@@ -150,8 +166,10 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. **User reviews `settings-to-header` on their phone** (Network URL) and decides whether the
-   320px `.seg` overflow (see "One finding, not fixed" above) needs a fix before merge.
+1. **User reviews `settings-to-header` on their phone** (Network URL): confirm swipe-to-close and
+   the Back gesture both close the drawer (the swipe fix above was only verified with CDP touch
+   emulation, not a real device), and decide whether the 320px `.seg` overflow (see "One finding,
+   not fixed" above) needs a fix before merge.
 2. Once satisfied, merge `settings-to-header` to `master` via
    `superpowers:finishing-a-development-branch` (or the user's own preferred flow) and delete
    `.superpowers/sdd/2026-09-30-settings-to-header/`.
