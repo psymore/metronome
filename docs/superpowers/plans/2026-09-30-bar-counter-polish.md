@@ -177,3 +177,129 @@ The practice timer is started, paused and resumed from `mountTransport`'s `onTog
   - The counter counts and stops in polyrhythm.
   - The practice timer runs in polyrhythm.
 - [ ] Commit: `Update FOLLOWUP.md`
+
+### Task 5: Classic engraved-italic font for the "i" buttons and the tempo marking (Moderato…)
+
+Match the old sheet-music look: a serif italic like the tempo words printed on a score. Self-host the font the same way Inter is done; see the comment at the top of `src/styles.css` for why a CDN is not allowed (offline and privacy promises).
+
+**Files:**
+- Create `src/assets/fonts/eb-garamond/`, holding the woff2 files and `OFL.txt`
+- Modify `src/styles.css`
+
+- [ ] **Step 1: get the font files once.** This is a dev-time download only, so it adds no dependency:
+
+```bash
+cd "$TEMP" && npm pack @fontsource/eb-garamond && tar xzf fontsource-eb-garamond-*.tgz
+```
+
+  - Copy these files into `src/assets/fonts/eb-garamond/`:
+    - `package/files/eb-garamond-latin-600-italic.woff2` → `eb-garamond-italic-latin.woff2`
+    - `package/files/eb-garamond-latin-ext-600-italic.woff2` → `eb-garamond-italic-latin-ext.woff2`
+    - `package/LICENSE` → `OFL.txt`
+  - Don't touch `package.json`.
+  - The service worker already precaches `**/*.woff2`.
+
+- [ ] **Step 2:** In `src/styles.css`, add two `@font-face` blocks right after the Inter ones:
+  - Copy Inter's `unicode-range` lists exactly.
+  - `font-family: "EB Garamond"`, `font-style: italic`, `font-weight: 600`, `font-display: swap`.
+  - Then add this token to `:root`:
+
+```css
+  --font-score: "EB Garamond", "Palatino Linotype", Georgia, serif;
+```
+
+- [ ] **Step 3:** Use it in two places.
+  - `.tempo-marking`:
+    - `font-family: var(--font-score); font-style: italic; font-weight: 600;`
+    - `font-size: 17px`. Garamond's x-height is small, so 13px would read tiny.
+    - `letter-spacing: 0.01em`.
+  - `.info-btn`:
+    - `font-family: var(--font-score); font-style: italic; font-weight: 600; font-size: 16px; line-height: 1;`
+    - Nudge the glyph with `padding-right: 1px` if it looks off-center. Italic "i" leans right.
+- [ ] `npm run build`. Check that `dist/` contains both new woff2 files.
+- [ ] Commit: `Engraved-italic score font (self-hosted EB Garamond) for tempo marking and info buttons`
+
+### Task 6: The info popup stays until dismissed, with a ✕ in its right edge
+
+Today `createInfoPopup` (`src/ui/infoPopup.ts`) hides the popup after 5 s. It should stay open until one of these happens:
+- a tap outside it (already works),
+- a tap on its ✕,
+- Escape.
+
+Tapping the text itself should no longer close it, so users can read and select it calmly.
+
+**Files:** Modify `index.html` (line with `id="infoPopup"`), `src/ui/infoPopup.ts`, `src/styles.css` (`.info-popup`)
+
+- [ ] **index.html:** change the `<p id="infoPopup" …>` to:
+
+```html
+<div id="infoPopup" class="info-popup" role="status" aria-live="polite" hidden>
+  <p id="infoPopupText" class="info-popup-text"></p>
+  <button type="button" id="infoPopupClose" class="info-popup-close" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
+</div>
+```
+
+- [ ] **src/ui/infoPopup.ts:**
+  - Drop `durationMs`, the timer, and `el.addEventListener('click', hide)`.
+  - Keep the outside-click listener.
+  - Add the close button and an Escape handler, and write the message into the text element:
+
+```ts
+export function createInfoPopup(el: HTMLElement): InfoPopup {
+  const reparent = createTopLayerHost(el);
+  const text = el.querySelector<HTMLElement>('.info-popup-text') ?? el;
+  const hide = (): void => {
+    el.hidden = true;
+  };
+  el.querySelector('.info-popup-close')?.addEventListener('click', hide);
+  document.addEventListener('click', (e) => {
+    if (!el.hidden && !el.contains(e.target as Node)) hide();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.hidden) hide();
+  });
+  return (message) => {
+    reparent();
+    text.textContent = message;
+    el.hidden = false;
+  };
+}
+```
+
+  - Update the doc comment to match.
+  - In `main.ts`, the call `createInfoPopup(byId('infoPopup'))` stays as it is.
+  - If the popup sits inside an open `<dialog>`, Escape also closes that dialog. That's fine, because both should close.
+
+- [ ] **src/styles.css:**
+  - Give `.info-popup` `padding: 20px 44px 20px 22px`. The right side leaves room for the ✕.
+  - Add:
+
+```css
+.info-popup-text {
+  margin: 0;
+}
+.info-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.info-popup-close:active {
+  background: var(--pink-soft);
+}
+```
+
+- [ ] `npm test`, `npm run lint`. Commit: `Info popup stays open until dismissed, with a close button`
+
+(Task 4's FOLLOWUP update comes last. Add these to its phone checklist:
+- the "i" and Moderato use the italic score font,
+- an info popup stays open and closes with ✕, an outside tap or Escape.)
