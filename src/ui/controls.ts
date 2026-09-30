@@ -3,8 +3,11 @@ import { format, t } from '../i18n/i18n';
 import {
   cycleBeatLevel,
   isCompoundMeter,
+  isSubOn,
+  patternFromSettings,
   type Settings,
   type Subdivision,
+  toggleSub,
 } from '../state/settings';
 import type { Store } from '../state/store';
 import { TapTempo } from '../state/tapTempo';
@@ -68,7 +71,23 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   });
 
   const onBeatRowClick = (e: Event) => {
-    const button = (e.target as HTMLElement).closest<HTMLButtonElement>('.beat');
+    const target = e.target as HTMLElement;
+    const toggle = target.closest<HTMLButtonElement>('.sub-toggle');
+    if (toggle) {
+      const s = store.get();
+      const sub = patternFromSettings(s).subdivision;
+      store.set({
+        subOff: toggleSub(
+          s.subOff,
+          s.beatsPerBar,
+          sub,
+          Number(toggle.dataset.beat),
+          Number(toggle.dataset.k),
+        ),
+      });
+      return;
+    }
+    const button = target.closest<HTMLButtonElement>('.beat');
     if (!button) return;
     const index = Number(button.dataset.index);
     store.set({ levels: cycleBeatLevel(store.get().levels, index) });
@@ -76,19 +95,38 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
   beatRow.addEventListener('click', onBeatRowClick);
 
   function renderBeatsInto(container: HTMLElement, s: Settings): void {
-    if (container.childElementCount !== s.beatsPerBar) {
-      container.replaceChildren(
-        ...Array.from({ length: s.beatsPerBar }, (_, i) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.dataset.index = String(i);
-          b.textContent = String(i + 1);
-          return b;
-        }),
-      );
+    const sub = patternFromSettings(s).subdivision;
+    const shape = `${s.beatsPerBar}x${sub}`;
+    if (container.dataset.shape !== shape) {
+      const children: HTMLElement[] = [];
+      for (let i = 0; i < s.beatsPerBar; i++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'beat';
+        b.dataset.index = String(i);
+        b.textContent = String(i + 1);
+        if (sub <= 1) {
+          children.push(b);
+          continue;
+        }
+        const group = document.createElement('span');
+        group.className = 'beat-group';
+        group.appendChild(b);
+        for (let k = 1; k < sub; k++) {
+          const toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'sub-toggle';
+          toggle.dataset.beat = String(i);
+          toggle.dataset.k = String(k);
+          group.appendChild(toggle);
+        }
+        children.push(group);
+      }
+      container.replaceChildren(...children);
+      container.dataset.shape = shape;
     }
     s.levels.forEach((level, i) => {
-      const b = container.children[i];
+      const b = container.querySelectorAll('.beat')[i];
       if (!(b instanceof HTMLButtonElement)) return;
       b.className = `beat level-${level}`;
       b.setAttribute(
@@ -96,6 +134,15 @@ export function mountControls({ store, toggle }: ControlsDeps): void {
         format('beat.ariaLabel', { n: i + 1, level: format(`beatLevel.${level}`, {}) }),
       );
     });
+    if (sub > 1) {
+      for (const toggle of container.querySelectorAll<HTMLButtonElement>('.sub-toggle')) {
+        const beat = Number(toggle.dataset.beat);
+        const k = Number(toggle.dataset.k);
+        const on = isSubOn(s.subOff, sub, beat, k);
+        toggle.setAttribute('aria-pressed', String(on));
+        toggle.setAttribute('aria-label', format('sub.ariaLabel', { n: beat + 1, k }));
+      }
+    }
   }
 
   function render(s: Settings): void {

@@ -2,6 +2,7 @@ import {
   isBeatUnit,
   isCompoundMeter,
   isSubdivision,
+  patternFromSettings,
   type Settings,
   withSignature,
   withSubdivision,
@@ -21,6 +22,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   );
   const presetButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-preset]'));
   const compoundHint = byId('subdivisionCompoundHint');
+  const subHint = byId('subHint');
   const sigResultTop = byId('sigResultTop');
   const sigResultBottom = byId('sigResultBottom');
   const presetsStrip = byId('presetsStrip');
@@ -87,6 +89,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
       button.disabled = compound;
     }
     compoundHint.hidden = !compound || s.polyrhythm.enabled;
+    subHint.hidden = patternFromSettings(s).subdivision <= 1;
     const current = `${s.beatsPerBar}/${s.beatUnit}`;
     for (const button of presetButtons) {
       button.setAttribute('aria-checked', String(button.dataset.preset === current));

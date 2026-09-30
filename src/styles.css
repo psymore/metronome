@@ -753,6 +753,29 @@ output {
 .beat:active {
   transform: scale(0.88);
 }
+/* A beat plus its subdivision toggles stay together when the row wraps. */
+.beat-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+/* One subdivision click: solid theme color when on, hollow ring when off — the same code the
+   visualiser's dots use. 26px visual, 30px pitch with the gap. */
+.sub-toggle {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--select);
+  background: var(--select);
+}
+.sub-toggle[aria-pressed="false"] {
+  background: transparent;
+  border-color: var(--line);
+}
+.sub-toggle:active::after {
+  content: none;
+}
 
 .controls {
   display: grid;
