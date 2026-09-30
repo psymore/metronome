@@ -20,14 +20,9 @@ export interface SettingsDialogDeps {
 
 export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('settingsDialog');
-  const volumeInput = byId<HTMLInputElement>('volumeInput');
-  const volumeValue = byId<HTMLInputElement>('volumeValue');
   const offsetInput = byId<HTMLInputElement>('offsetInput');
   const offsetValue = byId<HTMLInputElement>('offsetValue');
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
-  const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
-  const beatRow = byId('beatRow');
-  const hapticsToggle = byId<HTMLButtonElement>('hapticsToggle');
   const depth25dToggle = byId<HTMLButtonElement>('depth25dToggle');
   const themeButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
@@ -43,16 +38,6 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
     dialog.showModal();
   });
   closeOnBackdropClick(dialog);
-
-  volumeInput.addEventListener('input', () => {
-    store.set({ volume: Number(volumeInput.value) / 100 });
-    updateRangeFill(volumeInput);
-  });
-  volumeValue.addEventListener('input', () => {
-    if (volumeValue.value === '') return;
-    const percent = Math.min(100, Math.max(0, Number(volumeValue.value)));
-    store.set({ volume: percent / 100 });
-  });
 
   offsetInput.addEventListener('input', () => {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
@@ -78,12 +63,6 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
       if (isNodeStyleName(nodeStyle)) store.set({ nodeStyle });
     });
   }
-  beatsClickableToggle.addEventListener('click', () => {
-    store.set({ beatsClickable: !store.get().beatsClickable });
-  });
-  hapticsToggle.addEventListener('click', () => {
-    store.set({ haptics: !store.get().haptics });
-  });
   depth25dToggle.addEventListener('click', () => {
     store.set({ depth25d: !store.get().depth25d });
   });
@@ -142,10 +121,6 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
   }
 
   const render = (s: Settings) => {
-    const percent = Math.round(s.volume * 100);
-    volumeInput.value = String(percent);
-    volumeValue.value = String(percent);
-    updateRangeFill(volumeInput);
     offsetInput.value = String(s.syncOffsetMs);
     offsetValue.value = String(s.syncOffsetMs);
     updateRangeFill(offsetInput);
@@ -156,9 +131,6 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
       button.setAttribute('aria-checked', String(button.dataset.themeOption === s.theme));
     }
     paintNodeStylePreviews();
-    beatsClickableToggle.setAttribute('aria-checked', String(s.beatsClickable));
-    beatRow.classList.toggle('dim', !s.beatsClickable);
-    hapticsToggle.setAttribute('aria-checked', String(s.haptics));
     depth25dToggle.setAttribute('aria-checked', String(s.depth25d));
   };
   render(store.get());

@@ -12,6 +12,8 @@ import { mountHoldRepeat } from './holdRepeat';
 export function mountSignatureDialog({ store }: { store: Store<Settings> }): void {
   const dialog = byId<HTMLDialogElement>('signatureDialog');
   const beatsValue = byId<HTMLInputElement>('beatsValue');
+  const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
+  const beatRow = byId('beatRow');
   const unitButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-unit]'));
   const subdivisionButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-subdivision]'),
@@ -34,6 +36,10 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
     updatePresetsFade();
   });
   closeOnBackdropClick(dialog);
+
+  beatsClickableToggle.addEventListener('click', () => {
+    store.set({ beatsClickable: !store.get().beatsClickable });
+  });
 
   const setBeats = (n: number) => store.set(withSignature(n, store.get().beatUnit));
   mountHoldRepeat(byId('beatsDown'), () => setBeats(store.get().beatsPerBar - 1));
@@ -84,6 +90,8 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
     for (const button of presetButtons) {
       button.setAttribute('aria-checked', String(button.dataset.preset === current));
     }
+    beatsClickableToggle.setAttribute('aria-checked', String(s.beatsClickable));
+    beatRow.classList.toggle('dim', !s.beatsClickable);
   };
   render(store.get());
   store.subscribe(render);

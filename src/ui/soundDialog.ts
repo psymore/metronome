@@ -187,8 +187,8 @@ export function mountSoundDialog({
     });
   }
 
-  /** Wires a 0-100% range+number pair to one gain field, same pattern the app already uses for
-   *  Volume/Visual sync offset in the Settings dialog. */
+  /** Wires a 0-100% range+number pair to one gain field, same pattern as the Volume slider
+   *  above and Visual sync offset in the side menu. */
   function mountGainSlider(
     input: HTMLInputElement,
     valueInput: HTMLInputElement,
@@ -207,6 +207,32 @@ export function mountSoundDialog({
   mountGainSlider(accentGainInput, accentGainValue, 'accentGain');
   mountGainSlider(mediumGainInput, mediumGainValue, 'mediumGain');
   mountGainSlider(normalGainInput, normalGainValue, 'normalGain');
+
+  const volumeInput = byId<HTMLInputElement>('volumeInput');
+  const volumeValue = byId<HTMLInputElement>('volumeValue');
+  const hapticsToggle = byId<HTMLButtonElement>('hapticsToggle');
+  volumeInput.addEventListener('input', () => {
+    store.set({ volume: Number(volumeInput.value) / 100 });
+    updateRangeFill(volumeInput);
+  });
+  volumeValue.addEventListener('input', () => {
+    if (volumeValue.value === '') return;
+    const percent = Math.min(100, Math.max(0, Number(volumeValue.value)));
+    store.set({ volume: percent / 100 });
+  });
+  hapticsToggle.addEventListener('click', () => {
+    store.set({ haptics: !store.get().haptics });
+  });
+  const renderVolumeAndHaptics = (s: Settings): void => {
+    const percent = Math.round(s.volume * 100);
+    volumeInput.value = String(percent);
+    volumeValue.value = String(percent);
+    updateRangeFill(volumeInput);
+    hapticsToggle.setAttribute('aria-checked', String(s.haptics));
+  };
+  renderVolumeAndHaptics(store.get());
+  store.subscribe(renderVolumeAndHaptics);
+
   for (const button of dialog.querySelectorAll<HTMLButtonElement>('[data-preview]')) {
     button.addEventListener('click', () => {
       const key = button.dataset.preview as SlotKey;
