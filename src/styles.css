@@ -842,8 +842,8 @@ output {
      curve are rasterized via slightly different paths on some mobile browsers, especially with
      a semi-transparent border-color, and the two arcs visibly don't quite line up. */
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
-  /* Faint resting glow: these are level-4 supporting controls (Signature/Sound/Settings) and
-     shouldn't compete with the BPM knob/Tap, but need to stay visible as tappable targets. */
+  /* Faint resting glow: Signature/Sound are supporting controls and shouldn't compete with the
+     BPM knob or Tap (which overrides this, see .tap), but need to stay visible as targets. */
   box-shadow: 0 0 2px var(--accent-idle);
   display: grid;
   place-items: center;
@@ -946,6 +946,9 @@ output {
   /* A faint tint of the theme color at rest sets TAP apart from the other square buttons,
      which stay plain --text. */
   color: color-mix(in srgb, var(--select) 25%, var(--text));
+  /* Tap outranks Signature/Sound in the panel's hierarchy, so it keeps the fuller resting glow
+     the other square buttons dropped (see .square-btn). */
+  box-shadow: 0 0 4.2px var(--accent-glow);
 }
 /* .flash is a 120ms JS-timed pulse fired on every tap (see controls.ts), independent of how long
    the pointer stays down — without :active here too, a held press outlives that 120ms and the
