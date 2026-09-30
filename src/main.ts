@@ -27,11 +27,10 @@ import { mountInfoButtons } from './ui/infoButtons';
 import { createInfoPopup } from './ui/infoPopup';
 import { mountKnob } from './ui/knob';
 import { fitColumnLabels } from './ui/labelFit';
-import { mountLanguageSwitch } from './ui/languageSwitch';
+import { mountMenuDrawer } from './ui/menuDrawer';
 import { mountPolyrhythmControls } from './ui/polyrhythmDialog';
 import { mountPracticeTimerDialog } from './ui/practiceTimerDialog';
 import { createPwaReloadHandler } from './ui/pwaReload';
-import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
 import { mountSoundDialog } from './ui/soundDialog';
 import { createSoundPreview } from './ui/soundPreview';
@@ -512,9 +511,8 @@ mountPracticeTimerDialog({
     }
   },
 });
-mountSettingsDialog({ store });
+mountMenuDrawer({ store });
 mountSoundDialog({ store, engine, sounds, library, previewSound, toast });
-mountLanguageSwitch({ store });
 mountInfoButtons(showInfo);
 mountClickFx();
 applyTranslations();

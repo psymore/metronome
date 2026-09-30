@@ -254,7 +254,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   /* Filled portion (0 to the thumb) in the full accent color, empty portion in a dim tint of it
      (the same --select-soft the checked switch uses) — a visible progress fill instead of one
      flat tone, colored like the rest of the theme instead of looking unthemed. --range-fill is
-     set from JS (settingsDialog.ts) on 'input' and on every render, since WebKit/Blink expose no
+     set from JS (updateRangeFill in dom.ts) on 'input' and on every render, since WebKit/Blink expose no
      equivalent of Firefox's ::-moz-range-progress below. */
   background: linear-gradient(
     to right,
@@ -416,14 +416,10 @@ output {
   align-items: center;
   gap: 8px;
 }
-.lang-switch {
-  position: relative;
-  margin-left: 4px;
-}
-/* Round header icon button (language, settings). Same subtle accent-tinted border as the panel
+/* Round header icon button (☰ menu). Same subtle accent-tinted border as the panel
    buttons (.square-btn), but no box-shadow at rest — only :active gets one, for the press
    feedback. */
-.icon-btn {
+.header-btn {
   position: relative;
   width: 30px;
   height: 30px;
@@ -438,53 +434,23 @@ output {
 }
 /* Invisible 44×44px hit area around the 30px visual button — mobile touch-target minimum
    without making the header's icons visually bigger. */
-.icon-btn::after {
+.header-btn::after {
   content: "";
   position: absolute;
   inset: -7px;
 }
-.icon-btn svg {
+.header-btn svg {
   width: 16px;
   height: 16px;
   display: block;
 }
-.icon-btn[aria-expanded="true"] {
+.header-btn[aria-expanded="true"] {
   color: var(--select);
   box-shadow: inset 0 0 0 1px var(--select);
 }
-.icon-btn:active {
+.header-btn:active {
   transform: scale(0.92);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
-}
-.lang-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 20;
-  display: grid;
-  gap: 2px;
-  padding: 4px;
-  min-width: 110px;
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 12px 30px rgb(0 0 0 / 0.5);
-}
-.lang-option {
-  border: 0;
-  background: transparent;
-  padding: 7px 10px;
-  border-radius: 6px;
-  text-align: left;
-  font-size: 13px;
-  color: var(--text);
-}
-.lang-option[aria-checked="true"] {
-  color: var(--select);
-  background: var(--select-soft);
 }
 .seg {
   position: relative;
@@ -1184,6 +1150,55 @@ html.depth-25d .knob {
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 600;
+}
+/* Left side menu (☰). A modal <dialog> like .sheet, so focus trapping, Esc and Android Back all
+   close it for free. The dialog itself has no padding: closeOnBackdropClick() closes on clicks
+   whose target is the <dialog> element, and padding on the dialog would count as that too — all
+   content and spacing live in .drawer-body instead. Opening is button-only (no edge swipe):
+   edge swipes are Android's system Back gesture. */
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  margin: 0;
+  width: min(86vw, 340px);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--accent-idle);
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
+  color: var(--text);
+  box-shadow: 20px 0 60px rgb(0 0 0 / 0.6);
+  overflow: hidden;
+  /* Vertical scrolling stays native; horizontal moves reach menuDrawer.ts's swipe-to-close. */
+  touch-action: pan-y;
+}
+.drawer[open] {
+  animation: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+.drawer::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+.drawer-body {
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+}
+.drawer-link {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--panel-lo);
+  color: var(--text);
+  text-decoration: none;
 }
 .icon-btn {
   width: 34px;

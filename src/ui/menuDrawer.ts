@@ -2,6 +2,7 @@ import { t } from '../i18n/i18n';
 import {
   type BeatLevel,
   defaultSettings,
+  isLanguage,
   isNodeStyleName,
   isThemeName,
   type Settings,
@@ -14,30 +15,61 @@ import { readTheme } from '../viz/vizController';
 import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
 
-export interface SettingsDialogDeps {
-  store: Store<Settings>;
-}
-
-export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
-  const dialog = byId<HTMLDialogElement>('settingsDialog');
+export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
+  const drawer = byId<HTMLDialogElement>('menuDrawer');
   const offsetInput = byId<HTMLInputElement>('offsetInput');
   const offsetValue = byId<HTMLInputElement>('offsetValue');
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
   const depth25dToggle = byId<HTMLButtonElement>('depth25dToggle');
   const themeButtons = Array.from(
-    dialog.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
+    drawer.querySelectorAll<HTMLButtonElement>('[data-theme-option]'),
   );
   const nodeStyleButtons = Array.from(
-    dialog.querySelectorAll<HTMLButtonElement>('[data-node-style-option]'),
+    drawer.querySelectorAll<HTMLButtonElement>('[data-node-style-option]'),
   );
   const nodeStylePreviews = Array.from(
-    dialog.querySelectorAll<HTMLCanvasElement>('[data-node-style-preview]'),
+    drawer.querySelectorAll<HTMLCanvasElement>('[data-node-style-preview]'),
   );
+  const languageButtons = Array.from(drawer.querySelectorAll<HTMLButtonElement>('[data-lang]'));
 
-  byId('settingsBtn').addEventListener('click', () => {
-    dialog.showModal();
+  // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
+  const resetConfirm = createConfirmGate(resetBtn, {
+    idleText: () => t('reset.button'),
+    armedText: () => t('reset.confirm'),
   });
-  closeOnBackdropClick(dialog);
+
+  byId('menuBtn').addEventListener('click', () => {
+    resetConfirm.disarm();
+    drawer.showModal();
+  });
+  closeOnBackdropClick(drawer);
+
+  // Swipe left on the open drawer closes it (the drawer slides in from the left). Ignored when
+  // the gesture starts on a range input, so dragging the sync-offset slider left still moves the
+  // slider. Opening stays button-only — see the .drawer note in styles.css.
+  const SWIPE_CLOSE_PX = 60;
+  let swipeStart: { x: number; y: number } | null = null;
+  drawer.addEventListener('pointerdown', (e) => {
+    const onSlider = (e.target as HTMLElement).closest('input[type="range"]');
+    swipeStart = onSlider ? null : { x: e.clientX, y: e.clientY };
+  });
+  drawer.addEventListener('pointerup', (e) => {
+    if (!swipeStart) return;
+    const dx = e.clientX - swipeStart.x;
+    const dy = e.clientY - swipeStart.y;
+    swipeStart = null;
+    if (dx < -SWIPE_CLOSE_PX && Math.abs(dx) > Math.abs(dy) * 1.5) drawer.close();
+  });
+  drawer.addEventListener('pointercancel', () => {
+    swipeStart = null;
+  });
+
+  for (const button of languageButtons) {
+    button.addEventListener('click', () => {
+      const language = button.dataset.lang;
+      if (isLanguage(language)) store.set({ language });
+    });
+  }
 
   offsetInput.addEventListener('input', () => {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
@@ -67,11 +99,6 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
     store.set({ depth25d: !store.get().depth25d });
   });
 
-  // Two-step confirm instead of window.confirm (not reliable inside the Tauri webview).
-  const resetConfirm = createConfirmGate(resetBtn, {
-    idleText: () => t('reset.button'),
-    armedText: () => t('reset.confirm'),
-  });
   resetBtn.addEventListener('click', () => {
     if (resetConfirm.tap()) store.set(defaultSettings());
   });
@@ -84,7 +111,7 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
   const paintNodeStylePreview = (canvas: HTMLCanvasElement, glow: number): void => {
     const style = canvas.dataset.nodeStylePreview;
     if (!isNodeStyleName(style)) return;
-    const theme = readTheme(dialog);
+    const theme = readTheme(drawer);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const cell = NODE_STYLE_PREVIEW_CELL;
     const width = cell * NODE_STYLE_PREVIEW_LEVELS.length;
@@ -132,6 +159,9 @@ export function mountSettingsDialog({ store }: SettingsDialogDeps): void {
     }
     paintNodeStylePreviews();
     depth25dToggle.setAttribute('aria-checked', String(s.depth25d));
+    for (const button of languageButtons) {
+      button.setAttribute('aria-checked', String(button.dataset.lang === s.language));
+    }
   };
   render(store.get());
   store.subscribe(render);

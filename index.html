@@ -307,21 +307,12 @@
     <main class="app">
       <header class="topbar">
         <div class="title-row">
+          <button type="button" id="menuBtn" class="header-btn" aria-haspopup="dialog" aria-controls="menuDrawer" data-i18n-aria-label="menu.ariaLabel" aria-label="Menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
           <h1 class="title">
             <button type="button" id="titleBtn" class="title-btn" data-i18n="app.title" aria-label="Preview the loading screen">Metronome</button>
           </h1>
-          <div class="lang-switch">
-            <button type="button" id="langBtn" class="icon-btn" aria-haspopup="true" aria-expanded="false" data-i18n-aria-label="language.ariaLabel" aria-label="Change language">
-              <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" /></svg>
-            </button>
-            <div id="langMenu" class="lang-menu" role="menu" hidden>
-              <button type="button" role="menuitemradio" class="lang-option" data-lang="en" aria-checked="true" data-i18n="language.english">English</button>
-              <button type="button" role="menuitemradio" class="lang-option" data-lang="tr" aria-checked="false" data-i18n="language.turkish">Türkçe</button>
-            </div>
-          </div>
-          <button type="button" id="settingsBtn" class="icon-btn" data-i18n-aria-label="settings.ariaLabel" aria-label="Settings">
-            <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
-          </button>
         </div>
         <div class="seg" role="radiogroup" data-i18n-aria-label="viz.ariaLabel" aria-label="Visualiser">
           <span class="seg-thumb" aria-hidden="true"></span>
@@ -554,62 +545,79 @@
       </div>
     </dialog>
 
-    <dialog id="settingsDialog" class="sheet" aria-labelledby="setTitle">
-      <form method="dialog" class="sheet-head">
-        <h2 id="setTitle" data-i18n="settingsDialog.title">Settings</h2>
-        <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
-      </form>
-      <div class="field">
-        <span data-i18n="theme.label">Theme</span>
-        <div class="unit-row" role="radiogroup" aria-label="Color theme">
-          <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false" data-i18n="theme.teal">Teal</button>
-          <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false" data-i18n="theme.amber">Amber</button>
-          <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false" data-i18n="theme.blue">Blue</button>
-          <button type="button" role="radio" class="chip" data-theme-option="chrome" aria-checked="false" data-i18n="theme.chrome">Chrome</button>
+    <dialog id="menuDrawer" class="drawer" aria-labelledby="menuTitle">
+      <div class="drawer-body">
+        <form method="dialog" class="sheet-head">
+          <h2 id="menuTitle" data-i18n="menu.title">Menu</h2>
+          <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
+        </form>
+
+        <h3 class="sheet-sub" data-i18n="menu.language">Language</h3>
+        <div class="field">
+          <div class="unit-row" role="radiogroup" data-i18n-aria-label="language.ariaLabel" aria-label="Change language">
+            <button type="button" role="radio" class="chip" data-lang="en" aria-checked="true">English</button>
+            <button type="button" role="radio" class="chip" data-lang="tr" aria-checked="false">Türkçe</button>
+          </div>
         </div>
+
+        <h3 class="sheet-sub" data-i18n="menu.appearance">Appearance</h3>
+        <div class="field">
+          <span data-i18n="theme.label">Theme</span>
+          <div class="unit-row" role="radiogroup" aria-label="Color theme">
+            <button type="button" role="radio" class="chip" data-theme-option="teal" aria-checked="false" data-i18n="theme.teal">Teal</button>
+            <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false" data-i18n="theme.amber">Amber</button>
+            <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false" data-i18n="theme.blue">Blue</button>
+            <button type="button" role="radio" class="chip" data-theme-option="chrome" aria-checked="false" data-i18n="theme.chrome">Chrome</button>
+          </div>
+        </div>
+        <div class="field">
+          <span data-i18n="nodeStyle.label">Beat sphere</span>
+          <div class="unit-row" role="radiogroup" aria-label="Beat style">
+            <button type="button" role="radio" class="chip chip--preview" data-node-style-option="classic" aria-checked="false">
+              <canvas class="node-style-preview" data-node-style-preview="classic" width="96" height="32" aria-hidden="true"></canvas>
+              <span data-i18n="nodeStyle.classic">Classic</span>
+            </button>
+            <button type="button" role="radio" class="chip chip--preview" data-node-style-option="metallic" aria-checked="false">
+              <canvas class="node-style-preview" data-node-style-preview="metallic" width="96" height="32" aria-hidden="true"></canvas>
+              <span data-i18n="nodeStyle.metallic">Metallic</span>
+            </button>
+            <button type="button" role="radio" class="chip chip--preview" data-node-style-option="wireframe" aria-checked="false">
+              <canvas class="node-style-preview" data-node-style-preview="wireframe" width="96" height="32" aria-hidden="true"></canvas>
+              <span data-i18n="nodeStyle.wireframe">Wireframe</span>
+            </button>
+            <button type="button" role="radio" class="chip chip--preview" data-node-style-option="frosted" aria-checked="false">
+              <canvas class="node-style-preview" data-node-style-preview="frosted" width="96" height="32" aria-hidden="true"></canvas>
+              <span data-i18n="nodeStyle.frosted">Frosted</span>
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <span>
+            <span data-i18n="depth25d.label">2.5D knob</span>
+            <button type="button" id="depth25dToggle" class="switch" role="switch" aria-checked="false" data-i18n-aria-label="depth25d.switchAriaLabel" aria-label="Toggle the 2.5D knob shape">
+              <span class="switch-knob"></span>
+            </button>
+          </span>
+          <div class="sub-head">
+            <p class="sub-label" data-i18n="depth25d.subLabel">Tilted, cylindrical BPM knob</p>
+            <button type="button" class="info-btn" data-i18n-aria-label="depth25d.hint" data-i18n-title="depth25d.hint" aria-label="Gives the BPM knob a tilted, cylindrical 3D shape instead of a flat disc." title="Gives the BPM knob a tilted, cylindrical 3D shape instead of a flat disc.">i</button>
+          </div>
+        </div>
+
+        <h3 class="sheet-sub" data-i18n="menu.advanced">Advanced</h3>
+        <label class="field">
+          <span><span data-i18n="syncOffset.label">Visual sync offset</span> <span class="field-value"><input type="number" id="offsetValue" class="field-value-input" inputmode="numeric" min="-200" max="200" step="1" value="0" data-i18n-aria-label="syncOffset.ariaLabel" aria-label="Visual sync offset in milliseconds" /> ms</span></span>
+          <input id="offsetInput" type="range" min="-200" max="200" step="1" />
+          <div class="sub-head">
+            <small class="sub-label" data-i18n="syncOffset.subLabel">Fixes flash/click lag</small>
+            <button type="button" class="info-btn" data-i18n-aria-label="syncOffset.hint" data-i18n-title="syncOffset.hint" aria-label="Delays visuals to match late audio (common on Bluetooth)." title="Delays visuals to match late audio (common on Bluetooth).">i</button>
+          </div>
+        </label>
+        <button type="button" id="resetBtn" class="wide-btn danger" data-i18n="reset.button">Reset all settings</button>
+
+        <h3 class="sheet-sub" data-i18n="menu.about">About</h3>
+        <a class="drawer-link" href="privacy-policy.html" target="_blank" rel="noopener" data-i18n="menu.privacyPolicy">Privacy policy</a>
       </div>
-      <div class="field">
-        <span data-i18n="nodeStyle.label">Beat sphere</span>
-        <div class="unit-row" role="radiogroup" aria-label="Beat style">
-          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="classic" aria-checked="false">
-            <canvas class="node-style-preview" data-node-style-preview="classic" width="96" height="32" aria-hidden="true"></canvas>
-            <span data-i18n="nodeStyle.classic">Classic</span>
-          </button>
-          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="metallic" aria-checked="false">
-            <canvas class="node-style-preview" data-node-style-preview="metallic" width="96" height="32" aria-hidden="true"></canvas>
-            <span data-i18n="nodeStyle.metallic">Metallic</span>
-          </button>
-          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="wireframe" aria-checked="false">
-            <canvas class="node-style-preview" data-node-style-preview="wireframe" width="96" height="32" aria-hidden="true"></canvas>
-            <span data-i18n="nodeStyle.wireframe">Wireframe</span>
-          </button>
-          <button type="button" role="radio" class="chip chip--preview" data-node-style-option="frosted" aria-checked="false">
-            <canvas class="node-style-preview" data-node-style-preview="frosted" width="96" height="32" aria-hidden="true"></canvas>
-            <span data-i18n="nodeStyle.frosted">Frosted</span>
-          </button>
-        </div>
-      </div>
-      <div class="field">
-        <span>
-          <span data-i18n="depth25d.label">2.5D knob</span>
-          <button type="button" id="depth25dToggle" class="switch" role="switch" aria-checked="false" data-i18n-aria-label="depth25d.switchAriaLabel" aria-label="Toggle the 2.5D knob shape">
-            <span class="switch-knob"></span>
-          </button>
-        </span>
-        <div class="sub-head">
-          <p class="sub-label" data-i18n="depth25d.subLabel">Tilted, cylindrical BPM knob</p>
-          <button type="button" class="info-btn" data-i18n-aria-label="depth25d.hint" data-i18n-title="depth25d.hint" aria-label="Gives the BPM knob a tilted, cylindrical 3D shape instead of a flat disc." title="Gives the BPM knob a tilted, cylindrical 3D shape instead of a flat disc.">i</button>
-        </div>
-      </div>
-      <label class="field">
-        <span><span data-i18n="syncOffset.label">Visual sync offset</span> <span class="field-value"><input type="number" id="offsetValue" class="field-value-input" inputmode="numeric" min="-200" max="200" step="1" value="0" data-i18n-aria-label="syncOffset.ariaLabel" aria-label="Visual sync offset in milliseconds" /> ms</span></span>
-        <input id="offsetInput" type="range" min="-200" max="200" step="1" />
-        <div class="sub-head">
-          <small class="sub-label" data-i18n="syncOffset.subLabel">Fixes flash/click lag</small>
-          <button type="button" class="info-btn" data-i18n-aria-label="syncOffset.hint" data-i18n-title="syncOffset.hint" aria-label="Delays visuals to match late audio (common on Bluetooth)." title="Delays visuals to match late audio (common on Bluetooth).">i</button>
-        </div>
-      </label>
-      <button type="button" id="resetBtn" class="wide-btn danger" data-i18n="reset.button">Reset all settings</button>
     </dialog>
 
     <dialog id="soundDialog" class="sheet" aria-labelledby="soundTitle">
