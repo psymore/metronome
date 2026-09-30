@@ -7,9 +7,9 @@ import {
   nodeAngle,
   nodeRadius,
   polar,
-  subDotRadius,
 } from './geometry';
 import { spriteSize } from './nodeSprite';
+import { subDotLayout } from './subDots';
 import type { Visualizer } from './types';
 
 export const circularVisualizer: Visualizer = {
@@ -54,17 +54,10 @@ export const circularVisualizer: Visualizer = {
     // sweeps over them.
     const sub = frame.subdivision;
     if (sub > 1) {
-      const arcSpan = (2 * Math.PI) / n - 2 * gapAngle;
-      const dotR = subDotRadius(nodeR, (r * arcSpan) / sub);
-      if (dotR > 0) {
-        for (let i = 0; i < n; i++) {
-          const start = nodeAngle(i, n) + gapAngle;
-          for (let k = 1; k < sub; k++) {
-            const p = polar(cx, cy, r, start + (arcSpan * k) / sub);
-            const glow = i === frame.activeBeat && k === frame.activeSub ? frame.subGlow : 0;
-            drawSubDot(ctx, p.x, p.y, dotR, glow, theme);
-          }
-        }
+      const layout = subDotLayout('circular', width, height, n, sub);
+      for (const dot of layout.dots) {
+        const glow = dot.beat === frame.activeBeat && dot.k === frame.activeSub ? frame.subGlow : 0;
+        drawSubDot(ctx, dot.x, dot.y, dot.r, glow, theme);
       }
     }
 
