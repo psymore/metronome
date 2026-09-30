@@ -153,3 +153,40 @@ export function circularRingRadius(row: number, rows: number, maxR: number, minR
   if (rows <= 1) return maxR;
   return maxR - (row * (maxR - minR)) / (rows - 1);
 }
+
+export interface LinearMetrics {
+  track: { left: number; width: number; y: number };
+  cells: BeatCell[];
+  rows: number;
+  nodeR: number;
+  tick: number;
+  reach: number;
+  rowGap: number;
+  /** Line cut-off from a node center (the ring/line stops this far from each node). */
+  gap: number;
+  cellW: number;
+  rowY: (row: number) => number;
+  nodeX: (col: number, rowCount: number) => number;
+}
+
+/** All the row/column/size math the linear view and its hit test share. Rows shrink together to
+ *  fit the canvas height, keeping the outer rows' stick on-canvas, but never so far that
+ *  neighbouring spheres touch. */
+export function linearMetrics(width: number, height: number, count: number): LinearMetrics {
+  const track = linearLayout(width, height);
+  const cells = beatLayoutGrid(count);
+  const rows = cells[0]?.rows ?? 1;
+  const nodeR = nodeRadius(track.width / 2, linearNodeSpacing(Math.min(count, 4), track.width));
+  const tick = Math.max(18, nodeR * 2);
+  const reach = tick * 2.2; // the stick's half-height, the tallest thing drawn around a row
+  const rowGap =
+    rows > 1
+      ? Math.max(nodeR * 2 + 6, Math.min(tick * 3.2, (height - reach * 2) / (rows - 1)))
+      : tick * 3.2;
+  const gap = nodeR + 5;
+  const cellW = track.width / MAX_PER_ROW;
+  const rowY = (row: number) => linearGridY(row, rows, track.y, rowGap);
+  const nodeX = (col: number, rowCount: number) =>
+    linearGridX(col, rowCount, track.left, track.width);
+  return { track, cells, rows, nodeR, tick, reach, rowGap, gap, cellW, rowY, nodeX };
+}

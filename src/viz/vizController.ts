@@ -11,6 +11,7 @@ import { NodeSpriteCache, spriteSize } from './nodeSprite';
 import { computePolyFrame } from './polyFrame';
 import { drawPolyrhythm, polyLayerTheme } from './polyrhythm';
 import { shouldAnimate } from './renderPolicy';
+import { subDotAt, subDotLayout, subFanDotAt, subFanLayout } from './subDots';
 import type { VizTheme } from './types';
 
 export interface VizSource {
@@ -57,6 +58,9 @@ export class VizController {
   private polyPairAnim = new Map<string, { start: number; opening: boolean }>();
   /** Ratio for which polyPairAnim's keys are valid; resets when a or b changes. */
   private polyRatio = '';
+  /** The one subdivision group currently fanned out (or animating), if any. `opening` like
+   *  polyPairAnim's; `shape` is the layout it was opened for — any change closes it. */
+  private subFan: { beat: number; start: number; opening: boolean; shape: string } | null = null;
   private readonly sprites = new NodeSpriteCache((level, label, radius, dpr, variant) =>
     this.paintSprite(level, label, radius, dpr, variant),
   );
@@ -72,6 +76,8 @@ export class VizController {
     /** Reported once (see `renderErrorLogged`) if `render()` throws, so the same log+toast
      *  pipeline other uncaught errors go through also covers a broken render loop. */
     private readonly onRenderError?: (err: unknown) => void,
+    /** Fires when a subdivision dot (direct or fanned-out) is tapped, toggling it on/off. */
+    private readonly onSubTap?: (beat: number, k: number) => void,
   ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not supported in this browser.');
@@ -134,22 +140,59 @@ export class VizController {
       this.onPolyBeatTap?.(hit.layer, hit.index);
       return;
     }
-    if (!this.onBeatTap) return;
-    const index =
-      s.visualizer === 'linear'
-        ? linearBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar)
-        : circularBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar);
-    if (index >= 0) this.onBeatTap(index);
+    const sub = patternFromSettings(s).subdivision;
+    const kind = s.visualizer === 'linear' ? 'linear' : 'circular';
+    const layout = subDotLayout(kind, this.size.width, this.size.height, s.beatsPerBar, sub);
+
+    // 1-2. An open fan owns the next tap: toggle one of its dots, or close it.
+    if (this.subFan?.opening) {
+      const group = layout.groups.find((g) => g.beat === this.subFan?.beat);
+      const fan = group ? subFanLayout(group, sub - 1, this.size.width, this.size.height) : [];
+      const j = subFanDotAt(fan, x, y);
+      if (j >= 0) this.onSubTap?.(this.subFan.beat, j + 1);
+      else this.animateSubFan(this.subFan.beat, false);
+      this.invalidate();
+      return;
+    }
+    const beatAt = (scale: number) =>
+      kind === 'linear'
+        ? linearBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar, scale)
+        : circularBeatAt(x, y, this.size.width, this.size.height, s.beatsPerBar, scale);
+    // 3. A tap on a node's own body always means the node.
+    const onNode = beatAt(1.1);
+    if (onNode >= 0) {
+      this.onBeatTap?.(onNode);
+      return;
+    }
+    // 4. Then the subdivision dots: one dot directly, or open its group's fan.
+    const hit = sub > 1 ? subDotAt(layout, x, y) : null;
+    if (hit?.kind === 'dot') {
+      this.onSubTap?.(hit.beat, hit.k);
+      return;
+    }
+    if (hit?.kind === 'group') {
+      this.animateSubFan(hit.beat, true, `${s.visualizer}|${s.beatsPerBar}|${sub}`);
+      this.invalidate();
+      return;
+    }
+    // 5. The node's generous hit ring, as before.
+    const index = beatAt(1.8);
+    if (index >= 0) this.onBeatTap?.(index);
   };
 
-  /** 0..1 progress of a pair's split animation, eased. 0 = coincident, 1 = fully branched. */
-  private currentSplitFrac(key: string): number {
-    const anim = this.polyPairAnim.get(key);
+  /** 0..1 progress of an in-flight split/fan animation, eased. 0 = at rest, 1 = fully open.
+   *  Reduced motion jumps straight to the end state instead of easing through it. */
+  private easedFrac(anim: { start: number; opening: boolean } | undefined): number {
     if (!anim) return 0;
     if (this.reducedMotion.matches) return anim.opening ? 1 : 0;
     const t = Math.min(1, Math.max(0, (performance.now() - anim.start) / POLY_SPLIT_MS));
     const eased = 1 - (1 - t) ** 3;
     return anim.opening ? eased : 1 - eased;
+  }
+
+  /** 0..1 progress of a pair's split animation, eased. 0 = coincident, 1 = fully branched. */
+  private currentSplitFrac(key: string): number {
+    return this.easedFrac(this.polyPairAnim.get(key));
   }
 
   private animatePair(key: string, opening: boolean): void {
@@ -160,6 +203,32 @@ export class VizController {
     // shift `start` so the eased frac at now equals current.
     const t = 1 - Math.cbrt(1 - (opening ? current : 1 - current));
     this.polyPairAnim.set(key, { start: now - t * POLY_SPLIT_MS, opening });
+  }
+
+  /** 0..1 progress of the currently open subdivision fan, eased; 0 when none is open. */
+  private subFanFrac(): number {
+    return this.easedFrac(this.subFan ?? undefined);
+  }
+
+  private animateSubFan(beat: number, opening: boolean, shape?: string): void {
+    const now = performance.now();
+    // Opening a different group than the one currently open closes the old one instantly — only
+    // one fan exists at a time, so this just replaces it — and the new one starts from frac 0.
+    const sameGroup = this.subFan?.beat === beat;
+    const current = sameGroup ? this.subFanFrac() : 0;
+    const t = 1 - Math.cbrt(1 - (opening ? current : 1 - current));
+    const useShape = shape ?? this.subFan?.shape ?? '';
+    this.subFan = { beat, start: now - t * POLY_SPLIT_MS, opening, shape: useShape };
+  }
+
+  private subFanAnimating(): boolean {
+    if (!this.subFan) return false;
+    const frac = this.subFanFrac();
+    return this.subFan.opening ? frac < 1 : frac > 0;
+  }
+
+  private pruneSubFan(): void {
+    if (this.subFan && !this.subFan.opening && this.subFanFrac() === 0) this.subFan = null;
   }
 
   private polyAnimating(): boolean {
@@ -300,6 +369,11 @@ export class VizController {
       return;
     }
 
+    const sub = patternFromSettings(s).subdivision;
+    const shape = `${s.visualizer}|${s.beatsPerBar}|${sub}`;
+    if (this.subFan && (this.subFan.shape !== shape || !s.beatsClickable)) this.subFan = null;
+    this.pruneSubFan();
+
     const beat = this.source.beatAt(heard);
     const frame = computeFrame({
       running: this.source.running(),
@@ -309,8 +383,11 @@ export class VizController {
       levels: s.levels,
       reducedMotion: this.reducedMotion.matches,
       // Effective clicks per beat, exactly as the scheduler plays them (1 in compound meters).
-      subdivision: patternFromSettings(s).subdivision,
+      subdivision: sub,
+      subOff: patternFromSettings(s).subOff ?? [],
     });
+    const subFanFrac = this.subFanFrac();
+    if (this.subFan && subFanFrac > 0) frame.subFan = { beat: this.subFan.beat, frac: subFanFrac };
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
     visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites, s.nodeStyle);
     if (frame.glow > this.lastGlow) {
@@ -319,5 +396,7 @@ export class VizController {
       this.onBeatStart?.(level, beat?.barIndex ?? 0);
     }
     this.lastGlow = frame.glow;
+    // Keep the fan's open/close animation running even while the metronome is stopped.
+    if (this.subFanAnimating()) this.invalidate();
   }
 }

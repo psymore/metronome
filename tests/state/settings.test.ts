@@ -6,6 +6,7 @@ import {
   defaultSettings,
   groupSizes,
   isCompoundMeter,
+  isSubOn,
   loadSettings,
   nextLevel,
   patternFromSettings,
@@ -13,7 +14,9 @@ import {
   SETTINGS_KEY,
   sanitizeSettings,
   saveSettings,
+  toggleSub,
   withSignature,
+  withSubdivision,
 } from '../../src/state/settings';
 
 function memoryStorage() {
@@ -113,6 +116,7 @@ describe('sanitizeSettings', () => {
       loopCount: 1,
       practiceSeconds: 0,
       subdivision: 1,
+      subOff: [],
       language: 'en',
       depth25d: false,
       polyrhythm: {
@@ -273,6 +277,7 @@ describe('level helpers', () => {
       levels: s.levels,
       subdivision: 1,
       pulsesPerBeat: 3,
+      subOff: [],
     });
   });
 
@@ -284,6 +289,7 @@ describe('level helpers', () => {
       levels: s.levels,
       subdivision: 3,
       pulsesPerBeat: 1,
+      subOff: [],
     });
   });
 
@@ -297,6 +303,7 @@ describe('level helpers', () => {
       beatsPerBar: 6,
       beatUnit: 8,
       levels: ['accent', 'normal', 'normal', 'medium', 'normal', 'normal'],
+      subOff: [],
     });
     expect(withSignature(0, 4).beatsPerBar).toBe(1);
     expect(withSignature(99, 4).beatsPerBar).toBe(16);
@@ -338,6 +345,56 @@ describe('polyrhythm settings', () => {
     expect(sanitizeSettings({}).polyrhythm).toEqual(defaultSettings().polyrhythm);
     expect(sanitizeSettings({ polyrhythm: 'nonsense' }).polyrhythm).toEqual(
       defaultSettings().polyrhythm,
+    );
+  });
+});
+
+describe('subdivision pattern (subOff)', () => {
+  it('treats an empty or short array as all on', () => {
+    expect(isSubOn([], 4, 2, 3)).toBe(true);
+    expect(isSubOn([true], 4, 2, 3)).toBe(true);
+  });
+
+  it('indexes beat-major, k from 1', () => {
+    // 16ths: 3 clicks per beat; beat 1, k 2 → index 1 * 3 + 1 = 4
+    const off = [false, false, false, false, true, false];
+    expect(isSubOn(off, 4, 1, 2)).toBe(false);
+    expect(isSubOn(off, 4, 1, 1)).toBe(true);
+  });
+
+  it('toggles one click and sizes the array to the full layout', () => {
+    const next = toggleSub([], 4, 2, 3, 1);
+    expect(next).toHaveLength(4); // 4 beats × (2 − 1)
+    expect(next[3]).toBe(true);
+    expect(toggleSub(next, 4, 2, 3, 1)[3]).toBe(false);
+  });
+
+  it('ignores out-of-range beats and clicks', () => {
+    expect(toggleSub([], 4, 2, 9, 1)).toEqual([false, false, false, false]);
+    expect(toggleSub([], 4, 2, 0, 2)).toEqual([false, false, false, false]);
+  });
+
+  it('resets the pattern on a signature or subdivision change', () => {
+    expect(withSignature(3, 4).subOff).toEqual([]);
+    expect(withSubdivision(3)).toEqual({ subdivision: 3, subOff: [] });
+  });
+
+  it('drops a stored pattern that does not fit the stored layout', () => {
+    const s = sanitizeSettings({ beatsPerBar: 4, subdivision: 2, subOff: [true, false] });
+    expect(s.subOff).toEqual([]);
+    const ok = sanitizeSettings({ beatsPerBar: 2, subdivision: 2, subOff: [true, 'x'] });
+    expect(ok.subOff).toEqual([true, false]);
+  });
+
+  it('passes the pattern to the scheduler, and none in a compound meter', () => {
+    const s = {
+      ...defaultSettings(),
+      subdivision: 2 as const,
+      subOff: [true, false, false, false],
+    };
+    expect(patternFromSettings(s).subOff).toEqual([true, false, false, false]);
+    expect(patternFromSettings({ ...s, ...withSignature(6, 8), subOff: [true] }).subOff).toEqual(
+      [],
     );
   });
 });

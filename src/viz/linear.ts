@@ -1,44 +1,22 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode, drawSubDot } from './drawNode';
-import {
-  beatLayoutGrid,
-  linearGridStickX,
-  linearGridX,
-  linearGridY,
-  linearLayout,
-  linearNodeSpacing,
-  MAX_PER_ROW,
-  nodeRadius,
-  subDotRadius,
-} from './geometry';
+import { drawNode } from './drawNode';
+import { linearGridStickX, linearMetrics } from './geometry';
 import { spriteSize } from './nodeSprite';
+import { drawSubdivisionDots, drawSubFan } from './subDotsDraw';
 import type { Visualizer } from './types';
 
 export const linearVisualizer: Visualizer = {
   draw(ctx, { width, height }, frame, theme, sprites, style) {
     ctx.clearRect(0, 0, width, height);
     const n = frame.beatsPerBar;
-    const track = linearLayout(width, height);
-    const cells = beatLayoutGrid(n);
-    const rows = cells[0]?.rows ?? 1;
-    const nodeR = nodeRadius(track.width / 2, linearNodeSpacing(Math.min(n, 4), track.width));
-    const tick = Math.max(18, nodeR * 2);
-    const reach = tick * 2.2; // the stick's half-height, the tallest thing drawn around a row
-    // Rows shrink together to fit the canvas height (the mobile stage is capped at 320px), keeping
-    // the outer rows' stick on-canvas, but never so far that neighbouring spheres touch.
-    // Keep identical to linearBeatAt in hitTest.ts.
-    const rowGap =
-      rows > 1
-        ? Math.max(nodeR * 2 + 6, Math.min(tick * 3.2, (height - reach * 2) / (rows - 1)))
-        : tick * 3.2;
+    const { track, cells, rows, nodeR, tick, reach, rowGap, gap, rowY, nodeX } = linearMetrics(
+      width,
+      height,
+      n,
+    );
     // Row tick marks stop halfway to the next row rather than running into its marks.
     const rowTick = rows > 1 ? Math.min(tick, rowGap / 2) : tick;
     const barTick = rows > 1 ? Math.min(tick * 1.4, rowGap / 2) : tick * 1.4;
-    const gap = nodeR + 5;
-
-    const rowY = (row: number) => linearGridY(row, rows, track.y, rowGap);
-    const nodeX = (col: number, rowCount: number) =>
-      linearGridX(col, rowCount, track.left, track.width);
 
     ctx.lineCap = 'round';
     ctx.lineWidth = 3;
@@ -90,25 +68,8 @@ export const linearVisualizer: Visualizer = {
     // Subdivision dots, spread evenly along the visible line between two nodes (inside the same
     // `gap` the line itself stops at, so a dot never sits on a node). A row's last beat has only
     // half a cell to the bar line; its dots shrink to fit there, capped at the full-size ones.
-    const sub = frame.subdivision;
-    if (sub > 1) {
-      const cellW = track.width / MAX_PER_ROW;
-      const fullDotR = subDotRadius(nodeR, (cellW - 2 * gap) / sub);
-      for (let i = 0; i < n; i++) {
-        const cell = cells[i];
-        if (!cell || fullDotR === 0) continue;
-        const x0 = nodeX(cell.col, cell.rowCount);
-        const last = cell.col === cell.rowCount - 1;
-        const from = x0 + gap;
-        const to = last ? x0 + cellW / 2 - 5 : nodeX(cell.col + 1, cell.rowCount) - gap;
-        const dotR = Math.min(fullDotR, subDotRadius(nodeR, (to - from) / sub));
-        if (dotR === 0) continue;
-        const y = rowY(cell.row);
-        for (let k = 1; k < sub; k++) {
-          const glow = i === frame.activeBeat && k === frame.activeSub ? frame.subGlow : 0;
-          drawSubDot(ctx, from + ((to - from) * k) / sub, y, dotR, glow, theme);
-        }
-      }
+    if (frame.subdivision > 1) {
+      drawSubdivisionDots(ctx, 'linear', width, height, frame, theme);
     }
 
     if (frame.activeBeat >= 0 && !frame.reducedMotion) {
@@ -157,6 +118,10 @@ export const linearVisualizer: Visualizer = {
         ctx.fillText(label, x, y);
         ctx.restore();
       }
+    }
+
+    if (frame.subdivision > 1) {
+      drawSubFan(ctx, 'linear', width, height, frame, theme);
     }
   },
 };

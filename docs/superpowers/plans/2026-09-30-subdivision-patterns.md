@@ -58,7 +58,12 @@ Planner's defaults (the user may still override; ask them if unsure):
   - Any other tap closes the fan and does nothing else.
   - The fan also closes by itself when the signature, the subdivision or the visualiser changes.
 - **Where the fan opens:**
-  - Circle view: toward the circle's center, along the group's inward normal.
+  - Circle view: **outward**, away from the circle's center along the group's outward normal
+    (the user's call).
+    - The square stage's corners have ~100px of room outside the ring. The top, bottom and
+      sides have only ~35px, so a fan near 12/3/6/9 o'clock gets pushed back inward by the
+      in-canvas clamp and may overlap the ring there. That's expected. The backdrop pill keeps
+      it readable.
   - Line view: above the row.
   - Either way the row of dots is shifted back inside the canvas if it would overflow.
 - **Priority of a tap:**
@@ -364,7 +369,7 @@ export interface SubGroup {
   /** Midpoint of the group's visible gap. */
   x: number;
   y: number;
-  /** Unit vector the fan pops out along (inward on the circle, up on the line). */
+  /** Unit vector the fan pops out along (outward on the circle, up on the line). */
   nx: number;
   ny: number;
   /** Unit vector the fan's row runs along, in playing order (clockwise / left→right). */
@@ -438,10 +443,10 @@ describe('subDotLayout', () => {
     expect(l.direct).toBe(false);
   });
 
-  it('points circle groups inward and line groups up', () => {
+  it('points circle groups outward and line groups up', () => {
     const c = subDotLayout('circular', 390, 320, 4, 2).groups[0];
-    // beat 0's gap is between 12 o'clock and 3 o'clock: inward means down-left
-    expect(c && c.nx < 0 && c.ny > 0).toBe(true);
+    // beat 0's gap is between 12 o'clock and 3 o'clock: outward means up-right
+    expect(c && c.nx > 0 && c.ny < 0).toBe(true);
     const lg = subDotLayout('linear', 390, 320, 4, 2).groups[0];
     expect(lg).toMatchObject({ nx: 0, ny: -1, tx: 1, ty: 0 });
   });
@@ -507,7 +512,7 @@ Run: `npx vitest run tests/viz/subDots.test.ts` — expected: FAIL (module missi
 - For beat `i`: `start = nodeAngle(i, n) + gapAngle`.
 - Dot `k` sits at `polar(cx, cy, r, start + arcSpan·k/sub)`, radius `subDotRadius(nodeR, r·arcSpan/sub)`.
 - Group midpoint: angle `a = start + arcSpan/2`, `(x, y) = polar(r, a)`.
-- Vectors: `n = (−cos a, −sin a)` (inward) and `t = (−sin a, cos a)` (clockwise).
+- Vectors: `n = (cos a, sin a)` (outward) and `t = (−sin a, cos a)` (clockwise).
 - `spacing = r·arcSpan/sub`.
 
 **Line** (mirror today's `linear.ts` dot block, via `linearMetrics`):
@@ -788,7 +793,8 @@ Import `toggleSub` and `patternFromSettings` from `./state/settings`.
   - Tapping a fan dot toggles it and the fan stays open.
   - Tapping elsewhere closes the fan and changes nothing else.
   - Tapping a node while the fan is open only closes the fan.
-- 16/4 and 16ths, circle view: fans open inward and stay inside the canvas. Nodes are still
+- 16/4 and 16ths, circle view: fans open outward and stay inside the canvas (near 12/3/6/9
+  o'clock the clamp pulls them back over the ring; that's expected). Nodes are still
   tappable on their bodies.
 - Reduced motion (DevTools rendering emulation): the fan opens and closes instantly.
 - Turning "Beats — tap directly on the visualiser" off disables all of it.

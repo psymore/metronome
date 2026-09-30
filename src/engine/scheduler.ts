@@ -1,4 +1,4 @@
-import type { BeatLevel } from '../state/settings';
+import { type BeatLevel, isSubOn } from '../state/settings';
 import { secondsPerBeat } from './timing';
 
 export interface BeatEvent {
@@ -23,6 +23,8 @@ export interface Pattern {
   /** Pulses per felt beat: 1 for simple meters, 3 for compound meters (BPM is the dotted quarter,
    *  each pulse an eighth). */
   pulsesPerBeat: 1 | 3;
+  /** Subdivision clicks switched off (see Settings.subOff); missing = on. */
+  subOff?: readonly boolean[];
 }
 
 export interface SchedulerOptions {
@@ -112,6 +114,7 @@ export class Scheduler {
       this.opts.onBeat(beat);
       const subdivision = Math.max(1, pattern.subdivision);
       for (let k = 1; k < subdivision; k++) {
+        if (!isSubOn(pattern.subOff ?? [], subdivision, this.beatInBar, k)) continue;
         this.opts.onSubdivision?.(this.nextTime + (duration * k) / subdivision);
       }
       this.nextTime += duration;
