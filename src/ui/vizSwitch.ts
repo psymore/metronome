@@ -13,9 +13,14 @@ export function mountVizSwitch({ store }: { store: Store<Settings> }): void {
     button.addEventListener('click', toggle);
   }
   const render = (s: Settings) => {
-    stage.dataset.viz = s.visualizer;
+    // Polyrhythm only has a circular view, so the switch is locked to Circle while it's on. The
+    // saved choice is left alone, so turning polyrhythm off brings Line back if it was picked.
+    const poly = s.polyrhythm.enabled;
+    const shown = poly ? 'circular' : s.visualizer;
+    stage.dataset.viz = shown;
     for (const button of buttons) {
-      button.setAttribute('aria-checked', String(button.dataset.viz === s.visualizer));
+      button.setAttribute('aria-checked', String(button.dataset.viz === shown));
+      button.disabled = poly;
     }
   };
   render(store.get());

@@ -1386,6 +1386,11 @@ html.depth-25d .knob {
 .sig-grid-col .sheet-sub {
   margin-bottom: 0;
 }
+/* Breathing room between the Subdivision chips (or their compound-meter hint) and the Beats card
+   below them — without it the card sat flush against the chip row. */
+.sig-beats-field {
+  margin-top: 16px;
+}
 .sig-grid-result {
   padding-left: 14px;
   border-left: 1px solid var(--line);
