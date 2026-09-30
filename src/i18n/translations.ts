@@ -63,7 +63,6 @@ export const translations: Record<Language, Record<string, string>> = {
     'songLength.hint':
       "How many bars is the piece? While it plays, the counter shows which bar you're on (e.g. 5/32) and stops at the end. 0 = off.",
     'songLength.apply': 'Apply',
-    'songLength.confirm': 'Start counting from bar 1 to bar {n}? Tap again to confirm.',
     'songLength.needsLength': 'Select a length greater than 0 to apply.',
     'barCounter.loopTitle': 'Loop',
     'barCounter.loopAriaLabel': 'Number of loops',
@@ -72,6 +71,9 @@ export const translations: Record<Language, Record<string, string>> = {
       'How many times to play the piece through before stopping. ∞ = until you stop it.',
     'barCounter.loopInfiniteAriaLabel': 'Infinite',
     'barCounter.idle': 'Bar −',
+    'barCounter.idleWithTarget': 'Bar −/{total}',
+    'barCounter.idleWithLoop': 'Bar −/{total} Loop −/{loopTotal}',
+    'barCounter.idleWithInfiniteLoop': 'Bar −/{total} Loop ∞',
     'barCounter.withLoop': 'Bar {bar}/{total} Loop {loop}/{loopTotal}',
     'barCounter.withInfiniteLoop': 'Bar {bar}/{total} Loop {loop}',
     'toast.songLengthEnded': 'Stopped after {n} bars.',
@@ -235,8 +237,6 @@ export const translations: Record<Language, Record<string, string>> = {
     'songLength.hint':
       'Parça kaç ölçü? Çalarken sayaç kaçıncı ölçüde olduğunu gösterir (ör. 5/32) ve sonunda durur. 0 = kapalı.',
     'songLength.apply': 'Uygula',
-    'songLength.confirm':
-      '1. ölçüden {n}. ölçüye kadar sayılsın mı? Onaylamak için tekrar dokunun.',
     'songLength.needsLength': 'Uygulamak için 0’dan büyük bir uzunluk seçin.',
     'barCounter.loopTitle': 'Tekrar',
     'barCounter.loopAriaLabel': 'Tekrar sayısı',
@@ -244,6 +244,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'barCounter.loopHint': 'Parça durmadan önce kaç kez baştan çalınsın. ∞ = siz durdurana kadar.',
     'barCounter.loopInfiniteAriaLabel': 'Sonsuz',
     'barCounter.idle': 'Ölçü −',
+    'barCounter.idleWithTarget': 'Ölçü −/{total}',
+    'barCounter.idleWithLoop': 'Ölçü −/{total} Tekrar −/{loopTotal}',
+    'barCounter.idleWithInfiniteLoop': 'Ölçü −/{total} Tekrar ∞',
     'barCounter.withLoop': 'Ölçü {bar}/{total} Tekrar {loop}/{loopTotal}',
     'barCounter.withInfiniteLoop': 'Ölçü {bar}/{total} Tekrar {loop}',
     'toast.songLengthEnded': '{n} ölçü sonunda durduruldu.',

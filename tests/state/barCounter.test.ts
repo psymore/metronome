@@ -3,6 +3,7 @@ import {
   barCounterFinished,
   barCounterProgress,
   formatBarCounter,
+  formatIdleBarCounter,
 } from '../../src/state/barCounter';
 
 describe('barCounterProgress', () => {
@@ -54,5 +55,14 @@ describe('barCounterFinished', () => {
   it('matches existing single-pass behavior', () => {
     expect(barCounterFinished(6, 7, 1)).toBe(false);
     expect(barCounterFinished(7, 7, 1)).toBe(true);
+  });
+});
+
+describe('formatIdleBarCounter', () => {
+  it('shows a dash for the bar and the target total', () => {
+    expect(formatIdleBarCounter(0, 1)).toBe('Bar −');
+    expect(formatIdleBarCounter(16, 1)).toBe('Bar −/16');
+    expect(formatIdleBarCounter(16, 3)).toBe('Bar −/16 Loop −/3');
+    expect(formatIdleBarCounter(16, 0)).toBe('Bar −/16 Loop ∞');
   });
 });

@@ -534,6 +534,18 @@ output {
 .bar-counter:active {
   transform: scale(0.96);
 }
+.bar-counter.just-set {
+  animation: bar-counter-set 900ms ease-out;
+}
+@keyframes bar-counter-set {
+  0%,
+  35% {
+    border-color: var(--select);
+    box-shadow:
+      0 0 0 2px var(--select),
+      0 0 14px var(--select);
+  }
+}
 .bar-counter[hidden] {
   display: none;
 }

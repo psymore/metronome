@@ -31,3 +31,11 @@ export function barCounterFinished(
 ): boolean {
   return targetBars > 0 && loopCount !== 0 && barIndex >= targetBars * loopCount;
 }
+
+/** The counter while stopped: a dash for the bar, plus the target and loop count when set. */
+export function formatIdleBarCounter(targetBars: number, loopCount: number): string {
+  if (targetBars <= 0) return format('barCounter.idle', {});
+  if (loopCount === 1) return format('barCounter.idleWithTarget', { total: targetBars });
+  if (loopCount === 0) return format('barCounter.idleWithInfiniteLoop', { total: targetBars });
+  return format('barCounter.idleWithLoop', { total: targetBars, loopTotal: loopCount });
+}
