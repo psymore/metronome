@@ -29,6 +29,7 @@ import { mountKnob } from './ui/knob';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountLanguageSwitch } from './ui/languageSwitch';
 import { mountPolyrhythmControls } from './ui/polyrhythmDialog';
+import { mountPracticeTimerDialog } from './ui/practiceTimerDialog';
 import { createPwaReloadHandler } from './ui/pwaReload';
 import { mountSettingsDialog } from './ui/settingsDialog';
 import { mountSignatureDialog } from './ui/signatureDialog';
@@ -501,7 +502,7 @@ mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
 mountPolyrhythmControls({ store, sounds, previewSound });
 mountBarCounterDialog({ store, toast });
-mountSettingsDialog({
+mountPracticeTimerDialog({
   store,
   onStartPractice: () => {
     if (engine.running) {
@@ -511,6 +512,7 @@ mountSettingsDialog({
     }
   },
 });
+mountSettingsDialog({ store });
 mountSoundDialog({ store, engine, sounds, library, previewSound, toast });
 mountLanguageSwitch({ store });
 mountInfoButtons(showInfo);

@@ -328,6 +328,12 @@ output {
 .label-sm {
   font-size: 9px;
 }
+/* Invisible placeholder the same height as .label under TAP (which has its text on the button
+   itself), so the Timer/Tap column is exactly as tall as the Signature/Sound column and
+   .controls' align-items: center keeps the buttons of both columns on the same rows. */
+.label-spacer {
+  height: 11px;
+}
 /* Locked to exactly one viewport height (dvh accounts for mobile browser chrome) and never
    scrolls. The stage row is the only flexible one (minmax(0, 1fr)): it absorbs whatever space
    the fixed-size rows around it (topbar, controls) don't need, so the visualiser shrinks
@@ -830,7 +836,8 @@ output {
   gap: 6px;
   width: 64px;
 }
-.col .label + .square-btn {
+.col .label + .square-btn,
+.col .label-spacer + .square-btn {
   margin-top: 10px;
 }
 .square-btn {
