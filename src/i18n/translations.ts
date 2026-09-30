@@ -125,6 +125,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'syncOffset.ariaLabel': 'Visual sync offset in milliseconds',
     'syncOffset.subLabel': 'Fixes flash/click lag',
     'syncOffset.hint': 'Delays visuals to match late audio (common on Bluetooth).',
+    'accentGain.label': 'Accent volume',
+    'accentGain.ariaLabel': 'Accent beat volume percent',
+    'mediumGain.label': 'Medium volume',
+    'mediumGain.ariaLabel': 'Medium beat volume percent',
+    'normalGain.label': 'Normal volume',
+    'normalGain.ariaLabel': 'Normal beat volume percent',
     'reset.button': 'Reset all settings',
     'reset.confirm': 'Click again to reset (your sounds are kept)',
     'shortcuts.hint':
@@ -285,6 +291,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'syncOffset.subLabel': 'Işık/ses kaymasını düzeltir',
     'syncOffset.hint':
       'Gecikmeli sesle eşleşmesi için görselleri geciktirir (Bluetooth’ta yaygın).',
+    'accentGain.label': 'Vurgu ses düzeyi',
+    'accentGain.ariaLabel': 'Vurgu vuruşu ses yüzdesi',
+    'mediumGain.label': 'Orta ses düzeyi',
+    'mediumGain.ariaLabel': 'Orta vuruş ses yüzdesi',
+    'normalGain.label': 'Normal ses düzeyi',
+    'normalGain.ariaLabel': 'Normal vuruş ses yüzdesi',
     'reset.button': 'Tüm ayarları sıfırla',
     'reset.confirm': 'Sıfırlamak için tekrar tıklayın (sesleriniz saklanır)',
     'shortcuts.hint':
