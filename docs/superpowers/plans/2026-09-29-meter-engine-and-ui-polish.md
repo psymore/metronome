@@ -200,6 +200,38 @@ Delete the `.seg-btn:active { transform: scale(0.95); }` rule and its comment. K
 3. Delete the two Roboto Mono `@font-face` blocks and `src/assets/fonts/roboto-mono/`. Grep
    docs (`platforms.md`, privacy policy) for "Roboto" and update.
 
+## Task 12: Themed sound picker (replace native `<select>`)
+
+**Files:** `src/ui/soundDialog.ts`, `src/ui/polyrhythmDialog.ts` (via the shared picker from Task 9),
+`index.html`, `src/styles.css`, `src/i18n/translations.ts`, maybe a new `src/ui/soundPicker.ts`.
+
+The current sound choosers (`accentSoundId`/`normalSoundId` in the Sounds dialog, `soundIdA`/
+`soundIdB` in the Polyrhythm dialog) are plain `<select>` elements. On mobile the OS renders its
+own light-themed list (see reference screenshot: white sheet, radio circles, "Built-in" group
+label, "No sounds added yet" row) which clashes with the app's dark panel chrome — everything
+around it is themed, the picker itself isn't.
+
+1. Build one shared custom listbox component (`openSoundPicker(...)` in a new `soundPicker.ts`,
+   or inline in `soundDialog.ts` if a shared module isn't warranted — decide once the existing
+   `.slot`/dialog structure from Task 9 is in place, since both dialogs must call the same thing).
+   It replaces the `<select>` visually but keeps the same data: grouped by `soundGroup.builtin` /
+   `soundGroup.yours` (existing i18n keys, reuse them), one row per sound with a radio-style
+   selected indicator, dark panel background matching the parent dialog (`--panel`, `--line`
+   borders, per-theme accent colour for the selected radio — teal/pink/whatever `--accent`
+   resolves to in the active theme), row dividers, and the empty-state row
+   (`soundList.empty` — "No sounds added yet.") when there are no custom sounds.
+2. Keep the underlying `<select>` in the DOM but visually hidden (`opacity:0`/off-screen, not
+   `display:none`) so existing keyboard/a11y/form semantics and the `change` event wiring in
+   `soundDialog.ts:150-153` keep working — the custom listbox opens on click/tap of the `.slot`
+   row, writes the choice back into the hidden `<select>` (`select.value = id; dispatch
+   'change'`), and closes. This avoids duplicating the `store.set` wiring.
+3. Open/close as a small popover or bottom-sheet anchored to the triggering row (match how other
+   in-app dialogs/popovers are already positioned — check `settingsDialog.ts` or the existing
+   dialog `<dialog>` pattern before inventing a new one). Dismiss on backdrop tap, `Escape`, and
+   selecting a row.
+4. Apply to all four sound slots (Sounds dialog's accent/normal, Polyrhythm dialog's A/B) so the
+   picker is visually consistent everywhere, per-theme. Verify in all 4 themes and at 320px width.
+
 ## Final check (after all tasks)
 
 `npm test`, `npm run lint`, `npm run build`. In `npm run dev` walk through: 4/4 → 6/8 → 12/8
