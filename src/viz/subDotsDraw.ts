@@ -1,7 +1,7 @@
 import { isSubOn } from '../state/settings';
 import { drawSubDot } from './drawNode';
 import type { VizFrame } from './frame';
-import { SUB_FAN_DOT_R, subDotLayout, subFanLayout } from './subDots';
+import { SUB_FAN_DOT_R, SUB_FAN_PAD, subDotLayout, subFanLayout } from './subDots';
 import type { VizTheme } from './types';
 
 function glowFor(frame: VizFrame, beat: number, k: number): number {
@@ -60,21 +60,21 @@ export function drawSubFan(
 
   ctx.save();
   ctx.globalAlpha = fan.frac;
-  const pad = SUB_FAN_DOT_R + 8;
-  const xs = fanned.map((p) => p.x);
-  const ys = fanned.map((p) => p.y);
-  const minX = Math.min(...xs) - pad;
-  const maxX = Math.max(...xs) + pad;
-  const minY = Math.min(...ys) - pad;
-  const maxY = Math.max(...ys) + pad;
-  const radius = SUB_FAN_DOT_R + 8;
+  // A capsule along the fan's row (which runs along the group's tangent, so it tilts with it on
+  // the circle), SUB_FAN_PAD past the end dots' centers.
+  const first = fanned[0] ?? group;
+  const last = fanned[fanned.length - 1] ?? group;
+  const length = Math.hypot(last.x - first.x, last.y - first.y);
+  ctx.translate((first.x + last.x) / 2, (first.y + last.y) / 2);
+  ctx.rotate(Math.atan2(group.ty, group.tx));
   ctx.beginPath();
-  ctx.moveTo(minX + radius, minY);
-  ctx.arcTo(maxX, minY, maxX, maxY, radius);
-  ctx.arcTo(maxX, maxY, minX, maxY, radius);
-  ctx.arcTo(minX, maxY, minX, minY, radius);
-  ctx.arcTo(minX, minY, maxX, minY, radius);
-  ctx.closePath();
+  ctx.roundRect(
+    -length / 2 - SUB_FAN_PAD,
+    -SUB_FAN_PAD,
+    length + 2 * SUB_FAN_PAD,
+    2 * SUB_FAN_PAD,
+    SUB_FAN_PAD,
+  );
   ctx.fillStyle = 'rgb(0 0 0 / 0.55)';
   ctx.fill();
   ctx.strokeStyle = theme.ring;

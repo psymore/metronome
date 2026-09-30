@@ -13,6 +13,8 @@ export const SUB_TAP_MIN_SPACING = 32;
 /** Center-to-center spacing of an open fan's row of dots. */
 export const SUB_FAN_PITCH = 44;
 export const SUB_FAN_DOT_R = 11;
+/** The open fan's backdrop pill extends this far past its end dots' centers, all round. */
+export const SUB_FAN_PAD = SUB_FAN_DOT_R + 8;
 /** Distance from the group's in-place midpoint to the fan row's center, along its normal. */
 export const SUB_FAN_OFFSET = 46;
 
@@ -147,7 +149,7 @@ export function subDotLayout(
 
 /** Lays `clicks` fan dots out `SUB_FAN_PITCH` apart along the group's tangent, centered on the
  *  point offset `SUB_FAN_OFFSET` from the group along its normal, then shifts the whole row so
- *  every dot stays within the canvas. */
+ *  every dot, and the backdrop pill around it, stays within the canvas. */
 export function subFanLayout(
   group: SubGroup,
   clicks: number,
@@ -166,7 +168,7 @@ export function subFanLayout(
   const maxX = Math.max(...points.map((p) => p.x));
   const minY = Math.min(...points.map((p) => p.y));
   const maxY = Math.max(...points.map((p) => p.y));
-  const pad = SUB_FAN_DOT_R + 4;
+  const pad = SUB_FAN_PAD;
   let dx = 0;
   let dy = 0;
   if (minX < pad) dx = pad - minX;
