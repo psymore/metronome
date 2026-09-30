@@ -1172,8 +1172,6 @@ html.depth-25d .knob {
   color: var(--text);
   box-shadow: 20px 0 60px rgb(0 0 0 / 0.6);
   overflow: hidden;
-  /* Vertical scrolling stays native; horizontal moves reach menuDrawer.ts's swipe-to-close. */
-  touch-action: pan-y;
 }
 .drawer[open] {
   animation: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1191,6 +1189,12 @@ html.depth-25d .knob {
   height: 100%;
   overflow-y: auto;
   padding: max(18px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+  /* Vertical scrolling stays native; horizontal moves reach menuDrawer.ts's swipe-to-close.
+     This has to sit on .drawer-body, not .drawer: touch-action is only honored on elements
+     between the touched point and its nearest scroll-container ancestor, and .drawer-body
+     (overflow-y: auto) is that ancestor for every touch inside the drawer — .drawer itself is
+     never consulted. */
+  touch-action: pan-y;
 }
 .drawer-link {
   display: block;
