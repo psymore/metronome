@@ -15,6 +15,7 @@ import {
   resizePolyLevels,
   type Settings,
   saveSettings,
+  toggleSub,
 } from './state/settings';
 import { createStore } from './state/store';
 import { mountBarCounterDialog } from './ui/barCounterDialog';
@@ -213,6 +214,11 @@ const viz = new VizController(
     store.set({ polyrhythm: { ...p, ...(layer === 'A' ? { levelsA: next } : { levelsB: next }) } });
   },
   (err) => errorFloor.report(err),
+  (beat, k) => {
+    const s = store.get();
+    const sub = patternFromSettings(s).subdivision;
+    store.set({ subOff: toggleSub(s.subOff, s.beatsPerBar, sub, beat, k) });
+  },
 );
 store.subscribe(() => viz.invalidate());
 // Keep per-node level arrays sized to the ratio: growing adds default entries, shrinking trims.
