@@ -10,7 +10,7 @@ import {
 } from '../state/settings';
 import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
-import { glowIntensity } from '../viz/geometry';
+import { glowIntensity, MUTE_GLOW_SCALE } from '../viz/geometry';
 import { readTheme } from '../viz/vizController';
 import { createConfirmGate } from './confirmGate';
 import { byId, updateRangeFill } from './dom';
@@ -271,7 +271,8 @@ export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
     ctx.clearRect(0, 0, width, height);
     for (const [i, level] of NODE_STYLE_PREVIEW_LEVELS.entries()) {
       const cx = cell * i + cell / 2;
-      const nodeGlow = level === 'mute' ? 0 : glow;
+      // Same damped mute glow the real visualiser uses (frame.ts), so the preview matches it.
+      const nodeGlow = level === 'mute' ? glow * MUTE_GLOW_SCALE : glow;
       drawNode(ctx, cx, height / 2, cell * 0.38, level, nodeGlow, theme, style);
     }
   };
