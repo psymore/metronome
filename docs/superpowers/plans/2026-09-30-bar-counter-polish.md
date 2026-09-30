@@ -12,6 +12,12 @@
 
 **Tech Stack:** TypeScript, Vite, Vitest, Biome. No new dependencies.
 
+## Execution split (run one after the other in this folder, never at the same time)
+- **Part A, Haiku:** Tasks 1, 2, 5, 6, in that order. Create branch `bar-counter-polish` from `master`. Skip Task 4 entirely, including the FOLLOWUP update.
+- **Part B, Sonnet:** starts after Part A is committed, on the same branch.
+  - Review Part A briefly: `git log master..`, `npm test`, `npm run lint`, `npm run build`. Fix anything broken.
+  - Then do Tasks 3 and 4. Task 4's FOLLOWUP checklist covers all six tasks.
+
 ## Global Constraints
 - Every user-visible string goes in `src/i18n/translations.ts`, in both `en` and `tr`.
 - Files must use LF line endings. Biome rejects CRLF, so run `npm run format` before committing.
