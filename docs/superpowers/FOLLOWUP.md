@@ -4,9 +4,23 @@ If you are a fresh session: read `CLAUDE.md` first, then this file, then act on 
 
 ## Where things stand (2026-09-30)
 
-`master` = `c6ec1b1`, unchanged this session. This session's work lives on local branch
-`settings-to-header` (12 commits ahead of `master`, **not merged, not pushed**). No worktree is
+`master` = `origin/master` = `d7fc551`, pushed 2026-09-30; Vercel auto-deploys it. Branch
+`settings-to-header` was fast-forward merged into `master` (it can be deleted). No worktree is
 open.
+
+After the review below, a follow-up round on the same branch (`d7fc551`, one commit) added:
+- a steeper hold-to-repeat ramp for the BPM ± nudges (`mountHoldRepeat` gained an optional
+  `intervalFor`)
+- the bar-counter pill reverted to a plain, fully-in-front pill (the `444c1a7` half-border
+  treatment removed)
+- a live 1:1 drag for the drawer's swipe-to-close (commits past 50% of its width, otherwise snaps
+  back), with animated close/snap and a reduced-motion path that skips the animations
+- the `.header-btn` hit area moved to `::before` (the global `button:active::after` press glow
+  was shrinking it)
+- a one-time knob rotation hint (`src/ui/knobHint.ts`, `localStorage` key `knobHintShown`)
+- the knob indicator moved inward, the Sound dialog's Volume relabelled "Master Volume" /
+  "Ana Ses Düzeyi"
+- `.gitignore` ignoring root-level `/*.png` screenshots
 
 ### Done this session
 
@@ -75,8 +89,6 @@ skill (inline, no worktree, per this repo's standing instructions below), on bra
   new Timer button. The Settings dialog and its `#settingsBtn`/`settingsDialog.title` i18n keys no
   longer exist.
 - A bottom tab bar is not planned — the ☰ drawer is the app's only "everything else" surface.
-- Full decision ledger is at `.superpowers/sdd/2026-09-30-settings-to-header/progress.md`; delete
-  that workspace once the branch is merged.
 
 ### Standing instructions from previous sessions (apply going forward)
 
@@ -118,7 +130,7 @@ Check the plan's own checkboxes rather than trusting this summary.
   user's Xiaomi Redmi Note 10 Pro with a sideloaded release-signed APK
   (`android/app-release-signed.apk`, gitignored). **No signed AAB exists yet** — build
   `bundleRelease` + jarsigner per `docs/architecture/platforms.md` before uploading. Build the AAB
-  from `master` after `settings-to-header` (and any other pending branches) are merged.
+  from `master`.
 - Notifications are off (2026-09-29): `enableNotifications: false` in `twa-manifest.json` and
   `app/build.gradle`, `POST_NOTIFICATIONS` + `NotificationPermissionRequestActivity` removed from
   `AndroidManifest.xml` — matches the privacy policy's "no runtime permissions". The sideloaded
@@ -166,17 +178,17 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. **User reviews `settings-to-header` on their phone** (Network URL): confirm swipe-to-close and
-   the Back gesture both close the drawer (the swipe fix above was only verified with CDP touch
-   emulation, not a real device), and decide whether the 320px `.seg` overflow (see "One finding,
-   not fixed" above) needs a fix before merge.
-2. Once satisfied, merge `settings-to-header` to `master` via
-   `superpowers:finishing-a-development-branch` (or the user's own preferred flow) and delete
-   `.superpowers/sdd/2026-09-30-settings-to-header/`.
-3. Once merged and the Play Console account exists: build the unsigned AAB
-   (`gradlew bundleRelease`), the user signs it with jarsigner in their own terminal, then uploads
-   it to closed testing.
-4. After upload: Play App Signing fingerprint → `assetlinks.json`.
+1. User checks the live site on their phone: drawer swipe/Back-gesture close on a real device, and
+   whether the 320px `.seg` overflow (see "One finding, not fixed" above) needs a fix.
+2. Play Console (user, account opening ~2026-10-01/02): identity verification, store listing
+   (512px icon, 1024×500 feature graphic, ≥2 phone screenshots, TR/EN short+long description —
+   the agent can draft copy and take screenshots), Data safety ("no data collected"), content
+   rating, target audience 13+ (avoid the Families program), no ads, no login.
+3. Once the account exists: build the unsigned AAB (`gradlew bundleRelease`) from `master`, the
+   user signs it with jarsigner in their own terminal, then uploads it to closed testing.
+4. Right after the first upload, before inviting testers: Play App Signing fingerprint →
+   `assetlinks.json`. The user must uninstall the sideloaded APK before installing from Play
+   (different signing key).
 5. Help the user line up 12+ testers for the 14-day closed test.
 6. iOS: wait for the user's decision; don't start a wrapper unilaterally.
 
