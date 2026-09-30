@@ -1,7 +1,7 @@
 import { beatPhase } from '../engine/beatTimeline';
 import type { BeatEvent } from '../engine/scheduler';
 import type { BeatLevel } from '../state/settings';
-import { GLOW_SECONDS, glowIntensity } from './geometry';
+import { GLOW_SECONDS, glowIntensity, MUTE_GLOW_SCALE } from './geometry';
 
 export interface VizFrame {
   running: boolean;
@@ -47,7 +47,7 @@ export function computeFrame(input: FrameInput): VizFrame {
     levels: input.levels,
     activeBeat: beat.beatInBar,
     phase: beatPhase(beat, input.heardTime),
-    glow: beat.level === 'mute' ? glow * 0.25 : glow,
+    glow: beat.level === 'mute' ? glow * MUTE_GLOW_SCALE : glow,
     reducedMotion: input.reducedMotion,
   };
 }

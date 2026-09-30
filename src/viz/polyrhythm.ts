@@ -1,5 +1,6 @@
 import type { BeatLevel, NodeStyleName } from '../state/settings';
 import { drawNode } from './drawNode';
+import { MUTE_GLOW_SCALE } from './geometry';
 import { type NodeSprites, spriteSize } from './nodeSprite';
 import { darken, getNodeStyleKit, lighten, metalDisc } from './nodeStyleKit';
 import type { PolyFrame } from './polyFrame';
@@ -247,7 +248,7 @@ function drawLayer(
     // A muted beat still gets a (quieter) hit glow instead of none at all — matching standard
     // mode's frame.ts, which damps mute to 25% rather than zeroing it — so muted beats read as
     // "ticking silently" instead of completely inert here too.
-    const g = isActive ? (configured === 'mute' ? glow * 0.25 : glow) : 0;
+    const g = isActive ? (configured === 'mute' ? glow * MUTE_GLOW_SCALE : glow) : 0;
     const label = String(i + 1);
     if (g === 0) {
       // Position, not look, is all that changes for a mid-split node — the cached idle sprite is

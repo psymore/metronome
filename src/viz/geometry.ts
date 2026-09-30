@@ -31,6 +31,10 @@ export function linearStickX(
   return left + (width * (beatInBar + phase)) / count;
 }
 
+/** How much of the hit glow a muted beat still gets: damped, not zeroed, so a muted beat reads as
+ *  "ticking silently" rather than completely inert. */
+export const MUTE_GLOW_SCALE = 0.25;
+
 /** 1 at the beat, fading quadratically to 0 at `decay` seconds. */
 export function glowIntensity(sinceBeat: number, decay = GLOW_SECONDS): number {
   if (sinceBeat < 0 || sinceBeat >= decay) return 0;

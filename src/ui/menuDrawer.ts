@@ -10,7 +10,7 @@ import {
 } from '../state/settings';
 import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
-import { glowIntensity } from '../viz/geometry';
+import { glowIntensity, MUTE_GLOW_SCALE } from '../viz/geometry';
 import { readTheme } from '../viz/vizController';
 import { createConfirmGate } from './confirmGate';
 import { byId, updateRangeFill } from './dom';
@@ -271,7 +271,8 @@ export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
     ctx.clearRect(0, 0, width, height);
     for (const [i, level] of NODE_STYLE_PREVIEW_LEVELS.entries()) {
       const cx = cell * i + cell / 2;
-      const nodeGlow = level === 'mute' ? 0 : glow;
+      // Same damped mute glow the real visualiser uses (frame.ts), so the preview matches it.
+      const nodeGlow = level === 'mute' ? glow * MUTE_GLOW_SCALE : glow;
       drawNode(ctx, cx, height / 2, cell * 0.38, level, nodeGlow, theme, style);
     }
   };
@@ -281,17 +282,33 @@ export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
 
   /** Tapping a preview plays the same hit-glow the real visualiser uses, so it's an interactive
    *  sample of the style (not just a picture) — you can feel how "hit" reads before picking it. */
+  // One running flash per canvas: a re-tap restarts its clock instead of stacking a second rAF
+  // loop. null = restart on the next frame.
+  const flashStarts = new Map<HTMLCanvasElement, number | null>();
   const flashNodeStylePreview = (canvas: HTMLCanvasElement): void => {
-    const start = performance.now();
+    const running = flashStarts.has(canvas);
+    flashStarts.set(canvas, null);
+    if (running) return;
     const tick = (now: number): void => {
+      // The clock starts at the first frame's own timestamp, not performance.now() at click
+      // time: Chrome aligns input to rAF, so that frame's timestamp can predate the click
+      // handler, glowIntensity() reads the negative age as 0 and the flash ended before it
+      // started — which is why some taps didn't light up at all.
+      let start = flashStarts.get(canvas);
+      if (start == null) {
+        start = now;
+        flashStarts.set(canvas, now);
+      }
       const glow = glowIntensity((now - start) / 1000);
       paintNodeStylePreview(canvas, glow);
       if (glow > 0) requestAnimationFrame(tick);
+      else flashStarts.delete(canvas);
     };
     requestAnimationFrame(tick);
   };
+  // The whole chip triggers it, not just the canvas, so any tap on a Beat style option flashes.
   for (const canvas of nodeStylePreviews) {
-    canvas.addEventListener('click', () => flashNodeStylePreview(canvas));
+    canvas.closest('button')?.addEventListener('click', () => flashNodeStylePreview(canvas));
   }
 
   const render = (s: Settings) => {
