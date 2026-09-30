@@ -108,8 +108,14 @@ const engine = new AudioEngine({
   getPolyPattern: () => store.get(),
 });
 engine.setVolume(store.get().volume);
+engine.setAccentGain(store.get().accentGain);
+engine.setMediumGain(store.get().mediumGain);
+engine.setNormalGain(store.get().normalGain);
 store.subscribe((s, prev) => {
   if (s.volume !== prev.volume) engine.setVolume(s.volume);
+  if (s.accentGain !== prev.accentGain) engine.setAccentGain(s.accentGain);
+  if (s.mediumGain !== prev.mediumGain) engine.setMediumGain(s.mediumGain);
+  if (s.normalGain !== prev.normalGain) engine.setNormalGain(s.normalGain);
 });
 
 const sounds = new SoundStore();

@@ -39,6 +39,11 @@ export class AudioEngine {
   /** The last volume `setVolume` was given, so `recoverContext()`'s fresh master gain starts at
    *  the user's actual setting instead of the node default of 1.0 (full volume). */
   private volume = 1;
+  /** Per-level gains for the main scheduler's beats, kept in sync with Settings by the caller
+   *  (see `setVolume`'s pattern). Defaults match the pre-slider hardcoded mix. */
+  private accentGain = 1;
+  private mediumGain = 0.6;
+  private normalGain = 1;
 
   constructor(opts: AudioEngineOptions) {
     this.getPolyPattern = opts.getPolyPattern;
@@ -191,6 +196,18 @@ export class AudioEngine {
     this.master.gain.setTargetAtTime(volume, this.ctx.currentTime, 0.01);
   }
 
+  setAccentGain(gain: number): void {
+    this.accentGain = gain;
+  }
+
+  setMediumGain(gain: number): void {
+    this.mediumGain = gain;
+  }
+
+  setNormalGain(gain: number): void {
+    this.normalGain = gain;
+  }
+
   setSound(slot: SoundSlot, pcm: PcmData): void {
     this.buffers[slot] = this.toBuffer(pcm);
   }
@@ -237,23 +254,21 @@ export class AudioEngine {
     if (!buffer) return;
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
-    if (beat.level === 'medium') {
-      const gain = this.ctx.createGain();
-      gain.gain.value = 0.6; // tuned by ear: between mute (0) and a full accent (1)
-      source.connect(gain);
-      gain.connect(this.master);
-      source.onended = () => {
-        this.active.delete(source);
-        source.disconnect();
-        gain.disconnect();
-      };
-    } else {
-      source.connect(this.master);
-      source.onended = () => {
-        this.active.delete(source);
-        source.disconnect();
-      };
-    }
+    const levelGain =
+      beat.level === 'accent'
+        ? this.accentGain
+        : beat.level === 'medium'
+          ? this.mediumGain
+          : this.normalGain;
+    const gain = this.ctx.createGain();
+    gain.gain.value = levelGain;
+    source.connect(gain);
+    gain.connect(this.master);
+    source.onended = () => {
+      this.active.delete(source);
+      source.disconnect();
+      gain.disconnect();
+    };
     this.active.add(source);
     source.start(beat.time);
   }
