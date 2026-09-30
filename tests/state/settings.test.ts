@@ -387,8 +387,14 @@ describe('subdivision pattern (subOff)', () => {
   });
 
   it('passes the pattern to the scheduler, and none in a compound meter', () => {
-    const s = { ...defaultSettings(), subdivision: 2 as const, subOff: [true, false, false, false] };
+    const s = {
+      ...defaultSettings(),
+      subdivision: 2 as const,
+      subOff: [true, false, false, false],
+    };
     expect(patternFromSettings(s).subOff).toEqual([true, false, false, false]);
-    expect(patternFromSettings({ ...s, ...withSignature(6, 8), subOff: [true] }).subOff).toEqual([]);
+    expect(patternFromSettings({ ...s, ...withSignature(6, 8), subOff: [true] }).subOff).toEqual(
+      [],
+    );
   });
 });

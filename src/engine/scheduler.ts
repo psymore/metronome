@@ -1,4 +1,4 @@
-import { isSubOn, type BeatLevel } from '../state/settings';
+import { type BeatLevel, isSubOn } from '../state/settings';
 import { secondsPerBeat } from './timing';
 
 export interface BeatEvent {

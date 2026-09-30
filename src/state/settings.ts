@@ -264,7 +264,9 @@ export function toggleSub(
 }
 
 /** A subdivision change resets the on/off pattern (its layout just changed). */
-export function withSubdivision(subdivision: Subdivision): Pick<Settings, 'subdivision' | 'subOff'> {
+export function withSubdivision(
+  subdivision: Subdivision,
+): Pick<Settings, 'subdivision' | 'subOff'> {
   return { subdivision, subOff: [] };
 }
 
