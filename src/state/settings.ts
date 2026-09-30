@@ -56,6 +56,10 @@ export interface Settings {
   practiceSeconds: number;
   /** Clicks per beat: 1 = off, 2/3/4 = 8th/triplet/16th subdivision clicks. */
   subdivision: Subdivision;
+  /** Subdivision clicks switched off, flat, index `beat * (subdivision − 1) + (k − 1)` for click
+   *  k (1..subdivision−1) after beat `beat`. Missing entries are on; reset to [] on any signature
+   *  or subdivision change. */
+  subOff: boolean[];
   language: Language;
   /** Tilted, cylindrical 3D shape for the BPM knob instead of a flat disc. */
   depth25d: boolean;
@@ -94,6 +98,7 @@ export const DEFAULT_SETTINGS: Settings = {
   loopCount: 1,
   practiceSeconds: 0,
   subdivision: 1,
+  subOff: [],
   language: 'en',
   depth25d: false,
   polyrhythm: {
@@ -118,7 +123,7 @@ export function resizePolyLevels(levels: readonly BeatLevel[], n: number): BeatL
 }
 
 export function defaultSettings(): Settings {
-  return { ...DEFAULT_SETTINGS, levels: [...DEFAULT_SETTINGS.levels] };
+  return { ...DEFAULT_SETTINGS, levels: [...DEFAULT_SETTINGS.levels], subOff: [] };
 }
 
 export function isBeatLevel(v: unknown): v is BeatLevel {
@@ -172,6 +177,7 @@ export function patternFromSettings(s: Settings): Pattern {
     levels: s.levels,
     subdivision: compound ? 1 : s.subdivision,
     pulsesPerBeat: compound ? 3 : 1,
+    subOff: compound ? [] : s.subOff,
   };
 }
 
@@ -234,14 +240,42 @@ export function cycleBeatLevel(levels: readonly BeatLevel[], index: number): Bea
   return next;
 }
 
+/** Whether subdivision click k (1..sub−1) after beat `beat` plays. Out of range = on. */
+export function isSubOn(subOff: readonly boolean[], sub: number, beat: number, k: number): boolean {
+  if (sub <= 1 || k < 1 || k >= sub) return true;
+  return subOff[beat * (sub - 1) + (k - 1)] !== true;
+}
+
+/** Flips one subdivision click, returning a full-length array for the current layout. */
+export function toggleSub(
+  subOff: readonly boolean[],
+  beatsPerBar: number,
+  sub: number,
+  beat: number,
+  k: number,
+): boolean[] {
+  const size = beatsPerBar * Math.max(0, sub - 1);
+  const next = Array.from({ length: size }, (_, i) => subOff[i] === true);
+  if (sub > 1 && beat >= 0 && beat < beatsPerBar && k >= 1 && k < sub) {
+    const i = beat * (sub - 1) + (k - 1);
+    next[i] = !next[i];
+  }
+  return next;
+}
+
+/** A subdivision change resets the on/off pattern (its layout just changed). */
+export function withSubdivision(subdivision: Subdivision): Pick<Settings, 'subdivision' | 'subOff'> {
+  return { subdivision, subOff: [] };
+}
+
 /** A signature change (preset, beats +/-, note-value chip) resets accents to the meter's
  *  accent profile; per-beat taps afterwards are kept until the next signature change. */
 export function withSignature(
   beatsPerBar: number,
   beatUnit: BeatUnit,
-): Pick<Settings, 'beatsPerBar' | 'beatUnit' | 'levels'> {
+): Pick<Settings, 'beatsPerBar' | 'beatUnit' | 'levels' | 'subOff'> {
   const clamped = Math.min(MAX_BEATS, Math.max(MIN_BEATS, Math.round(beatsPerBar)));
-  return { beatsPerBar: clamped, beatUnit, levels: accentProfile(clamped, beatUnit) };
+  return { beatsPerBar: clamped, beatUnit, levels: accentProfile(clamped, beatUnit), subOff: [] };
 }
 
 /** Clamps a song-length-in-bars value; 0 means no target. */
@@ -313,6 +347,13 @@ export function sanitizeSettings(raw: unknown): Settings {
         ? r.practiceMinutes * 60
         : d.practiceSeconds,
     subdivision: isSubdivision(r.subdivision) ? r.subdivision : d.subdivision,
+    subOff: (() => {
+      const sub = isSubdivision(r.subdivision) ? r.subdivision : d.subdivision;
+      const expected = beatsPerBar * (sub - 1);
+      return Array.isArray(r.subOff) && r.subOff.length === expected
+        ? r.subOff.map((v) => v === true)
+        : [];
+    })(),
     language: isLanguage(r.language) ? r.language : d.language,
     depth25d: typeof r.depth25d === 'boolean' ? r.depth25d : d.depth25d,
     polyrhythm: (() => {

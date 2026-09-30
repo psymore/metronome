@@ -23,6 +23,8 @@ export interface Pattern {
   /** Pulses per felt beat: 1 for simple meters, 3 for compound meters (BPM is the dotted quarter,
    *  each pulse an eighth). */
   pulsesPerBeat: 1 | 3;
+  /** Subdivision clicks switched off (see Settings.subOff); missing = on. */
+  subOff?: readonly boolean[];
 }
 
 export interface SchedulerOptions {

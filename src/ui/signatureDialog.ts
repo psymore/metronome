@@ -4,6 +4,7 @@ import {
   isSubdivision,
   type Settings,
   withSignature,
+  withSubdivision,
 } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
@@ -58,7 +59,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   for (const button of subdivisionButtons) {
     button.addEventListener('click', () => {
       const subdivision = Number(button.dataset.subdivision);
-      if (isSubdivision(subdivision)) store.set({ subdivision });
+      if (isSubdivision(subdivision)) store.set(withSubdivision(subdivision));
     });
   }
 
