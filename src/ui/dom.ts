@@ -13,3 +13,13 @@ export function closeOnBackdropClick(dialog: HTMLDialogElement): void {
     if (event.target === dialog) dialog.close();
   });
 }
+
+/** Reflects a range input's value as a left-filled/right-empty track (Chrome/WebKit have no
+ *  native ::-webkit-slider-progress, unlike Firefox's ::-moz-range-progress already used in
+ *  styles.css — this custom property drives the same gradient there). */
+export function updateRangeFill(input: HTMLInputElement): void {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const percent = ((Number(input.value) - min) / (max - min)) * 100;
+  input.style.setProperty('--range-fill', `${percent}%`);
+}

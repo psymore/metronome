@@ -6,7 +6,7 @@ import type { SoundMeta, SoundStore } from '../sounds/soundStore';
 import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
-import { byId, closeOnBackdropClick } from './dom';
+import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
 import { mountSoundPicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 import type { Toast } from './toast';
@@ -45,6 +45,12 @@ export function mountSoundDialog({
     byId<HTMLButtonElement>('normalSelectTrigger'),
     'otherBeats.label',
   );
+  const accentGainInput = byId<HTMLInputElement>('accentGainInput');
+  const accentGainValue = byId<HTMLInputElement>('accentGainValue');
+  const mediumGainInput = byId<HTMLInputElement>('mediumGainInput');
+  const mediumGainValue = byId<HTMLInputElement>('mediumGainValue');
+  const normalGainInput = byId<HTMLInputElement>('normalGainInput');
+  const normalGainValue = byId<HTMLInputElement>('normalGainValue');
   const fileInput = byId<HTMLInputElement>('soundFile');
   const dropZone = byId('dropZone');
   const list = byId('userSounds');
@@ -118,9 +124,23 @@ export function mountSoundDialog({
     );
   }
 
+  function renderGain(input: HTMLInputElement, valueInput: HTMLInputElement, gain: number): void {
+    const percent = Math.round(gain * 100);
+    input.value = String(percent);
+    valueInput.value = String(percent);
+    updateRangeFill(input);
+  }
+
+  function renderGains(s: Settings): void {
+    renderGain(accentGainInput, accentGainValue, s.accentGain);
+    renderGain(mediumGainInput, mediumGainValue, s.mediumGain);
+    renderGain(normalGainInput, normalGainValue, s.normalGain);
+  }
+
   function render(s: Settings): void {
     fillSelect(selects.accentSoundId, s.accentSoundId);
     fillSelect(selects.normalSoundId, s.normalSoundId);
+    renderGains(s);
     renderList();
   }
 
@@ -166,6 +186,27 @@ export function mountSoundDialog({
       store.set({ [key]: selects[key].value } as Partial<Settings>);
     });
   }
+
+  /** Wires a 0-100% range+number pair to one gain field, same pattern the app already uses for
+   *  Volume/Visual sync offset in the Settings dialog. */
+  function mountGainSlider(
+    input: HTMLInputElement,
+    valueInput: HTMLInputElement,
+    key: 'accentGain' | 'mediumGain' | 'normalGain',
+  ): void {
+    input.addEventListener('input', () => {
+      store.set({ [key]: Number(input.value) / 100 });
+      updateRangeFill(input);
+    });
+    valueInput.addEventListener('input', () => {
+      if (valueInput.value === '') return;
+      const percent = Math.min(100, Math.max(0, Number(valueInput.value)));
+      store.set({ [key]: percent / 100 });
+    });
+  }
+  mountGainSlider(accentGainInput, accentGainValue, 'accentGain');
+  mountGainSlider(mediumGainInput, mediumGainValue, 'mediumGain');
+  mountGainSlider(normalGainInput, normalGainValue, 'normalGain');
   for (const button of dialog.querySelectorAll<HTMLButtonElement>('[data-preview]')) {
     button.addEventListener('click', () => {
       const key = button.dataset.preview as SlotKey;
@@ -202,5 +243,11 @@ export function mountSoundDialog({
 
   store.subscribe((s, prev) => {
     if (s.accentSoundId !== prev.accentSoundId || s.normalSoundId !== prev.normalSoundId) render(s);
+    else if (
+      s.accentGain !== prev.accentGain ||
+      s.mediumGain !== prev.mediumGain ||
+      s.normalGain !== prev.normalGain
+    )
+      renderGains(s);
   });
 }

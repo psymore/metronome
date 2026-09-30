@@ -566,18 +566,6 @@
           <button type="button" class="info-btn" data-i18n-aria-label="beats.hint" data-i18n-title="beats.hint" aria-label="Cycles accent → normal → mute here and on the visualiser." title="Cycles accent → normal → mute here and on the visualiser.">i</button>
         </div>
       </div>
-      <label class="field">
-        <span><span data-i18n="accentGain.label">Accent volume</span> <span class="field-value"><input type="number" id="accentGainValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="100" data-i18n-aria-label="accentGain.ariaLabel" aria-label="Accent beat volume percent" />%</span></span>
-        <input id="accentGainInput" type="range" min="0" max="100" step="1" />
-      </label>
-      <label class="field">
-        <span><span data-i18n="mediumGain.label">Medium volume</span> <span class="field-value"><input type="number" id="mediumGainValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="60" data-i18n-aria-label="mediumGain.ariaLabel" aria-label="Medium beat volume percent" />%</span></span>
-        <input id="mediumGainInput" type="range" min="0" max="100" step="1" />
-      </label>
-      <label class="field">
-        <span><span data-i18n="normalGain.label">Normal volume</span> <span class="field-value"><input type="number" id="normalGainValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="100" data-i18n-aria-label="normalGain.ariaLabel" aria-label="Normal beat volume percent" />%</span></span>
-        <input id="normalGainInput" type="range" min="0" max="100" step="1" />
-      </label>
       <div class="field">
         <span>
           <span data-i18n="haptics.label">Vibrate on beat</span>
@@ -642,7 +630,16 @@
           <select id="accentSelect" class="native-select sound-picker-select" tabindex="-1" aria-hidden="true"></select>
           <button type="button" class="small-btn" data-preview="accentSoundId" data-i18n-aria-label="accent.previewAriaLabel" aria-label="Preview accent sound">▶</button>
         </div>
+        <label class="field">
+          <span><span data-i18n="accentGain.label">Accent volume</span> <span class="field-value"><input type="number" id="accentGainValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="100" data-i18n-aria-label="accentGain.ariaLabel" aria-label="Accent beat volume percent" />%</span></span>
+          <input id="accentGainInput" type="range" min="0" max="100" step="1" data-i18n-aria-label="accentGain.ariaLabel" aria-label="Accent beat volume percent" />
+        </label>
       </div>
+      <label class="field">
+        <span><span data-i18n="mediumGain.label">Medium volume</span> <span class="field-value"><input type="number" id="mediumGainValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="60" data-i18n-aria-label="mediumGain.ariaLabel" aria-label="Medium beat volume percent" />%</span></span>
+        <input id="mediumGainInput" type="range" min="0" max="100" step="1" data-i18n-aria-label="mediumGain.ariaLabel" aria-label="Medium beat volume percent" />
+        <p class="sub-label" data-i18n="mediumGain.subLabel">Uses the Accent sound</p>
+      </label>
       <div class="slot">
         <label for="normalSelectTrigger" data-i18n="otherBeats.label">Other beats</label>
         <div class="slot-row">
@@ -650,6 +647,10 @@
           <select id="normalSelect" class="native-select sound-picker-select" tabindex="-1" aria-hidden="true"></select>
           <button type="button" class="small-btn" data-preview="normalSoundId" data-i18n-aria-label="otherBeats.previewAriaLabel" aria-label="Preview beat sound">▶</button>
         </div>
+        <label class="field">
+          <span><span data-i18n="normalGain.label">Normal volume</span> <span class="field-value"><input type="number" id="normalGainValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="100" data-i18n-aria-label="normalGain.ariaLabel" aria-label="Normal beat volume percent" />%</span></span>
+          <input id="normalGainInput" type="range" min="0" max="100" step="1" data-i18n-aria-label="normalGain.ariaLabel" aria-label="Normal beat volume percent" />
+        </label>
       </div>
       <div id="dropZone" class="drop-zone">
         <p data-i18n="dropZone.text">Drop audio files here, or</p>

@@ -151,6 +151,9 @@ describe('sanitizeSettings', () => {
       bpm: 77,
       syncOffsetMs: -35,
       volume: 0.3,
+      accentGain: 0.25,
+      mediumGain: 0.4,
+      normalGain: 0.7,
       accentSoundId: 'user:abc',
       theme: 'blue' as const,
     };

@@ -14,7 +14,7 @@ import { drawNode } from '../viz/drawNode';
 import { glowIntensity } from '../viz/geometry';
 import { readTheme } from '../viz/vizController';
 import { createConfirmGate } from './confirmGate';
-import { byId, closeOnBackdropClick } from './dom';
+import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
 
 export interface SettingsDialogDeps {
@@ -25,16 +25,6 @@ export interface SettingsDialogDeps {
 
 /** Seconds a single tap (or hold-repeat tick) of the practice timer's +/- buttons moves by. */
 const PRACTICE_STEP_SECONDS = 15;
-
-/** Reflects a range input's value as a left-filled/right-empty track (Chrome/WebKit have no
- *  native ::-webkit-slider-progress, unlike Firefox's ::-moz-range-progress already used in
- *  styles.css — this custom property drives the same gradient there). */
-function updateRangeFill(input: HTMLInputElement): void {
-  const min = Number(input.min);
-  const max = Number(input.max);
-  const percent = ((Number(input.value) - min) / (max - min)) * 100;
-  input.style.setProperty('--range-fill', `${percent}%`);
-}
 
 export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('settingsDialog');
@@ -48,12 +38,6 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const practiceTimerApply = byId<HTMLButtonElement>('practiceTimerApply');
   const offsetInput = byId<HTMLInputElement>('offsetInput');
   const offsetValue = byId<HTMLInputElement>('offsetValue');
-  const accentGainInput = byId<HTMLInputElement>('accentGainInput');
-  const accentGainValue = byId<HTMLInputElement>('accentGainValue');
-  const mediumGainInput = byId<HTMLInputElement>('mediumGainInput');
-  const mediumGainValue = byId<HTMLInputElement>('mediumGainValue');
-  const normalGainInput = byId<HTMLInputElement>('normalGainInput');
-  const normalGainValue = byId<HTMLInputElement>('normalGainValue');
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
   const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
   const beatRow = byId('beatRow');
@@ -128,26 +112,6 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     );
     store.set({ syncOffsetMs: ms });
   });
-
-  /** Wires a 0-100% range+number pair to one gain field, same pattern as Volume above. */
-  const mountGainSlider = (
-    input: HTMLInputElement,
-    valueInput: HTMLInputElement,
-    key: 'accentGain' | 'mediumGain' | 'normalGain',
-  ): void => {
-    input.addEventListener('input', () => {
-      store.set({ [key]: Number(input.value) / 100 });
-      updateRangeFill(input);
-    });
-    valueInput.addEventListener('input', () => {
-      if (valueInput.value === '') return;
-      const percent = Math.min(100, Math.max(0, Number(valueInput.value)));
-      store.set({ [key]: percent / 100 });
-    });
-  };
-  mountGainSlider(accentGainInput, accentGainValue, 'accentGain');
-  mountGainSlider(mediumGainInput, mediumGainValue, 'mediumGain');
-  mountGainSlider(normalGainInput, normalGainValue, 'normalGain');
   for (const button of themeButtons) {
     button.addEventListener('click', () => {
       const theme = button.dataset.themeOption;
@@ -236,15 +200,6 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
     offsetInput.value = String(s.syncOffsetMs);
     offsetValue.value = String(s.syncOffsetMs);
     updateRangeFill(offsetInput);
-    const renderGain = (input: HTMLInputElement, valueInput: HTMLInputElement, gain: number) => {
-      const percent = Math.round(gain * 100);
-      input.value = String(percent);
-      valueInput.value = String(percent);
-      updateRangeFill(input);
-    };
-    renderGain(accentGainInput, accentGainValue, s.accentGain);
-    renderGain(mediumGainInput, mediumGainValue, s.mediumGain);
-    renderGain(normalGainInput, normalGainValue, s.normalGain);
     for (const button of nodeStyleButtons) {
       button.setAttribute('aria-checked', String(button.dataset.nodeStyleOption === s.nodeStyle));
     }
