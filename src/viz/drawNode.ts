@@ -35,3 +35,28 @@ export function drawNode(
   }
   ctx.restore();
 }
+
+/** A subdivision dot between beat nodes: a dim idle disc that lights up in the theme's node color
+ *  with a soft glow while `glow` > 0. Base and flash share one radius so it reads as one dot. */
+export function drawSubDot(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  glow: number,
+  theme: VizTheme,
+): void {
+  ctx.save();
+  ctx.fillStyle = theme.nodeIdle;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  if (glow > 0) {
+    ctx.globalAlpha = glow;
+    ctx.fillStyle = theme.node;
+    ctx.shadowColor = theme.glow;
+    ctx.shadowBlur = 12 * glow;
+    ctx.fill();
+  }
+  ctx.restore();
+}

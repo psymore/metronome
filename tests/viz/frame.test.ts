@@ -19,6 +19,7 @@ const base = {
   beatsPerBar: 4,
   levels: ['accent', 'normal', 'normal', 'normal'] as BeatLevel[],
   reducedMotion: false,
+  subdivision: 1,
 };
 
 describe('computeFrame', () => {
@@ -60,5 +61,45 @@ describe('computeFrame', () => {
     expect(
       computeFrame({ ...base, beat: beat({ beatsPerBar: 3 }), heardTime: 10 }).beatsPerBar,
     ).toBe(3);
+  });
+
+  describe('subdivision dots', () => {
+    it('lights no dot on the beat itself', () => {
+      const f = computeFrame({ ...base, subdivision: 2, beat: beat(), heardTime: 10 });
+      expect(f).toMatchObject({ subdivision: 2, activeSub: -1, subGlow: 0 });
+    });
+
+    it('lights the eighth-note dot exactly halfway through the beat', () => {
+      const f = computeFrame({ ...base, subdivision: 2, beat: beat(), heardTime: 10.25 });
+      expect(f).toMatchObject({ activeSub: 1, subGlow: 1 });
+    });
+
+    it('lights the second triplet dot two thirds of the way through', () => {
+      const f = computeFrame({ ...base, subdivision: 3, beat: beat(), heardTime: 10 + 1 / 3 });
+      expect(f.activeSub).toBe(2);
+      expect(f.subGlow).toBeCloseTo(1);
+    });
+
+    it('fades a dot out before the next subdivision click', () => {
+      // 16ths at duration 0.5: one click every 0.125s, so the glow must be gone by then.
+      const f = computeFrame({ ...base, subdivision: 4, beat: beat(), heardTime: 10.125 + 0.12 });
+      expect(f).toMatchObject({ activeSub: 1, subGlow: 0 });
+    });
+
+    it('never lights a dot without a subdivision', () => {
+      const f = computeFrame({ ...base, beat: beat(), heardTime: 10.25 });
+      expect(f).toMatchObject({ subdivision: 1, activeSub: -1, subGlow: 0 });
+    });
+
+    it('keeps the dots unlit while stopped', () => {
+      const f = computeFrame({
+        ...base,
+        subdivision: 2,
+        running: false,
+        beat: beat(),
+        heardTime: 10.25,
+      });
+      expect(f).toMatchObject({ subdivision: 2, activeSub: -1, subGlow: 0 });
+    });
   });
 });

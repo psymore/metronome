@@ -1,5 +1,5 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode } from './drawNode';
+import { drawNode, drawSubDot } from './drawNode';
 import {
   beatLayoutGrid,
   linearGridStickX,
@@ -7,7 +7,9 @@ import {
   linearGridY,
   linearLayout,
   linearNodeSpacing,
+  MAX_PER_ROW,
   nodeRadius,
+  subDotRadius,
 } from './geometry';
 import { spriteSize } from './nodeSprite';
 import type { Visualizer } from './types';
@@ -82,6 +84,30 @@ export const linearVisualizer: Visualizer = {
           ctx.lineTo(x, y + h);
         }
         ctx.stroke();
+      }
+    }
+
+    // Subdivision dots, spread evenly along the visible line between two nodes (inside the same
+    // `gap` the line itself stops at, so a dot never sits on a node). A row's last beat has only
+    // half a cell to the bar line; its dots shrink to fit there, capped at the full-size ones.
+    const sub = frame.subdivision;
+    if (sub > 1) {
+      const cellW = track.width / MAX_PER_ROW;
+      const fullDotR = subDotRadius(nodeR, (cellW - 2 * gap) / sub);
+      for (let i = 0; i < n; i++) {
+        const cell = cells[i];
+        if (!cell || fullDotR === 0) continue;
+        const x0 = nodeX(cell.col, cell.rowCount);
+        const last = cell.col === cell.rowCount - 1;
+        const from = x0 + gap;
+        const to = last ? x0 + cellW / 2 - 5 : nodeX(cell.col + 1, cell.rowCount) - gap;
+        const dotR = Math.min(fullDotR, subDotRadius(nodeR, (to - from) / sub));
+        if (dotR === 0) continue;
+        const y = rowY(cell.row);
+        for (let k = 1; k < sub; k++) {
+          const glow = i === frame.activeBeat && k === frame.activeSub ? frame.subGlow : 0;
+          drawSubDot(ctx, from + ((to - from) * k) / sub, y, dotR, glow, theme);
+        }
       }
     }
 

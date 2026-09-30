@@ -17,6 +17,7 @@ import {
   nodeAngle,
   nodeRadius,
   polar,
+  subDotRadius,
 } from '../../src/viz/geometry';
 
 describe('circular geometry', () => {
@@ -189,5 +190,19 @@ describe('circularRingRadius', () => {
     expect(circularRingRadius(0, 3, 120, 60)).toBe(120);
     expect(circularRingRadius(2, 3, 120, 60)).toBe(60);
     expect(circularRingRadius(1, 3, 120, 60)).toBe(90);
+  });
+});
+
+describe('subDotRadius', () => {
+  it('is 40% of the node radius when there is room', () => {
+    expect(subDotRadius(17, 60)).toBeCloseTo(6.8);
+  });
+
+  it('shrinks to keep 3px between neighbouring dots', () => {
+    expect(subDotRadius(17, 10)).toBeCloseTo(3.5);
+  });
+
+  it('is 0 (not drawn) when the dots would not fit', () => {
+    expect(subDotRadius(17, 6)).toBe(0);
   });
 });

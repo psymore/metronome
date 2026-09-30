@@ -75,6 +75,16 @@ export function nodeRadius(span: number, spacing: number): number {
   return Math.max(5, Math.min(17, span * 0.14, spacing * 0.42));
 }
 
+/**
+ * Radius of the subdivision dots, spread evenly along the visible gap between two beat nodes
+ * (`spacing` = that gap's length / subdivision, center to center). 40% of a beat node when there
+ * is room, shrinking to keep 3px between neighbouring dots; 0 (skip drawing) under 2px.
+ */
+export function subDotRadius(nodeR: number, spacing: number): number {
+  const r = Math.min(nodeR * 0.4, spacing / 2 - 1.5);
+  return r >= 2 ? r : 0;
+}
+
 export const MAX_PER_ROW = 4;
 
 export interface BeatCell {

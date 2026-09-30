@@ -1,6 +1,6 @@
 import type { PolyBeatEvent } from '../engine/polyScheduler';
 import type { BeatEvent } from '../engine/scheduler';
-import type { BeatLevel, Settings } from '../state/settings';
+import { type BeatLevel, patternFromSettings, type Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
 import { drawNode } from './drawNode';
 import { computeFrame } from './frame';
@@ -308,6 +308,8 @@ export class VizController {
       beatsPerBar: s.beatsPerBar,
       levels: s.levels,
       reducedMotion: this.reducedMotion.matches,
+      // Effective clicks per beat, exactly as the scheduler plays them (1 in compound meters).
+      subdivision: patternFromSettings(s).subdivision,
     });
     const visualizer = s.visualizer === 'linear' ? linearVisualizer : circularVisualizer;
     visualizer.draw(this.ctx, this.size, frame, this.theme, this.sprites, s.nodeStyle);

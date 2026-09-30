@@ -1,5 +1,5 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode } from './drawNode';
+import { drawNode, drawSubDot } from './drawNode';
 import {
   circularLayout,
   circularNodeSpacing,
@@ -7,6 +7,7 @@ import {
   nodeAngle,
   nodeRadius,
   polar,
+  subDotRadius,
 } from './geometry';
 import { spriteSize } from './nodeSprite';
 import type { Visualizer } from './types';
@@ -46,6 +47,25 @@ export const circularVisualizer: Visualizer = {
       ctx.moveTo(from.x, from.y);
       ctx.lineTo(to.x, to.y);
       ctx.stroke();
+    }
+
+    // Subdivision dots, spread evenly along each visible ring arc between two nodes (the same
+    // gapAngle cut-off the ring uses, so a dot never sits on a node). Drawn before the hand so it
+    // sweeps over them.
+    const sub = frame.subdivision;
+    if (sub > 1) {
+      const arcSpan = (2 * Math.PI) / n - 2 * gapAngle;
+      const dotR = subDotRadius(nodeR, (r * arcSpan) / sub);
+      if (dotR > 0) {
+        for (let i = 0; i < n; i++) {
+          const start = nodeAngle(i, n) + gapAngle;
+          for (let k = 1; k < sub; k++) {
+            const p = polar(cx, cy, r, start + (arcSpan * k) / sub);
+            const glow = i === frame.activeBeat && k === frame.activeSub ? frame.subGlow : 0;
+            drawSubDot(ctx, p.x, p.y, dotR, glow, theme);
+          }
+        }
+      }
     }
 
     if (frame.activeBeat >= 0 && !frame.reducedMotion) {
