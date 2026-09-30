@@ -56,6 +56,7 @@ export function drawSubFan(
   if (!group) return;
   const fanned = subFanLayout(group, sub - 1, width, height);
   const inPlace = layout.dots.filter((d) => d.beat === fan.beat);
+  const inPlaceForK = (k: number) => inPlace.find((d) => d.k === k);
 
   ctx.save();
   ctx.globalAlpha = fan.frac;
@@ -80,19 +81,25 @@ export function drawSubFan(
   ctx.stroke();
   ctx.restore();
 
-  inPlace.forEach((dot, j) => {
-    const target = fanned[j];
-    if (!target) return;
-    const x = dot.x + (target.x - dot.x) * fan.frac;
-    const y = dot.y + (target.y - dot.y) * fan.frac;
-    const r = dot.r + (SUB_FAN_DOT_R - dot.r) * fan.frac;
+  // A beat whose dots are too small to draw (dotR === 0, see subDots.ts) has no in-place dot for
+  // some or all k — its fan dots grow from the group's own position (r 0) instead of lerping
+  // from a dot that was never drawn.
+  fanned.forEach((target, j) => {
+    const k = j + 1;
+    const from = inPlaceForK(k);
+    const x0 = from ? from.x : group.x;
+    const y0 = from ? from.y : group.y;
+    const r0 = from ? from.r : 0;
+    const x = x0 + (target.x - x0) * fan.frac;
+    const y = y0 + (target.y - y0) * fan.frac;
+    const r = r0 + (SUB_FAN_DOT_R - r0) * fan.frac;
     drawSubDot(
       ctx,
       x,
       y,
       r,
-      isSubOn(frame.subOff, sub, dot.beat, dot.k),
-      glowFor(frame, dot.beat, dot.k),
+      isSubOn(frame.subOff, sub, fan.beat, k),
+      glowFor(frame, fan.beat, k),
       theme,
     );
   });

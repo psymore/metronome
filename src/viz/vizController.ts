@@ -371,7 +371,7 @@ export class VizController {
 
     const sub = patternFromSettings(s).subdivision;
     const shape = `${s.visualizer}|${s.beatsPerBar}|${sub}`;
-    if (this.subFan && this.subFan.shape !== shape) this.subFan = null;
+    if (this.subFan && (this.subFan.shape !== shape || !s.beatsClickable)) this.subFan = null;
     this.pruneSubFan();
 
     const beat = this.source.beatAt(heard);

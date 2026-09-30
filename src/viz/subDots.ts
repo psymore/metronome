@@ -62,12 +62,17 @@ function circularSubDotLayout(
 
   const dots: SubDot[] = [];
   const groups: SubGroup[] = [];
-  if (sub > 1 && dotR > 0) {
+  // Every beat gets a group whenever there's a subdivision, even if its dots are too small to
+  // draw (dotR === 0) — a beat that's crammed too tight to show dots is exactly the case the fan
+  // exists for, so it must still have a tappable target.
+  if (sub > 1) {
     for (let i = 0; i < count; i++) {
       const start = nodeAngle(i, count) + gapAngle;
-      for (let k = 1; k < sub; k++) {
-        const p = polar(cx, cy, r, start + (arcSpan * k) / sub);
-        dots.push({ beat: i, k, x: p.x, y: p.y, r: dotR });
+      if (dotR > 0) {
+        for (let k = 1; k < sub; k++) {
+          const p = polar(cx, cy, r, start + (arcSpan * k) / sub);
+          dots.push({ beat: i, k, x: p.x, y: p.y, r: dotR });
+        }
       }
       const a = start + arcSpan / 2;
       const mid = polar(cx, cy, r, a);
@@ -98,7 +103,9 @@ function linearSubDotLayout(
   const dots: SubDot[] = [];
   const groups: SubGroup[] = [];
   let minSpacing = Number.POSITIVE_INFINITY;
-  if (sub > 1 && fullDotR > 0) {
+  // Every beat gets a group whenever there's a subdivision, even if its dots are too small to
+  // draw (dotR === 0, e.g. a row's tight last beat) — it must still have a tappable target.
+  if (sub > 1) {
     for (let i = 0; i < count; i++) {
       const cell = cells[i];
       if (!cell) continue;
@@ -107,12 +114,13 @@ function linearSubDotLayout(
       const from = x0 + gap;
       const to = last ? x0 + cellW / 2 - 5 : nodeX(cell.col + 1, cell.rowCount) - gap;
       const spacing = (to - from) / sub;
-      const dotR = Math.min(fullDotR, subDotRadius(nodeR, spacing));
-      if (dotR === 0) continue;
-      minSpacing = Math.min(minSpacing, spacing);
+      const dotR = fullDotR > 0 ? Math.min(fullDotR, subDotRadius(nodeR, spacing)) : 0;
       const y = rowY(cell.row);
-      for (let k = 1; k < sub; k++) {
-        dots.push({ beat: i, k, x: from + ((to - from) * k) / sub, y, r: dotR });
+      if (dotR > 0) {
+        minSpacing = Math.min(minSpacing, spacing);
+        for (let k = 1; k < sub; k++) {
+          dots.push({ beat: i, k, x: from + ((to - from) * k) / sub, y, r: dotR });
+        }
       }
       groups.push({ beat: i, x: (from + to) / 2, y, nx: 0, ny: -1, tx: 1, ty: 0 });
     }
@@ -171,18 +179,27 @@ export function subFanLayout(
 
 export type SubHit = { kind: 'dot'; beat: number; k: number } | { kind: 'group'; beat: number };
 
-/** Nearest dot under (x, y): a `dot` hit when the layout is directly tappable, else its `group`. */
+/** Nearest dot under (x, y) when the layout is directly tappable; otherwise the nearest group's
+ *  own footprint (its gap's midpoint), which exists for every beat even when that beat has no
+ *  drawable dots (e.g. a tightly packed row-end or a crowded circle) — the fan is always
+ *  reachable even where there's nothing to see yet. */
 export function subDotAt(layout: SubDotLayout, x: number, y: number): SubHit | null {
-  const maxR = layout.direct ? Math.min(22, layout.spacing / 2) : 22;
-  let best: { dot: SubDot; d: number } | null = null;
-  for (const dot of layout.dots) {
-    const d = Math.hypot(x - dot.x, y - dot.y);
-    if (d <= maxR && (!best || d < best.d)) best = { dot, d };
+  if (layout.direct) {
+    const maxR = Math.min(22, layout.spacing / 2);
+    let best: { dot: SubDot; d: number } | null = null;
+    for (const dot of layout.dots) {
+      const d = Math.hypot(x - dot.x, y - dot.y);
+      if (d <= maxR && (!best || d < best.d)) best = { dot, d };
+    }
+    return best ? { kind: 'dot', beat: best.dot.beat, k: best.dot.k } : null;
   }
-  if (!best) return null;
-  return layout.direct
-    ? { kind: 'dot', beat: best.dot.beat, k: best.dot.k }
-    : { kind: 'group', beat: best.dot.beat };
+  const maxR = 22;
+  let best: { group: SubGroup; d: number } | null = null;
+  for (const group of layout.groups) {
+    const d = Math.hypot(x - group.x, y - group.y);
+    if (d <= maxR && (!best || d < best.d)) best = { group, d };
+  }
+  return best ? { kind: 'group', beat: best.group.beat } : null;
 }
 
 /** Index of the nearest fan dot under (x, y), or -1. */
