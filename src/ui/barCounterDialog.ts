@@ -14,7 +14,7 @@ export function mountBarCounterDialog({
   toast: Toast;
 }): void {
   const dialog = byId<HTMLDialogElement>('barCounterDialog');
-  const targetBarsValue = byId('targetBarsValue');
+  const targetBarsValue = byId<HTMLInputElement>('targetBarsValue');
   const targetBarsApply = byId<HTMLButtonElement>('targetBarsApply');
   const loopButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-loop]'));
 
@@ -35,8 +35,7 @@ export function mountBarCounterDialog({
   });
 
   const renderTargetBars = () => {
-    targetBarsValue.textContent =
-      pendingTargetBars > 0 ? String(pendingTargetBars) : t('songLength.off');
+    targetBarsValue.value = String(pendingTargetBars);
   };
 
   const setPendingTargetBars = (n: number) => {
@@ -46,6 +45,9 @@ export function mountBarCounterDialog({
   };
   mountHoldRepeat(byId('targetBarsDown'), () => setPendingTargetBars(pendingTargetBars - 1));
   mountHoldRepeat(byId('targetBarsUp'), () => setPendingTargetBars(pendingTargetBars + 1));
+  targetBarsValue.addEventListener('input', () => {
+    if (targetBarsValue.value !== '') setPendingTargetBars(Number(targetBarsValue.value));
+  });
 
   targetBarsApply.addEventListener('click', () => {
     if (pendingTargetBars <= 0) {

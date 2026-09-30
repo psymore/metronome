@@ -1264,8 +1264,9 @@ html.depth-25d .knob {
    not a full third grid track of its own — it's a border on the result column). */
 .sig-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: auto auto;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 .sig-grid-col {
@@ -1459,8 +1460,19 @@ html.depth-25d .knob {
   justify-items: center;
   gap: 8px;
 }
-/* A single-value picker's value box (Beats, polyrhythm layer counts, Song length) — same dark
-   box/border/tabular-nums look as .time-fields input, for a value that isn't itself editable. */
+/* Single-value pickers (Beats, polyrhythm layer counts, Song length): steppers flank the value
+   left/right instead of stacking below it, and the value itself is a real number input — tapping
+   it opens the device's numeric keyboard instead of only accepting +/- taps. */
+.num-picker--row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+/* The value box (Beats, polyrhythm layer counts, Song length) — same dark box/border/tabular-nums
+   look as .time-fields input. A real <input type="number"> everywhere it's used now, so the
+   spin-button removal below applies unconditionally rather than being scoped to .time-fields. */
 .num-value {
   min-width: 3.2em;
   padding: 6px 10px;
@@ -1473,6 +1485,12 @@ html.depth-25d .knob {
   font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 600;
+  -moz-appearance: textfield;
+}
+.num-value::-webkit-inner-spin-button,
+.num-value::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .time-fields {
   display: flex;

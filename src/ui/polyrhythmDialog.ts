@@ -28,8 +28,8 @@ export function mountPolyrhythmControls({
     document.querySelectorAll<HTMLElement>('#signatureDialog [data-standard-block]'),
   );
   const polyBlock = byId('polyBlock');
-  const aValue = byId('polyAValue');
-  const bValue = byId('polyBValue');
+  const aValue = byId<HTMLInputElement>('polyAValue');
+  const bValue = byId<HTMLInputElement>('polyBValue');
   const soundASelect = byId<HTMLSelectElement>('polySoundA');
   const soundBSelect = byId<HTMLSelectElement>('polySoundB');
   mountSoundPicker(
@@ -57,6 +57,12 @@ export function mountPolyrhythmControls({
   mountHoldRepeat(byId('polyAUp'), () => setA(store.get().polyrhythm.a + 1));
   mountHoldRepeat(byId('polyBDown'), () => setB(store.get().polyrhythm.b - 1));
   mountHoldRepeat(byId('polyBUp'), () => setB(store.get().polyrhythm.b + 1));
+  aValue.addEventListener('input', () => {
+    if (aValue.value !== '') setA(Number(aValue.value));
+  });
+  bValue.addEventListener('input', () => {
+    if (bValue.value !== '') setB(Number(bValue.value));
+  });
 
   async function fillSoundSelect(select: HTMLSelectElement, current: string): Promise<void> {
     const builtin = document.createElement('optgroup');
@@ -114,8 +120,8 @@ export function mountPolyrhythmControls({
     }
     polyBlock.hidden = !enabled;
     for (const block of standardBlocks) block.hidden = enabled;
-    aValue.textContent = String(s.polyrhythm.a);
-    bValue.textContent = String(s.polyrhythm.b);
+    aValue.value = String(s.polyrhythm.a);
+    bValue.value = String(s.polyrhythm.b);
     if (soundASelect.value !== s.polyrhythm.soundIdA) soundASelect.value = s.polyrhythm.soundIdA;
     if (soundBSelect.value !== s.polyrhythm.soundIdB) soundBSelect.value = s.polyrhythm.soundIdB;
   };

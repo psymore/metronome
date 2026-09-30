@@ -422,15 +422,11 @@
       <div class="picker-block sig-grid" data-standard-block>
         <div class="sig-grid-col">
           <h3 class="sheet-sub" data-i18n="sigDialog.beatsTitle">Beats</h3>
-          <div class="num-picker">
-            <output id="beatsValue" class="num-value">4</output>
-            <div class="time-steppers">
-              <button type="button" id="beatsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
-              <button type="button" id="beatsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
-            </div>
+          <div class="num-picker num-picker--row">
+            <button type="button" id="beatsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
+            <input type="number" id="beatsValue" class="num-value" inputmode="numeric" min="1" max="16" step="1" value="4" data-i18n-aria-label="sigDialog.beatsAriaLabel" aria-label="Beats" />
+            <button type="button" id="beatsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
           </div>
-        </div>
-        <div class="sig-grid-col">
           <h3 class="sheet-sub" data-i18n="sigDialog.noteValueTitle">Note value</h3>
           <div class="unit-row unit-row--grid" role="radiogroup" data-i18n-aria-label="unit.ariaLabel" aria-label="Note value">
             <button type="button" role="radio" class="chip" data-unit="2" aria-checked="false">2</button>
@@ -451,12 +447,10 @@
       <p class="sub-label" id="subdivisionCompoundHint" data-i18n="subdivision.compoundHint" hidden>Eighths are already the beat's subdivision</p>
       <div id="polyBlock" class="picker-block" hidden>
         <h3 class="sheet-sub" data-i18n="sigDialog.polyLayerA">Layer A</h3>
-        <div class="num-picker">
-          <output id="polyAValue" class="num-value">3</output>
-          <div class="time-steppers">
-            <button type="button" id="polyADown" class="round-step-btn" data-i18n-aria-label="nudge.fewerPolyA" aria-label="Fewer Layer A events">−</button>
-            <button type="button" id="polyAUp" class="round-step-btn" data-i18n-aria-label="nudge.morePolyA" aria-label="More Layer A events">+</button>
-          </div>
+        <div class="num-picker num-picker--row">
+          <button type="button" id="polyADown" class="round-step-btn" data-i18n-aria-label="nudge.fewerPolyA" aria-label="Fewer Layer A events">−</button>
+          <input type="number" id="polyAValue" class="num-value" inputmode="numeric" min="2" max="16" step="1" value="3" data-i18n-aria-label="sigDialog.polyAAriaLabel" aria-label="Layer A events" />
+          <button type="button" id="polyAUp" class="round-step-btn" data-i18n-aria-label="nudge.morePolyA" aria-label="More Layer A events">+</button>
         </div>
         <div class="slot">
           <div class="slot-row">
@@ -467,12 +461,10 @@
         </div>
 
         <h3 class="sheet-sub" data-i18n="sigDialog.polyLayerB">Layer B</h3>
-        <div class="num-picker">
-          <output id="polyBValue" class="num-value">4</output>
-          <div class="time-steppers">
-            <button type="button" id="polyBDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerPolyB" aria-label="Fewer Layer B events">−</button>
-            <button type="button" id="polyBUp" class="round-step-btn" data-i18n-aria-label="nudge.morePolyB" aria-label="More Layer B events">+</button>
-          </div>
+        <div class="num-picker num-picker--row">
+          <button type="button" id="polyBDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerPolyB" aria-label="Fewer Layer B events">−</button>
+          <input type="number" id="polyBValue" class="num-value" inputmode="numeric" min="2" max="16" step="1" value="4" data-i18n-aria-label="sigDialog.polyBAriaLabel" aria-label="Layer B events" />
+          <button type="button" id="polyBUp" class="round-step-btn" data-i18n-aria-label="nudge.morePolyB" aria-label="More Layer B events">+</button>
         </div>
         <div class="slot">
           <div class="slot-row">
@@ -494,12 +486,10 @@
         <button type="button" class="info-btn" data-i18n-aria-label="songLength.hint" data-i18n-title="songLength.hint" aria-label="Set the bars in the piece to track your position while playing." title="Set the bars in the piece to track your position while playing.">i</button>
       </div>
       <p class="sub-label" data-i18n="songLength.subLabel">0 = off</p>
-      <div class="num-picker">
-        <output id="targetBarsValue" class="num-value">Off</output>
-        <div class="time-steppers">
-          <button type="button" id="targetBarsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBars" aria-label="Fewer bars">−</button>
-          <button type="button" id="targetBarsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBars" aria-label="More bars">+</button>
-        </div>
+      <div class="num-picker num-picker--row">
+        <button type="button" id="targetBarsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBars" aria-label="Fewer bars">−</button>
+        <input type="number" id="targetBarsValue" class="num-value" inputmode="numeric" min="0" max="999" step="1" value="0" data-i18n-aria-label="songLength.valueAriaLabel" aria-label="Song length in bars" />
+        <button type="button" id="targetBarsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBars" aria-label="More bars">+</button>
       </div>
       <button type="button" id="targetBarsApply" class="wide-btn" data-i18n="songLength.apply">Apply</button>
       <div class="sub-head">

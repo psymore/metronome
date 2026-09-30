@@ -399,7 +399,8 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     c2d.rotate(rotation);
     c2d.beginPath();
-    c2d.moveTo(0, -g.innerRadius + g.innerRadius * 0.06);
+    // Tail extended inward (tip position unchanged) for a ~1.5x longer, more visible indicator.
+    c2d.moveTo(0, -g.innerRadius + g.innerRadius * 0.005);
     c2d.lineTo(0, -g.innerRadius + g.innerRadius * 0.17);
     c2d.lineWidth = Math.max(2, g.outerRadius * 0.03);
     c2d.lineCap = 'round';

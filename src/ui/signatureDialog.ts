@@ -11,7 +11,7 @@ import { mountHoldRepeat } from './holdRepeat';
 
 export function mountSignatureDialog({ store }: { store: Store<Settings> }): void {
   const dialog = byId<HTMLDialogElement>('signatureDialog');
-  const beatsValue = byId('beatsValue');
+  const beatsValue = byId<HTMLInputElement>('beatsValue');
   const unitButtons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-unit]'));
   const subdivisionButtons = Array.from(
     dialog.querySelectorAll<HTMLButtonElement>('[data-subdivision]'),
@@ -38,6 +38,9 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   const setBeats = (n: number) => store.set(withSignature(n, store.get().beatUnit));
   mountHoldRepeat(byId('beatsDown'), () => setBeats(store.get().beatsPerBar - 1));
   mountHoldRepeat(byId('beatsUp'), () => setBeats(store.get().beatsPerBar + 1));
+  beatsValue.addEventListener('input', () => {
+    if (beatsValue.value !== '') setBeats(Number(beatsValue.value));
+  });
 
   for (const button of unitButtons) {
     button.addEventListener('click', () => {
@@ -62,7 +65,7 @@ export function mountSignatureDialog({ store }: { store: Store<Settings> }): voi
   }
 
   const render = (s: Settings) => {
-    beatsValue.textContent = String(s.beatsPerBar);
+    beatsValue.value = String(s.beatsPerBar);
     sigResultTop.textContent = String(s.beatsPerBar);
     sigResultBottom.textContent = String(s.beatUnit);
     for (const button of unitButtons) {
