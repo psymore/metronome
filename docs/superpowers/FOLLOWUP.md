@@ -2,63 +2,65 @@
 
 If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step" immediately.
 
-## Where things stand (2026-09-30, later same day as the previous entry)
+## Where things stand (2026-09-30)
 
-`master` = `origin/master` (`92407b5`), unchanged this session. This session's work lives on local
-branch `per-level-beat-volume` (4 commits ahead of `master`, **not merged, not pushed**). No
-worktree is open.
+`master` = `c6ec1b1`, unchanged this session. This session's work lives on local branch
+`settings-to-header` (11 commits ahead of `master`, **not merged, not pushed**). No worktree is
+open.
 
 ### Done this session
 
-Implemented `docs/superpowers/plans/2026-09-30-per-level-beat-volume.md` in full, using the
-`executing-plans` skill (inline, no worktree — see standing instructions below), on branch
-`per-level-beat-volume`:
+Implemented `docs/superpowers/plans/2026-09-30-settings-to-header.md` in full (the plan was
+extended mid-flight — see its own "Status of earlier tasks" section), using the `executing-plans`
+skill (inline, no worktree, per this repo's standing instructions below), on branch
+`settings-to-header`:
 
-- **Task 1** (`eb554d6`): `accentGain`/`mediumGain`/`normalGain` added to `Settings`
-  (`src/state/settings.ts`), defaults 1/0.6/1 (matches the old hardcoded mix exactly), clamped in
-  `sanitizeSettings` the same way `volume` is.
-- **Task 2** (`a8b5bf6`): `AudioEngine.playBeat` (`src/engine/audioEngine.ts`) now routes accent
-  and normal beats through a `GainNode` too (previously a direct source→master connect), all three
-  levels read their gain from new `setAccentGain`/`setMediumGain`/`setNormalGain` instance setters
-  (mirrors the existing `setVolume` pattern). `main.ts` pushes settings changes into the engine the
-  same way it already does for `volume`. `playPolyBeat` untouched (out of scope per the plan).
-- **Task 3, reworked mid-review**: originally built as three sliders in the Settings dialog
-  (`b2b7edf`), per an executor ruling that picked one of the plan's two open-question options. The
-  user then asked (outside the plan, after seeing that layout) to move them into the **Sound**
-  dialog instead, next to the sound each level uses. Confirmed via `AskUserQuestion` where Medium's
-  slider should go (no sound picker of its own — it borrows the Accent buffer): user chose "own
-  separate row" over "grouped under Accent's slider". Final layout (`eb7f4d7`): Accent's slider
-  under the Accent sound picker, Normal's under the Other-beats picker, Medium as its own labelled
-  row ("Uses the Accent sound") between them. `updateRangeFill` moved from `settingsDialog.ts` to
-  the shared `ui/dom.ts` so both dialogs use it; `soundDialog.ts`'s render is split into
-  `renderGains()`/`render()` so a slider drag doesn't rebuild the sound `<select>`s on every tick.
-  Settings dialog no longer has these sliders at all.
-- **Final review**: dispatched a fresh `general-purpose` subagent (model: opus) against the
-  pre-rework diff. Verdict "Ready to merge: with fixes" — 0 Critical, 1 Important, 7 Minor. Fixed:
-  strengthened `settings.ts`'s "keeps valid values" test with distinct non-default gains (the old
-  test couldn't have caught a copy-paste mistake between the three `clampNumber` calls); added
-  `aria-label`s to the new range inputs. Ruled as out-of-scope-for-this-plan and left as-is:
-  `playSubdivision`'s fixed `0.4` gain ignoring `normalGain` (only `playBeat` was in scope), no
-  polyrhythm-mode hint on the sliders (polyrhythm is explicitly out of scope), the
-  `store.set({[key]: ...})` cast pattern (matches existing `soundDialog.ts` precedent). Deferred as
-  minor: "Medium volume" label wording, `#volumeInput`/`#offsetInput` still lacking `aria-label`
-  (pre-existing, untouched), doc staleness (this file, now refreshed).
-- **Outstanding before merge — the plan's own Final Check step, not yet done**: nobody has actually
-  *listened* to the change. `npx tsc --noEmit`, `npx vitest run` (218/218), `npm run lint`, and
-  `npm run build` all pass, and a Playwright session confirmed the UI/store/persistence behave
-  correctly (defaults, moving sliders, a deliberately "backwards" Normal-louder-than-Accent mix
-  without the UI fighting it) — but this agent has no audio output. **The user needs to, on a
-  cleared-`localStorage` install: confirm it sounds identical to before this branch, then confirm
-  Accent/Medium/Normal are each audibly distinct and independently adjustable.**
-- Mid-session correction, worth flagging: this agent added `Co-Authored-By` trailers to the first
-  4 commits despite this repo's own standing no-attribution instruction (below, and in this agent's
-  memory) — caught before anything was pushed and fixed via `git filter-branch` (all 4 commits were
-  local-only, safe to rewrite; new SHAs are the ones listed above). If a fresh session finds itself
-  about to commit here, double-check CLAUDE.md/this file's standing instructions against whatever
-  the harness's own attribution reminder says — the repo's own instruction wins.
-- Full decision ledger (including all rulings and their reasoning) is at
-  `.superpowers/sdd/2026-09-30-per-level-beat-volume/progress.md`; delete that workspace once the
-  branch is merged.
+- **Tasks 1-2** (earlier in the session, before the plan was extended): dimmed Signature/Sound's
+  resting glow, kept Tap's fuller glow, moved Settings into the header as a gear icon (later
+  superseded by Task 5).
+- **Task 3** (`f43c724`, `aa043c1`): committed the pending `.title` font-size shrink
+  (21px → 14.7px, user-approved on their phone earlier). Regrouped the panel into two balanced
+  columns — **left = Timer + Tap**, **right = Signature + Sound** — and gave the practice timer
+  its own `#practiceTimerDialog` / `src/ui/practiceTimerDialog.ts`, split out of the old
+  `settingsDialog.ts`.
+- **Task 4** (`91f4a8e`): moved Beats into the Signature dialog (`data-standard-block`, hides in
+  Polyrhythm) and Volume + Vibrate into the Sound dialog (Volume as its first field, Vibrate above
+  the drop zone).
+- **Task 5** (`6d38011`): dissolved the Settings dialog entirely into a **☰ side menu**
+  (`src/ui/menuDrawer.ts`, a `<dialog class="drawer">`) opened from a single `#menuBtn` in the
+  header — the gear and the language globe both left the header. Fixed a bug Task 2 had introduced
+  (`.icon-btn` collision between the header buttons and every dialog's ✕ close button) by renaming
+  the header's rule to `.header-btn`.
+- **Task 6** (this step; no code changes needed): verified with Playwright at 320/360/390/412px
+  in English and Turkish, and the full acceptance walkthrough at 390px and 1024px desktop —
+  drawer open/close (✕, backdrop, Esc, left-swipe, field-padding clicks don't close it, dragging
+  the sync-offset slider doesn't close it), language switch, theme/beat-sphere/2.5D/sync-offset
+  live-apply, two-tap Reset, panel row alignment (Timer/Signature and Tap/Sound line up at both
+  64px and 52px button sizes), Tap's stronger resting glow, Timer dialog start flow (0:30 practice
+  timer, two-tap Start, ⏸⏹✕ appear top-left without covering the Timer button), Signature dialog's
+  Beats field (visible in Standard, hidden in Polyrhythm), Sound dialog's Volume/Vibrate placement,
+  every dialog's ✕ back to its pre-`8127427` look (34px, no pink tint), Circle/Line switch.
+- **One finding, not fixed (reported here per the plan's own instruction rather than shrinking
+  things further)**: at exactly **320px width**, the header's Circle/Line `.seg` pill (fixed
+  168px) overflows past the intended right margin by ~32px (`segRight` 336 vs a 304px limit) —
+  same in English and Turkish, so it's not a translation-length issue. `bar.scrollWidth >
+  bar.clientWidth` reads `false` because the overflow is visual (flex children pushed past the
+  container), not a scrollable overflow, so it wouldn't show up as a scrollbar — the "Line" label
+  just gets visually clipped at the viewport edge. 360/390/412px all pass cleanly. This is a
+  narrow-width tightness in `.seg`'s fixed width, not something this branch's changes made worse
+  (the header actually has *less* content now: one ☰ button instead of gear+globe, and a smaller
+  title). Left for the user to decide whether 320px (the narrowest Android/iPhone SE-class width)
+  needs a fix, and if so whether `.seg` should shrink or the header should wrap.
+- Where each old Settings-dialog control now lives: Theme/Beat sphere/2.5D knob/Visual sync
+  offset/Reset → the ☰ drawer (`src/ui/menuDrawer.ts`). Language → the ☰ drawer (was the header
+  globe + `src/ui/languageSwitch.ts`, now deleted). Beats → Signature dialog
+  (`src/ui/signatureDialog.ts`). Volume + Vibrate → Sound dialog (`src/ui/soundDialog.ts`).
+  Practice timer → its own Timer dialog (`src/ui/practiceTimerDialog.ts`), opened from the panel's
+  new Timer button. The Settings dialog and its `#settingsBtn`/`settingsDialog.title` i18n keys no
+  longer exist.
+- A bottom tab bar is not planned — the ☰ drawer is the app's only "everything else" surface.
+- Full decision ledger is at `.superpowers/sdd/2026-09-30-settings-to-header/progress.md`; delete
+  that workspace once the branch is merged.
 
 ### Standing instructions from previous sessions (apply going forward)
 
@@ -66,8 +68,7 @@ Implemented `docs/superpowers/plans/2026-09-30-per-level-beat-volume.md` in full
   directory. (The `executing-plans`/`subagent-driven-development` skills default to worktrees —
   skip that step and just `git checkout -b` instead.)
 - **Never add `Co-Authored-By` or any attribution line to any commit in this repo**, overriding
-  the harness's default attribution reminder. This is standing, not one-time. (See the correction
-  noted above — this was nearly violated this session.)
+  the harness's default attribution reminder. This is standing, not one-time.
 - The 11 commits from an earlier worktree session (`65a8edb..339b714`, now part of `master`'s
   history) still carry `Co-Authored-By: Claude Sonnet 5` trailers — the user said they'll clean
   those up themselves later. Don't rewrite them unasked.
@@ -76,16 +77,19 @@ Implemented `docs/superpowers/plans/2026-09-30-per-level-beat-volume.md` in full
   screenshots from that phone. If the phone shows a broken/unstyled page, check the Playwright
   console for a Vite "504 Outdated Optimize Dep" error first (stale dep-cache after repeated
   dev-server restarts) — fix is `rm -rf node_modules/.vite` and a clean restart, not a code change.
+- The Playwright MCP browser profile is shared across sessions and sometimes reports "Browser is
+  already in use" — when that happens, ask the user to check on their phone via the dev server's
+  Network URL instead of force-closing another session's browser.
 
 ### Still open from the 2026-09-29 performance/errors/platforms review (low priority, not scheduled)
 
 Wireframe blur batching (one path instead of ~21 blurred ops per glowing node), merged-node mute
-glow zeroed while split nodes damp to 25%, Settings node-style previews repaint on every store
-change even while closed, `render()` still unguarded on the constructor/ResizeObserver path,
-Tauri `security.csp: null` undocumented, English-only upload error strings
-(`validate.ts`/`importSound.ts`), transient IDB failure permanently overwriting the saved sound
-choice (`main.ts` `applySound` fallback `store.set`), Frosted paintMute flash ring drawn at the
-unswollen radius.
+glow zeroed while split nodes damp to 25%, the drawer's node-style previews repaint on every store
+change even while closed (same pre-existing pattern as the old Settings dialog), `render()` still
+unguarded on the constructor/ResizeObserver path, Tauri `security.csp: null` undocumented,
+English-only upload error strings (`validate.ts`/`importSound.ts`), transient IDB failure
+permanently overwriting the saved sound choice (`main.ts` `applySound` fallback `store.set`),
+Frosted paintMute flash ring drawn at the unswollen radius.
 
 Still-deferred Phase A items: sprite-cache growth across window resizes, sub-pixel sprite blit
 softening, `AudioEngine.preview()` leaving the context running until the next stop/start.
@@ -98,7 +102,7 @@ Check the plan's own checkboxes rather than trusting this summary.
   user's Xiaomi Redmi Note 10 Pro with a sideloaded release-signed APK
   (`android/app-release-signed.apk`, gitignored). **No signed AAB exists yet** — build
   `bundleRelease` + jarsigner per `docs/architecture/platforms.md` before uploading. Build the AAB
-  from `master` after this session's branch is merged (not yet, as of this entry).
+  from `master` after `settings-to-header` (and any other pending branches) are merged.
 - Notifications are off (2026-09-29): `enableNotifications: false` in `twa-manifest.json` and
   `app/build.gradle`, `POST_NOTIFICATIONS` + `NotificationPermissionRequestActivity` removed from
   `AndroidManifest.xml` — matches the privacy policy's "no runtime permissions". The sideloaded
@@ -146,16 +150,17 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. **User does the audible Final Check** on branch `per-level-beat-volume` (see "Outstanding
-   before merge" above), then this branch merges to `master` via
-   `superpowers:finishing-a-development-branch` (or the user's own preferred flow) and
-   `.superpowers/sdd/2026-09-30-per-level-beat-volume/` gets deleted.
-2. Once merged and the Play Console account exists: build the unsigned AAB
+1. **User reviews `settings-to-header` on their phone** (Network URL) and decides whether the
+   320px `.seg` overflow (see "One finding, not fixed" above) needs a fix before merge.
+2. Once satisfied, merge `settings-to-header` to `master` via
+   `superpowers:finishing-a-development-branch` (or the user's own preferred flow) and delete
+   `.superpowers/sdd/2026-09-30-settings-to-header/`.
+3. Once merged and the Play Console account exists: build the unsigned AAB
    (`gradlew bundleRelease`), the user signs it with jarsigner in their own terminal, then uploads
    it to closed testing.
-3. After upload: Play App Signing fingerprint → `assetlinks.json`.
-4. Help the user line up 12+ testers for the 14-day closed test.
-5. iOS: wait for the user's decision; don't start a wrapper unilaterally.
+4. After upload: Play App Signing fingerprint → `assetlinks.json`.
+5. Help the user line up 12+ testers for the 14-day closed test.
+6. iOS: wait for the user's decision; don't start a wrapper unilaterally.
 
 ## Design decisions already settled — do not re-open
 
@@ -163,4 +168,6 @@ Foreground-only playback, TWA on Vercel (not Capacitor) for Android, Bubblewrap 
 Android), no new runtime dependencies without a strong reason. Per-level beat volume: three
 independent 0-100% sliders with no ordering constraint, Medium keeps borrowing the Accent sound
 buffer (no third sound slot), sliders live in the Sound dialog next to the sound picker each level
-uses (not Settings) — see this entry's "Done this session" for the exact layout.
+uses. Control hierarchy: BPM knob/Tap are primary, Signature/Sound secondary, everything else
+(Theme/Beat sphere/2.5D/sync offset/Reset/Language) lives behind the ☰ side menu — no bottom tab
+bar, no Settings dialog.
