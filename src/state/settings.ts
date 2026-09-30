@@ -35,6 +35,11 @@ export interface Settings {
   /** Positive values delay the visuals (for outputs that under-report latency). */
   syncOffsetMs: number;
   volume: number;
+  /** Per-level beat gain, 0-1, applied on top of `volume`. Defaults match the mix that shipped
+   *  before these were adjustable: full accent, borrowed-accent medium at 0.6, full normal. */
+  accentGain: number;
+  mediumGain: number;
+  normalGain: number;
   accentSoundId: string;
   normalSoundId: string;
   theme: ThemeName;
@@ -76,6 +81,9 @@ export const DEFAULT_SETTINGS: Settings = {
   visualizer: 'circular',
   syncOffsetMs: 0,
   volume: 0.8,
+  accentGain: 1,
+  mediumGain: 0.6,
+  normalGain: 1,
   accentSoundId: 'builtin:click-high',
   normalSoundId: 'builtin:click',
   theme: 'teal',
@@ -288,6 +296,9 @@ export function sanitizeSettings(raw: unknown): Settings {
       clampNumber(r.syncOffsetMs, d.syncOffsetMs, -SYNC_OFFSET_LIMIT_MS, SYNC_OFFSET_LIMIT_MS),
     ),
     volume: clampNumber(r.volume, d.volume, 0, 1),
+    accentGain: clampNumber(r.accentGain, d.accentGain, 0, 1),
+    mediumGain: clampNumber(r.mediumGain, d.mediumGain, 0, 1),
+    normalGain: clampNumber(r.normalGain, d.normalGain, 0, 1),
     accentSoundId: isSoundId(r.accentSoundId) ? r.accentSoundId : d.accentSoundId,
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
     theme: isThemeName(r.theme) ? r.theme : d.theme,
