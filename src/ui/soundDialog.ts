@@ -7,6 +7,7 @@ import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
+import { mountSoundPicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 import type { Toast } from './toast';
 
@@ -34,6 +35,16 @@ export function mountSoundDialog({
     accentSoundId: byId<HTMLSelectElement>('accentSelect'),
     normalSoundId: byId<HTMLSelectElement>('normalSelect'),
   };
+  mountSoundPicker(
+    selects.accentSoundId,
+    byId<HTMLButtonElement>('accentSelectTrigger'),
+    'accent.label',
+  );
+  mountSoundPicker(
+    selects.normalSoundId,
+    byId<HTMLButtonElement>('normalSelectTrigger'),
+    'otherBeats.label',
+  );
   const fileInput = byId<HTMLInputElement>('soundFile');
   const dropZone = byId('dropZone');
   const list = byId('userSounds');

@@ -460,7 +460,8 @@
         </div>
         <div class="slot">
           <div class="slot-row">
-            <select id="polySoundA" data-i18n-aria-label="sigDialog.polySoundA" aria-label="Layer A sound"></select>
+            <button type="button" id="polySoundATrigger" class="sound-trigger" data-i18n-aria-label="sigDialog.polySoundA" aria-label="Layer A sound"><span class="sound-trigger-value"></span></button>
+            <select id="polySoundA" class="native-select sound-picker-select" tabindex="-1" aria-hidden="true"></select>
             <button type="button" id="polyPreviewA" class="small-btn" data-i18n-aria-label="sigDialog.previewPolyA" aria-label="Preview Layer A sound">▶</button>
           </div>
         </div>
@@ -475,7 +476,8 @@
         </div>
         <div class="slot">
           <div class="slot-row">
-            <select id="polySoundB" data-i18n-aria-label="sigDialog.polySoundB" aria-label="Layer B sound"></select>
+            <button type="button" id="polySoundBTrigger" class="sound-trigger" data-i18n-aria-label="sigDialog.polySoundB" aria-label="Layer B sound"><span class="sound-trigger-value"></span></button>
+            <select id="polySoundB" class="native-select sound-picker-select" tabindex="-1" aria-hidden="true"></select>
             <button type="button" id="polyPreviewB" class="small-btn" data-i18n-aria-label="sigDialog.previewPolyB" aria-label="Preview Layer B sound">▶</button>
           </div>
         </div>
@@ -632,16 +634,18 @@
         <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
       <div class="slot">
-        <label for="accentSelect" data-i18n="accent.label">Accent (beat 1)</label>
+        <label for="accentSelectTrigger" data-i18n="accent.label">Accent (beat 1)</label>
         <div class="slot-row">
-          <select id="accentSelect"></select>
+          <button type="button" id="accentSelectTrigger" class="sound-trigger"><span class="sound-trigger-value"></span></button>
+          <select id="accentSelect" class="native-select sound-picker-select" tabindex="-1" aria-hidden="true"></select>
           <button type="button" class="small-btn" data-preview="accentSoundId" data-i18n-aria-label="accent.previewAriaLabel" aria-label="Preview accent sound">▶</button>
         </div>
       </div>
       <div class="slot">
-        <label for="normalSelect" data-i18n="otherBeats.label">Other beats</label>
+        <label for="normalSelectTrigger" data-i18n="otherBeats.label">Other beats</label>
         <div class="slot-row">
-          <select id="normalSelect"></select>
+          <button type="button" id="normalSelectTrigger" class="sound-trigger"><span class="sound-trigger-value"></span></button>
+          <select id="normalSelect" class="native-select sound-picker-select" tabindex="-1" aria-hidden="true"></select>
           <button type="button" class="small-btn" data-preview="normalSoundId" data-i18n-aria-label="otherBeats.previewAriaLabel" aria-label="Preview beat sound">▶</button>
         </div>
       </div>
@@ -652,6 +656,14 @@
       </div>
       <h3 class="sheet-sub" data-i18n="yourSounds.title">Your sounds</h3>
       <ul id="userSounds" class="sound-list"></ul>
+    </dialog>
+
+    <dialog id="soundPickerDialog" class="sheet sound-picker-sheet" aria-labelledby="soundPickerTitle">
+      <form method="dialog" class="sheet-head">
+        <h2 id="soundPickerTitle" data-i18n="soundDialog.title">Sounds</h2>
+        <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
+      </form>
+      <div id="soundPickerList" class="sound-picker-list" role="listbox"></div>
     </dialog>
   </body>
 </html>

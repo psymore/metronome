@@ -5,6 +5,7 @@ import { clampPolyCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
+import { mountSoundPicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 
 export interface PolyrhythmControlsDeps {
@@ -31,6 +32,16 @@ export function mountPolyrhythmControls({
   const bValue = byId('polyBValue');
   const soundASelect = byId<HTMLSelectElement>('polySoundA');
   const soundBSelect = byId<HTMLSelectElement>('polySoundB');
+  mountSoundPicker(
+    soundASelect,
+    byId<HTMLButtonElement>('polySoundATrigger'),
+    'sigDialog.polyLayerA',
+  );
+  mountSoundPicker(
+    soundBSelect,
+    byId<HTMLButtonElement>('polySoundBTrigger'),
+    'sigDialog.polyLayerB',
+  );
 
   const setMode = (enabled: boolean) =>
     store.set({ polyrhythm: { ...store.get().polyrhythm, enabled } });

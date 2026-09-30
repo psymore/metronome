@@ -1296,11 +1296,12 @@ html.depth-25d .knob {
   min-width: 36px;
   padding: 7px 6px;
 }
-/* App-wide themed dropdown styling: every native <select> in the app follows this one recipe,
-   so the Sound dialog, the Polyrhythm A/B selects, and any future select share the same look.
-   Opt out with .native-select if a bare browser control is ever needed. */
-select:not(.native-select) {
+/* Every sound-slot uses a themed trigger button (soundPicker.ts) instead of a native <select> —
+   the select itself is kept only as a hidden value-holder (.sound-picker-select below) so its
+   OS-rendered option list, unthemeable on mobile, never opens. */
+.sound-trigger {
   appearance: none;
+  width: 100%;
   padding: 8px 40px 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--line);
@@ -1311,29 +1312,35 @@ select:not(.native-select) {
   background-size: 12px 8px;
   color: var(--text);
   font: inherit;
+  text-align: left;
   box-shadow: 0 0 4.2px var(--accent-glow);
   cursor: pointer;
 }
-select:not(.native-select):focus,
-select:not(.native-select):focus-visible {
+.sound-trigger:focus,
+.sound-trigger:focus-visible {
   outline: none;
   border-color: var(--select);
   box-shadow:
     0 0 4.2px var(--accent-glow),
     0 0 0 2px var(--select);
 }
-select:not(.native-select) option {
-  background-color: var(--panel-lo);
-  color: var(--text);
-  padding: 8px;
+.sound-trigger-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
-select:not(.native-select) option:checked {
-  background: linear-gradient(var(--select), var(--select));
-  background-color: var(--select);
-  color: var(--text);
-}
-.slot-row select {
-  margin-right: 4px;
+/* A native <select> kept only so its value/change-event wiring keeps working; never shown. */
+.sound-picker-select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 /* A segmented control for presets: unlike free-floating chips, segments sit flush against
    each other in one continuous pill and scroll horizontally if they overflow. */
@@ -1858,15 +1865,9 @@ select:not(.native-select) option:checked {
   display: flex;
   gap: 8px;
 }
-.slot-row select {
+.slot-row .sound-trigger {
   flex: 1;
   min-width: 0;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--panel-lo);
-  color: var(--text);
-  font: inherit;
 }
 .small-btn {
   padding: 8px 12px;
@@ -1925,6 +1926,71 @@ select:not(.native-select) option:checked {
 .sound-list li.empty {
   color: var(--muted);
   background: none;
+}
+.sound-picker-sheet {
+  width: min(92vw, 360px);
+}
+.sound-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.sound-picker-group {
+  margin: 14px 0 6px;
+  padding: 0 2px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+.sound-picker-group:first-child {
+  margin-top: 0;
+}
+.sound-picker-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sound-picker-row:hover,
+.sound-picker-row:focus-visible {
+  outline: none;
+  background: var(--panel-lo);
+}
+.sound-picker-radio {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.4);
+}
+.sound-picker-row[aria-selected="true"] .sound-picker-radio {
+  border-color: var(--select);
+  background: radial-gradient(circle, var(--select) 42%, transparent 46%);
+  box-shadow: 0 0 4px var(--select-soft);
+}
+.sound-picker-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sound-picker-empty {
+  padding: 6px 8px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 @media (min-width: 900px) {
