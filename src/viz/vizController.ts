@@ -362,7 +362,11 @@ export class VizController {
         reducedMotion: this.reducedMotion.matches,
       });
       drawPolyrhythm(this.ctx, this.size, frame, this.theme, this.sprites, s.nodeStyle);
-      this.lastGlow = Math.max(frame.glowA, frame.glowB);
+      if (frame.glowA > this.lastGlow && beatA) {
+        const level = s.polyrhythm.levelsA[beatA.index] ?? 'normal';
+        this.onBeatStart?.(level, beatA.cycleIndex);
+      }
+      this.lastGlow = frame.glowA;
       // Keep the animation loop alive while any pair is still mid-split, even if the metronome
       // itself is stopped and shouldAnimate() would otherwise pause the frame loop.
       if (this.polyAnimating()) this.invalidate();
