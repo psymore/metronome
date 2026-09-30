@@ -4,91 +4,118 @@ If you are a fresh session: read `CLAUDE.md` first, then this file, then act on 
 
 ## Where things stand (2026-09-30)
 
-`master` = `origin/master` = `d7fc551`, pushed 2026-09-30; Vercel auto-deploys it. Branch
-`settings-to-header` was fast-forward merged into `master` (it can be deleted). No worktree is
-open.
-
-After the review below, a follow-up round on the same branch (`d7fc551`, one commit) added:
-- a steeper hold-to-repeat ramp for the BPM ± nudges (`mountHoldRepeat` gained an optional
-  `intervalFor`)
-- the bar-counter pill reverted to a plain, fully-in-front pill (the `444c1a7` half-border
-  treatment removed)
-- a live 1:1 drag for the drawer's swipe-to-close (commits past 50% of its width, otherwise snaps
-  back), with animated close/snap and a reduced-motion path that skips the animations
-- the `.header-btn` hit area moved to `::before` (the global `button:active::after` press glow
-  was shrinking it)
-- a one-time knob rotation hint (`src/ui/knobHint.ts`, `localStorage` key `knobHintShown`)
-- the knob indicator moved inward, the Sound dialog's Volume relabelled "Master Volume" /
-  "Ana Ses Düzeyi"
-- `.gitignore` ignoring root-level `/*.png` screenshots
+`master` = `origin/master` = `d7fc551` (unchanged this session; not pushed to since). Branch
+`subdivision-patterns` (plain local branch, no worktree, per standing instructions) has this
+session's work, **not merged and not pushed**: `git log --oneline d7fc551..subdivision-patterns`
+= `6cda47f..4d4e161`, 8 commits by this session plus the user's own `6cda47f` (the plan file
+update for the circle-outward override, already theirs — see below).
 
 ### Done this session
 
-Implemented `docs/superpowers/plans/2026-09-30-settings-to-header.md` in full (the plan was
-extended mid-flight — see its own "Status of earlier tasks" section), using the `executing-plans`
-skill (inline, no worktree, per this repo's standing instructions below), on branch
-`settings-to-header`:
+Implemented `docs/superpowers/plans/2026-09-30-subdivision-patterns.md` in full (all 7 tasks),
+using the `executing-plans` skill (inline, no worktree), on branch `subdivision-patterns`:
+lets the player switch individual subdivision clicks on/off (e.g. only the "&" of 8ths, or a
+triplet with the middle click dropped), edited either by tapping dots on the visualiser or via
+toggles in the Signature dialog's beat row.
 
-- **Tasks 1-2** (earlier in the session, before the plan was extended): dimmed Signature/Sound's
-  resting glow, kept Tap's fuller glow, moved Settings into the header as a gear icon (later
-  superseded by Task 5).
-- **Task 3** (`f43c724`, `aa043c1`): committed the pending `.title` font-size shrink
-  (21px → 14.7px, user-approved on their phone earlier). Regrouped the panel into two balanced
-  columns — **left = Timer + Tap**, **right = Signature + Sound** — and gave the practice timer
-  its own `#practiceTimerDialog` / `src/ui/practiceTimerDialog.ts`, split out of the old
-  `settingsDialog.ts`.
-- **Task 4** (`91f4a8e`): moved Beats into the Signature dialog (`data-standard-block`, hides in
-  Polyrhythm) and Volume + Vibrate into the Sound dialog (Volume as its first field, Vibrate above
-  the drop zone).
-- **Task 5** (`6d38011`): dissolved the Settings dialog entirely into a **☰ side menu**
-  (`src/ui/menuDrawer.ts`, a `<dialog class="drawer">`) opened from a single `#menuBtn` in the
-  header — the gear and the language globe both left the header. Fixed a bug Task 2 had introduced
-  (`.icon-btn` collision between the header buttons and every dialog's ✕ close button) by renaming
-  the header's rule to `.header-btn`.
-- **Task 6**: verified with Playwright at 320/360/390/412px in English and Turkish, and the full
-  acceptance walkthrough at 390px and 1024px desktop — drawer open/close (✕, backdrop, Esc,
-  field-padding clicks don't close it, dragging the sync-offset slider doesn't close it), language
-  switch, theme/beat-sphere/2.5D/sync-offset live-apply, two-tap Reset, panel row alignment
-  (Timer/Signature and Tap/Sound line up at both 64px and 52px button sizes), Tap's stronger
-  resting glow, Timer dialog start flow (0:30 practice timer, two-tap Start, ⏸⏹✕ appear top-left
-  without covering the Timer button), Signature dialog's Beats field (visible in Standard, hidden
-  in Polyrhythm), Sound dialog's Volume/Vibrate placement, every dialog's ✕ back to its
-  pre-`8127427` look (34px, no pink tint), Circle/Line switch. **Left-swipe-to-close was initially
-  checked with a mouse only** (Playwright's default input), which doesn't exercise touch-action or
-  gesture handling at all — the final review (below) caught that this understated what was
-  actually verified, and found a real bug underneath it.
-- **Final review** (`314a448`): a fresh subagent (opus) reviewed the whole branch. Verdict "Ready
-  to merge: with fixes" — 0 Critical, 1 Important, 6 Minor. Fixed the Important finding: swipe-to-
-  close didn't work on touch devices because `touch-action: pan-y` sat on `.drawer`, but
-  `.drawer-body` (the scrollable element) is the nearest scroll-container ancestor for any touch
-  inside the drawer, so `.drawer`'s `touch-action` was never consulted — the browser claimed the
-  gesture as its own scroll before `menuDrawer.ts`'s swipe handler could see it. Moved the
-  declaration onto `.drawer-body`; verified under Playwright CDP touch emulation that swipe-close
-  now works and the sync-offset slider still drags correctly without closing the drawer. Six Minor
-  findings were deferred (dead `aria-expanded` CSS rule, `closeOnBackdropClick` also closing on a
-  sheet's own padding — pre-existing on every `.sheet`, not just the drawer — untested Tauri
-  `target="_blank"` behavior for the privacy link, missing `lang` attributes on the language chips,
-  a duplicated "Practice timer" label, a stale code comment). Full findings and rulings in the
-  ledger.
-- **One finding, not fixed (reported here per the plan's own instruction rather than shrinking
-  things further)**: at exactly **320px width**, the header's Circle/Line `.seg` pill (fixed
-  168px) overflows past the intended right margin by ~32px (`segRight` 336 vs a 304px limit) —
-  same in English and Turkish, so it's not a translation-length issue. `bar.scrollWidth >
-  bar.clientWidth` reads `false` because the overflow is visual (flex children pushed past the
-  container), not a scrollable overflow, so it wouldn't show up as a scrollbar — the "Line" label
-  just gets visually clipped at the viewport edge. 360/390/412px all pass cleanly. This is a
-  narrow-width tightness in `.seg`'s fixed width, not something this branch's changes made worse
-  (the header actually has *less* content now: one ☰ button instead of gear+globe, and a smaller
-  title). Left for the user to decide whether 320px (the narrowest Android/iPhone SE-class width)
-  needs a fix, and if so whether `.seg` should shrink or the header should wrap.
-- Where each old Settings-dialog control now lives: Theme/Beat sphere/2.5D knob/Visual sync
-  offset/Reset → the ☰ drawer (`src/ui/menuDrawer.ts`). Language → the ☰ drawer (was the header
-  globe + `src/ui/languageSwitch.ts`, now deleted). Beats → Signature dialog
-  (`src/ui/signatureDialog.ts`). Volume + Vibrate → Sound dialog (`src/ui/soundDialog.ts`).
-  Practice timer → its own Timer dialog (`src/ui/practiceTimerDialog.ts`), opened from the panel's
-  new Timer button. The Settings dialog and its `#settingsBtn`/`settingsDialog.title` i18n keys no
-  longer exist.
-- A bottom tab bar is not planned — the ☰ drawer is the app's only "everything else" surface.
+- **Task 1** (`3a2742f`): `Settings.subOff: boolean[]`, `isSubOn`/`toggleSub`/`withSubdivision`
+  in `src/state/settings.ts`; `Pattern.subOff?` in the scheduler; `sanitizeSettings` drops a
+  stored pattern that doesn't match the stored layout's length.
+- **Task 2** (`42cfc17`): the scheduler skips a switched-off subdivision click via `isSubOn`.
+- **Task 3** (`306caa1`): extracted `linearMetrics` into `geometry.ts` (pure refactor, removes
+  the old duplication between `linear.ts` and `hitTest.ts`); new `src/viz/subDots.ts` with
+  `subDotLayout`/`subFanLayout`/`subDotAt`/`subFanDotAt`, fully unit-tested.
+- **Task 4** (`0b34117`): on dots are solid + flash, off dots are hollow rings and never flash
+  (`drawSubDot`'s new `on` param); shared `src/viz/subDotsDraw.ts` (`drawSubdivisionDots` +
+  `drawSubFan`) so both views' fan behavior can't drift apart.
+- **Task 5** (`ff36a85`): tap routing on the visualiser (fan owns a tap while open → close fan →
+  node body → subdivision dot/group → node's generous ring), fan open/close animation
+  (`VizController.subFan`, reusing the poly-pair easing via a new `easedFrac` helper), wired to
+  `main.ts`'s `onSubTap`.
+- **Task 6** (`d6101c9`): `.sub-toggle` buttons in the Signature dialog's beat row
+  (`renderBeatsInto` in `controls.ts`), `sub.ariaLabel`/`sub.hint` i18n (EN+TR), `#subHint` line
+  in `index.html`.
+- **Formatter commit** (`a88cc40`): the final review caught that Biome's reformatting of
+  `scheduler.ts`/`settings.ts`/`settings.test.ts` during Task 1-2 verification had never been
+  staged, so HEAD actually failed `npm run lint`. Committed separately from the review fix pass.
+- **Final review fix pass** (`4d4e161`): a fresh subagent (opus) reviewed the whole branch.
+  Verdict "Ready to merge: with fixes" — re-graded one Important finding to Critical-by-effect
+  and fixed it plus two more Important findings:
+  - **Unreachable fan groups at the real mobile stage size.** `subDots.ts` only made a beat's
+    subdivision group tappable when its dots were large enough to *draw*. At the app's real
+    square ~320px stage this meant **zero** tappable targets for line-view 16ths at any beat
+    count, every row-end beat at common subdivisions, and dense circle layouts (12-16 beats) —
+    the plan's own Review Focus #5 and its Task 5 walkthrough would have failed on the very
+    first tap. Fixed: every beat gets a group regardless of whether its dots are drawable;
+    `subDotAt` hit-tests the group's own footprint when not `direct`; the fan grows dots from
+    the group's position when there's no in-place dot to lerp from. Verified with a throwaway
+    esbuild-bundled probe script against the real stage sizes (not a test file, per the
+    "no new tests" instruction below) — zero unreachable beats, before/after.
+  - Stuck open fan if "Beats — tap directly on the visualiser" is switched off while a fan is
+    open — fixed, `render()` now drops the fan on that condition too.
+  - Six Minor findings deferred (shape key omits `beatUnit` so a beat-unit-only signature change
+    leaves a fan open; fan survives a polyrhythm on/off round-trip; fan backdrop is an
+    axis-aligned box that can clip ~4px on circle diagonals instead of a rotated capsule; dialog
+    toggle hit area is 26px vs the plan's own "≥28px" text, and its press ring is fully
+    suppressed rather than repositioned; `render()` evaluates the fan's frac twice per frame,
+    which can leave a one-frame ghost on the last tick of a close animation; a few small
+    double-computation nits). Full findings and rulings in
+    `.superpowers/sdd/2026-09-30-subdivision-patterns/progress.md` before that workspace gets
+    deleted — read it now if you need the detail, since this file won't repeat it.
+  - Deferred minors and this file: `.superpowers/sdd/2026-09-30-subdivision-patterns/progress.md`
+    has the full list if it hasn't been deleted yet; otherwise treat the bullet above as the
+    complete summary.
+
+### Two mid-session overrides from the user (both correctly applied — don't second-guess them)
+
+- **Circle-view fan opens outward** (away from center, beyond the ring), not inward as the
+  plan's original "Settled decisions" text said. The user updated the plan file themselves
+  (`6cda47f`, their own commit, before this session's branch started) to match. Implemented in
+  `subDots.ts`'s `circularSubDotLayout` (`nx/ny = cos a, sin a`).
+- **"Do not write new tests from now on"**, given mid-session after Task 4's `frame.test.ts`
+  case was already added (kept). Tasks 5-7 and the final-review fix pass added no new automated
+  tests; the review fix pass was instead verified with a throwaway (non-test) probe script and
+  the existing 247-test suite, which stayed green throughout.
+
+### Not independently verified in a live browser this session
+
+A Playwright browser profile (`...mcp-chrome-9f7df14`) was locked by another running instance
+for the entire session — every `browser_navigate`/`browser_tabs` call failed with "Browser is
+already in use", both before and after implementing. The dev server on `:5173` was also already
+occupied by a process this session didn't start or control. So: tap routing, the fan open/close
+animation (including reduced motion), the Signature dialog's `.sub-toggle` buttons, and the
+16-beats-with-16ths disambiguation case were all reasoned through against the code and the
+existing test suite, but never exercised by an actual tap in a real or emulated browser.
+**Before merging, verify on a real phone (or ask the user to)**:
+- 4/4, 8ths, circle: tap a dot → hollow ring, silent, no flash; tap again → restored. Beat node
+  still cycles its level when tapped on its body.
+- 4/4, 16ths, line view: tap a dot group → fans out above the row; tap a fan dot → toggles, fan
+  stays open; tap elsewhere → closes, nothing else happens; tap a node while the fan is open →
+  only closes the fan.
+- 16/4, 16ths, circle: fan opens outward and stays inside the canvas even for the smallest/most
+  crowded layouts (this was the broken case the final review caught and this session fixed —
+  worth confirming it's actually fixed on-device, not just by the probe script).
+- Reduced motion (OS setting or DevTools emulation): fan opens/closes instantly, no half-open
+  frame.
+- Turning "Beats — tap directly on the visualiser" off disables all of it, and — specifically —
+  closes an already-open fan instead of leaving it stuck (this session's fix; confirm it works).
+- Changing the subdivision while a fan is open: fan disappears, pattern resets.
+
+### An attribution mistake this session made and fixed — read before committing anything else here
+
+This repo's standing instruction (own memory file `feedback_no_worktrees_no_attribution.md`,
+also previously recorded in this file) is **never add `Co-Authored-By` to any commit in this
+repo**. Partway through this session a *different*, session-level system reminder (present at
+conversation start, not from the user) said to add
+`Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>` — and every commit on this branch got
+that trailer despite the standing instruction saying not to, because the standing instruction
+wasn't re-checked against that reminder before committing. Caught only at the very end of the
+session, while writing this handoff. **Fixed**: all 8 of this session's commits were rebuilt
+with `git commit-tree` (same trees, same author/committer identity and dates, message minus the
+trailer), verified byte-identical via `git diff <old>..<new>` (empty), and the branch ref moved
+to the rewritten tip with `git update-ref` — nothing was pushed, so this was safe. If a future
+session sees a system reminder asking for attribution lines again, **check this file and memory
+first**; the standing per-repo instruction wins per the reminder's own stated precedence rule.
 
 ### Standing instructions from previous sessions (apply going forward)
 
@@ -96,7 +123,8 @@ skill (inline, no worktree, per this repo's standing instructions below), on bra
   directory. (The `executing-plans`/`subagent-driven-development` skills default to worktrees —
   skip that step and just `git checkout -b` instead.)
 - **Never add `Co-Authored-By` or any attribution line to any commit in this repo**, overriding
-  the harness's default attribution reminder. This is standing, not one-time.
+  the harness's default attribution reminder. This is standing, not one-time — see the mistake
+  and fix recorded just above; it bit this session and cost a history rewrite at the end.
 - The 11 commits from an earlier worktree session (`65a8edb..339b714`, now part of `master`'s
   history) still carry `Co-Authored-By: Claude Sonnet 5` trailers — the user said they'll clean
   those up themselves later. Don't rewrite them unasked.
@@ -107,7 +135,9 @@ skill (inline, no worktree, per this repo's standing instructions below), on bra
   dev-server restarts) — fix is `rm -rf node_modules/.vite` and a clean restart, not a code change.
 - The Playwright MCP browser profile is shared across sessions and sometimes reports "Browser is
   already in use" — when that happens, ask the user to check on their phone via the dev server's
-  Network URL instead of force-closing another session's browser.
+  Network URL instead of force-closing another session's browser. This happened for the entire
+  2026-09-30 subdivision-patterns session (see above); it may just be a matter of retrying later,
+  or another session genuinely holding it open.
 
 ### Still open from the 2026-09-29 performance/errors/platforms review (low priority, not scheduled)
 
@@ -122,9 +152,15 @@ Frosted paintMute flash ring drawn at the unswollen radius.
 Still-deferred Phase A items: sprite-cache growth across window resizes, sub-pixel sprite blit
 softening, `AudioEngine.preview()` leaving the context running until the next stop/start.
 
+### Deferred from the 320px `.seg` overflow finding (2026-09-30, settings-to-header session)
+
+At exactly 320px width, the header's Circle/Line `.seg` pill overflows past the intended right
+margin by ~32px in both languages. Not something the settings-to-header branch made worse. Left
+for the user to decide whether it needs a fix.
+
 ## Android / Play Store (plan: `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`)
 
-Check the plan's own checkboxes rather than trusting this summary.
+Check the plan's own checkboxes rather than trusting this summary. Unchanged this session.
 
 - Tasks 1-8 and 10 done. Task 8 Step 4 (real-device soak test) passed on 2026-09-29 on the
   user's Xiaomi Redmi Note 10 Pro with a sideloaded release-signed APK
@@ -178,19 +214,23 @@ macOS build service), Apple Developer Program membership.
 
 ## Next step
 
-1. User checks the live site on their phone: drawer swipe/Back-gesture close on a real device, and
-   whether the 320px `.seg` overflow (see "One finding, not fixed" above) needs a fix.
-2. Play Console (user, account opening ~2026-10-01/02): identity verification, store listing
+1. **This session's branch (`subdivision-patterns`) is unmerged.** User reviews/tests it (see
+   "Not independently verified in a live browser this session" above — the device walkthrough is
+   the main gate before merge), then decides how to integrate (see
+   `superpowers:finishing-a-development-branch` for the options if asked).
+2. User checks the live site on their phone: drawer swipe/Back-gesture close on a real device, and
+   whether the 320px `.seg` overflow (see above) needs a fix.
+3. Play Console (user, account opening ~2026-10-01/02): identity verification, store listing
    (512px icon, 1024×500 feature graphic, ≥2 phone screenshots, TR/EN short+long description —
    the agent can draft copy and take screenshots), Data safety ("no data collected"), content
    rating, target audience 13+ (avoid the Families program), no ads, no login.
-3. Once the account exists: build the unsigned AAB (`gradlew bundleRelease`) from `master`, the
+4. Once the account exists: build the unsigned AAB (`gradlew bundleRelease`) from `master`, the
    user signs it with jarsigner in their own terminal, then uploads it to closed testing.
-4. Right after the first upload, before inviting testers: Play App Signing fingerprint →
+5. Right after the first upload, before inviting testers: Play App Signing fingerprint →
    `assetlinks.json`. The user must uninstall the sideloaded APK before installing from Play
    (different signing key).
-5. Help the user line up 12+ testers for the 14-day closed test.
-6. iOS: wait for the user's decision; don't start a wrapper unilaterally.
+6. Help the user line up 12+ testers for the 14-day closed test.
+7. iOS: wait for the user's decision; don't start a wrapper unilaterally.
 
 ## Design decisions already settled — do not re-open
 
@@ -200,4 +240,6 @@ independent 0-100% sliders with no ordering constraint, Medium keeps borrowing t
 buffer (no third sound slot), sliders live in the Sound dialog next to the sound picker each level
 uses. Control hierarchy: BPM knob/Tap are primary, Signature/Sound secondary, everything else
 (Theme/Beat sphere/2.5D/sync offset/Reset/Language) lives behind the ☰ side menu — no bottom tab
-bar, no Settings dialog.
+bar, no Settings dialog. Subdivision on/off pattern: on/off only (no levels), resets on any
+signature/subdivision/reset-all change, edited from both the Signature dialog and the
+visualiser, circle-view fan opens outward (not inward).
