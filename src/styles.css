@@ -251,10 +251,18 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  /* A dim tint of the theme accent (the same --select-soft the checked switch uses), not a
-     neutral gray — visibly a groove against its --panel-lo field, and colored like the rest of
-     the theme instead of looking unthemed. */
-  background: var(--accent-glow);
+  /* Filled portion (0 to the thumb) in the full accent color, empty portion in a dim tint of it
+     (the same --select-soft the checked switch uses) — a visible progress fill instead of one
+     flat tone, colored like the rest of the theme instead of looking unthemed. --range-fill is
+     set from JS (settingsDialog.ts) on 'input' and on every render, since WebKit/Blink expose no
+     equivalent of Firefox's ::-moz-range-progress below. */
+  background: linear-gradient(
+    to right,
+    var(--accent-color) 0%,
+    var(--accent-color) var(--range-fill, 50%),
+    var(--accent-glow) var(--range-fill, 50%),
+    var(--accent-glow) 100%
+  );
 }
 input[type="range"]::-moz-range-track {
   height: 6px;
@@ -416,12 +424,10 @@ output {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  /* Same subtle accent-tinted border as the panel buttons (.square-btn), but no box-shadow at
+     rest — only :active gets one, for the press feedback. */
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
   color: var(--pink);
   display: flex;
   align-items: center;
@@ -1287,8 +1293,7 @@ html.depth-25d .knob {
   font-size: 30px;
 }
 .unit-row--grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
   gap: 6px;
   justify-content: center;
 }
@@ -1451,6 +1456,32 @@ html.depth-25d .knob {
   color: var(--text);
   font: inherit;
   font-size: 14px;
+}
+/* A compact tappable value (Volume %, Visual sync offset ms) inline in a .field's label row —
+   the same "tap to type" idea as .num-value, just small enough to sit in a text line instead of
+   its own card. Scoped under .field-value so it outweighs .field input[type="number"] above
+   (same specificity, later in source) instead of inheriting its full-width sizing. */
+.field-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.field-value .field-value-input {
+  width: 3.4em;
+  padding: 2px 6px;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--edge);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.field-value-input::-webkit-inner-spin-button,
+.field-value-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 /* Shared "value box on top, round steppers below" format for every dialog's +/- number picker
    (the practice timer's stacked MM:SS fields, and single-value pickers like Beats, the
@@ -1876,6 +1907,11 @@ html.depth-25d .knob {
   display: grid;
   gap: 6px;
   margin-bottom: 14px;
+}
+/* Layer A/B's sound picker sits right under the layer-count stepper — a little breathing room
+   so it doesn't read as glued to it. */
+#polyBlock .slot {
+  margin-top: 10px;
 }
 .slot label {
   font-size: 14px;

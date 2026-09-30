@@ -7,6 +7,7 @@ import {
   isNodeStyleName,
   isThemeName,
   type Settings,
+  SYNC_OFFSET_LIMIT_MS,
 } from '../state/settings';
 import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
@@ -25,10 +26,20 @@ export interface SettingsDialogDeps {
 /** Seconds a single tap (or hold-repeat tick) of the practice timer's +/- buttons moves by. */
 const PRACTICE_STEP_SECONDS = 15;
 
+/** Reflects a range input's value as a left-filled/right-empty track (Chrome/WebKit have no
+ *  native ::-webkit-slider-progress, unlike Firefox's ::-moz-range-progress already used in
+ *  styles.css — this custom property drives the same gradient there). */
+function updateRangeFill(input: HTMLInputElement): void {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const percent = ((Number(input.value) - min) / (max - min)) * 100;
+  input.style.setProperty('--range-fill', `${percent}%`);
+}
+
 export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('settingsDialog');
   const volumeInput = byId<HTMLInputElement>('volumeInput');
-  const volumeValue = byId('volumeValue');
+  const volumeValue = byId<HTMLInputElement>('volumeValue');
   const practiceMinutesInput = byId<HTMLInputElement>('practiceMinutesInput');
   const practiceSecondsInput = byId<HTMLInputElement>('practiceSecondsInput');
   const practiceTimeValue = byId('practiceTimeValue');
@@ -36,7 +47,7 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const practiceTimeUp = byId<HTMLButtonElement>('practiceTimeUp');
   const practiceTimerApply = byId<HTMLButtonElement>('practiceTimerApply');
   const offsetInput = byId<HTMLInputElement>('offsetInput');
-  const offsetValue = byId('offsetValue');
+  const offsetValue = byId<HTMLInputElement>('offsetValue');
   const resetBtn = byId<HTMLButtonElement>('resetBtn');
   const beatsClickableToggle = byId<HTMLButtonElement>('beatsClickableToggle');
   const beatRow = byId('beatRow');
@@ -66,6 +77,12 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
 
   volumeInput.addEventListener('input', () => {
     store.set({ volume: Number(volumeInput.value) / 100 });
+    updateRangeFill(volumeInput);
+  });
+  volumeValue.addEventListener('input', () => {
+    if (volumeValue.value === '') return;
+    const percent = Math.min(100, Math.max(0, Number(volumeValue.value)));
+    store.set({ volume: percent / 100 });
   });
 
   const setPracticeSeconds = (seconds: number): void => {
@@ -95,6 +112,15 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   });
   offsetInput.addEventListener('input', () => {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
+    updateRangeFill(offsetInput);
+  });
+  offsetValue.addEventListener('input', () => {
+    if (offsetValue.value === '') return;
+    const ms = Math.min(
+      SYNC_OFFSET_LIMIT_MS,
+      Math.max(-SYNC_OFFSET_LIMIT_MS, Number(offsetValue.value)),
+    );
+    store.set({ syncOffsetMs: ms });
   });
   for (const button of themeButtons) {
     button.addEventListener('click', () => {
@@ -174,14 +200,16 @@ export function mountSettingsDialog({ store, onStartPractice }: SettingsDialogDe
   const render = (s: Settings) => {
     const percent = Math.round(s.volume * 100);
     volumeInput.value = String(percent);
-    volumeValue.textContent = `${percent}%`;
+    volumeValue.value = String(percent);
+    updateRangeFill(volumeInput);
     practiceMinutesInput.value = String(Math.floor(s.practiceSeconds / 60));
     practiceSecondsInput.value = String(s.practiceSeconds % 60);
     practiceTimeValue.textContent =
       s.practiceSeconds > 0 ? formatTimeLeft(0, s.practiceSeconds) : t('practiceTimer.off');
     practiceTimerApply.disabled = s.practiceSeconds <= 0;
     offsetInput.value = String(s.syncOffsetMs);
-    offsetValue.textContent = `${s.syncOffsetMs > 0 ? '+' : ''}${s.syncOffsetMs} ms`;
+    offsetValue.value = String(s.syncOffsetMs);
+    updateRangeFill(offsetInput);
     for (const button of nodeStyleButtons) {
       button.setAttribute('aria-checked', String(button.dataset.nodeStyleOption === s.nodeStyle));
     }

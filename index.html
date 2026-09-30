@@ -604,11 +604,11 @@
         </div>
       </div>
       <label class="field">
-        <span><span data-i18n="volume.label">Volume</span> <output id="volumeValue">80%</output></span>
+        <span><span data-i18n="volume.label">Volume</span> <span class="field-value"><input type="number" id="volumeValue" class="field-value-input" inputmode="numeric" min="0" max="100" step="1" value="80" data-i18n-aria-label="volume.ariaLabel" aria-label="Volume percent" />%</span></span>
         <input id="volumeInput" type="range" min="0" max="100" step="1" />
       </label>
       <label class="field">
-        <span><span data-i18n="syncOffset.label">Visual sync offset</span> <output id="offsetValue">0 ms</output></span>
+        <span><span data-i18n="syncOffset.label">Visual sync offset</span> <span class="field-value"><input type="number" id="offsetValue" class="field-value-input" inputmode="numeric" min="-200" max="200" step="1" value="0" data-i18n-aria-label="syncOffset.ariaLabel" aria-label="Visual sync offset in milliseconds" /> ms</span></span>
         <input id="offsetInput" type="range" min="-200" max="200" step="1" />
         <div class="sub-head">
           <small class="sub-label" data-i18n="syncOffset.subLabel">Fixes flash/click lag</small>
