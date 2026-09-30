@@ -1141,7 +1141,7 @@ html.depth-25d .knob {
   transform: translate(-50%, -50%);
   max-width: min(88vw, 360px);
   margin: 0;
-  padding: 20px 22px;
+  padding: 20px 44px 20px 22px;
   border-radius: 16px;
   border: 3px solid var(--pink);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
@@ -1152,6 +1152,27 @@ html.depth-25d .knob {
   font-size: 15px;
   text-align: center;
   z-index: 12;
+}
+.info-popup-text {
+  margin: 0;
+}
+.info-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.info-popup-close:active {
+  background: var(--pink-soft);
 }
 .info-popup[hidden] {
   display: none;

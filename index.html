@@ -395,7 +395,10 @@
       </div>
 
       <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
-      <p id="infoPopup" class="info-popup" role="status" aria-live="polite" hidden></p>
+      <div id="infoPopup" class="info-popup" role="status" aria-live="polite" hidden>
+        <p id="infoPopupText" class="info-popup-text"></p>
+        <button type="button" id="infoPopupClose" class="info-popup-close" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
+      </div>
       <pre id="debug" class="debug" hidden></pre>
     </main>
 
