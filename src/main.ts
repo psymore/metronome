@@ -435,7 +435,7 @@ practiceResetBtn.addEventListener('click', resetAndStopPracticeTimer);
     clearTimeout(deleteTimeout);
     deleteTimeout = undefined;
     deleteState = 'idle';
-    practiceDeleteBtn.innerHTML = '<img src="/src/assets/icons/delete.png" alt="" class="practice-icon-img" aria-hidden="true" />';
+    practiceDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M19 6H5M9 6V5c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v1M9 10v8M15 10v8M3 6h18l-1 14c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2L3 6Z" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     practiceDeleteBtn.classList.remove('is-confirming');
   };
 

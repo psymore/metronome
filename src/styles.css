@@ -1921,11 +1921,6 @@ html.depth-25d .knob {
   width: 24px;
   height: 24px;
 }
-.practice-icon-img {
-  width: 24px;
-  height: 24px;
-  display: block;
-}
 .practice-icon-btn .icon-resume-timer,
 .practice-icon-btn .icon-replay-timer {
   display: none;
