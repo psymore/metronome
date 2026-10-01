@@ -99,6 +99,20 @@ declined) and may still be running on port 5173 — check before starting anothe
   pair (45px each) via `deleteButtonExpand` animation. Cancel button red, Confirm green, both
   round with matching shadow/border styling as regular icon buttons.
 
+### Batch 5 — professional PNG icons for timer buttons (committed, not yet tested by user)
+
+- **Icon organization**: Created `src/assets/icons/` directory to hold button icons:
+  - `reset.png` — circular arrow with checkmark (replaces SVG reset icon)
+  - `delete.png` — trash bin icon (replaces SVG delete icon)
+- **HTML updates**: Replaced `<svg>` icon paths in reset and delete buttons with `<img>` tags
+  referencing the PNG files. Images use `aria-hidden="true"` and class `.practice-icon-img`.
+- **CSS**: Added `.practice-icon-img` style (24px × 24px, display: block) to properly size and
+  render PNG icons inline with other icon button styling.
+- **Vite asset handling**: Icons are bundled and cache-busted by Vite during build
+  (e.g., `reset-BxGoPN0s.png` in dist/).
+- **git tracking**: `.gitignore` already has `/*.png` (root-level only), so icons in
+  `src/assets/icons/` are properly committed to the repository.
+
 ## Next step
 
 1. User tests all of this on their phone:
@@ -107,10 +121,12 @@ declined) and may still be running on port 5173 — check before starting anothe
    - Info-button "i" centering
    - Practice timer bar's left/right swap
    - Practice timer modal's inline confirm (Start → [ ✕ | ✓ ] → confirm or auto-reset)
-   - **New**: Practice timer control bar 3-button layout:
+   - Practice timer control bar 3-button layout:
      - Left: Play/Pause/Replay cycles correctly
      - Middle: Reset (↺) resets timer to configured duration in one click
      - Right: Delete (🗑) shows inline confirm on first click, closes timer on ✓, returns to icon on ✕ or timeout
+   - **New**: Verify professional PNG icons (reset circular arrow, delete trash bin) render clearly
+     and match the overall UI aesthetic
 2. If the first-beat-accent fix doesn't actually address what they saw, come back to
    `src/state/settings.ts`'s `ensureFirstAccent` with real repro steps from the user rather than
    guessing again.
