@@ -90,6 +90,15 @@ export class VizController {
       if (!document.hidden) this.invalidate();
     });
     canvas.addEventListener('pointerdown', this.onPointerDown);
+    // A tap anywhere outside the canvas (panel buttons, header, etc.) closes an open fan.
+    // Taps on the canvas itself are handled by onPointerDown's own fan routing.
+    document.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (e.target !== canvas) this.closeSubFan();
+      },
+      true,
+    );
     this.resize();
   }
 
@@ -219,6 +228,12 @@ export class VizController {
     const t = 1 - Math.cbrt(1 - (opening ? current : 1 - current));
     const useShape = shape ?? this.subFan?.shape ?? '';
     this.subFan = { beat, start: now - t * POLY_SPLIT_MS, opening, shape: useShape };
+  }
+
+  closeSubFan(): void {
+    if (!this.subFan?.opening) return;
+    this.animateSubFan(this.subFan.beat, false);
+    this.invalidate();
   }
 
   private subFanAnimating(): boolean {
