@@ -192,6 +192,11 @@ button {
   color: inherit;
   cursor: pointer;
   touch-action: manipulation;
+  /* A long press (e.g. holding +/- to repeat) otherwise selects the button's glyph as text and
+     pops up the native copy menu. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   position: relative;
   /* Not overflow: hidden — the click glow's outer box-shadow (button:active::after /
      .btn-flash::after below) needs to extend past the button's own edge, and a hidden-overflow

@@ -8,6 +8,30 @@ On `master`, **all changes committed and pushed**. This session was a long UI-po
 by the user testing live on their phone and a large desktop monitor. Everything below was looked
 at by the user as it landed unless marked otherwise.
 
+### Latest: knob app icon, long-press fix, narrow-phone fix (not browser-checked)
+
+- **App icon** is now the BPM knob redrawn in SVG (`public/icon.svg`): gear teeth, teal metal
+  face, indicator tick, dark LCD with only a play glyph (digits are unreadable at icon size), on
+  the panel's shaded warm grey with a drop shadow. The user liked the look from the PNG preview.
+  PNGs were regenerated with a one-off `sharp` call (svg → `pwa-64/192/512`,
+  `maskable-icon-512x512`, `apple-touch-icon-180x180`), not with `pwa-assets-generator`.
+- **Not updated for the new icon:** `public/favicon.ico`, everything in `src-tauri/icons/`, and
+  the Android launcher icon (`android/`, needs a new Play release).
+- **Long-press text selection:** the global `button` rule in `src/styles.css` has
+  `user-select: none` + `-webkit-touch-callout: none`, so holding +/- no longer opens the native
+  copy menu.
+- **Right edge cut off in the installed app** (fd1b666): `.app` uses
+  `grid-template-columns: minmax(0, 1fr)`. Confirmed working by the user on their 400px phone.
+
+**Checks that were skipped** (user asked for no browser and no tests, usage limit):
+
+- The long-press fix was not tried on a phone or in a browser.
+- The icon was only viewed as the 192px PNG; not seen installed, in a maskable (round) crop, or
+  at 64px. The knob's outer radius is 200/512, just inside the maskable safe zone.
+- Phones narrower than 400px (320/360px) were not checked. The column can't overflow any more,
+  but the controls panel (knob + two 64px button columns) may get tight at 320px.
+- No `npm test` / `npm run build` / lint run after these changes.
+
 ### Practice timer buttons and inline delete confirm
 
 - Timer bar icons redrawn as inline SVG (`index.html`): filled play/pause, a "replay" reset icon
@@ -80,6 +104,8 @@ commit without updating the tests. Fix is to update the expected strings.
 
 ## Next step
 
+0. Ask the user how the new icon and the +/- long-press fix behave on the phone; if the icon
+   stays, regenerate `favicon.ico`, the Tauri icons (`npx tauri icon`) and the Android icon.
 1. Ask the user how the wheel picker feels on the phone (finger scrolling, Save/Cancel).
 2. Decide with the user whether the timer and the loop may be active at once; if yes, fix the
    crowding/overlap of the two button groups on narrow screens.
