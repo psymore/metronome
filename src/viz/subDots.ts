@@ -24,6 +24,8 @@ export interface SubDot {
   x: number;
   y: number;
   r: number;
+  /** Inner-ring dots only: a short radial tick from just inside the dot toward the center. */
+  tick?: { x1: number; y1: number; x2: number; y2: number };
 }
 
 export interface SubGroup {
@@ -46,6 +48,8 @@ export interface SubDotLayout {
   spacing: number;
   /** Dots are big and far enough apart to tap one directly (spacing ≥ SUB_TAP_MIN_SPACING). */
   direct: boolean;
+  /** Circle view only: dots didn't fit between the nodes, so they sit on an inner ring. */
+  inner: boolean;
 }
 
 function circularSubDotLayout(
@@ -60,7 +64,13 @@ function circularSubDotLayout(
   const gapAngle = Math.asin(Math.min(1, (nodeR + gap) / r));
   const arcSpan = (2 * Math.PI) / count - 2 * gapAngle;
   const spacing = (r * arcSpan) / sub;
-  const dotR = subDotRadius(nodeR, spacing);
+  const inGapR = subDotRadius(nodeR, spacing);
+  // Under 3px an in-gap dot is invisible in practice: switch to the inner ring instead.
+  const inner = sub > 1 && inGapR < 3;
+  const innerR = r - nodeR - 12;
+  // Every click of the bar is evenly spaced around the inner ring, so this is its pitch.
+  const innerPitch = (2 * Math.PI * innerR) / (count * sub);
+  const innerDotR = Math.max(1.5, Math.min(3.5, innerPitch / 2 - 1));
 
   const dots: SubDot[] = [];
   const groups: SubGroup[] = [];
@@ -70,10 +80,28 @@ function circularSubDotLayout(
   if (sub > 1) {
     for (let i = 0; i < count; i++) {
       const start = nodeAngle(i, count) + gapAngle;
-      if (dotR > 0) {
+      if (inner) {
+        for (let k = 1; k < sub; k++) {
+          // Exact time position: beat i's angle plus k/sub of one beat's arc.
+          const a = nodeAngle(i, count) + ((2 * Math.PI) / count) * (k / sub);
+          const p = polar(cx, cy, innerR, a);
+          // Clock-face hierarchy: the click halfway through the beat gets the longer tick.
+          const len = k * 2 === sub ? 9 : 5;
+          const t1 = polar(cx, cy, innerR - innerDotR - 2, a);
+          const t2 = polar(cx, cy, innerR - innerDotR - 2 - len, a);
+          dots.push({
+            beat: i,
+            k,
+            x: p.x,
+            y: p.y,
+            r: innerDotR,
+            tick: { x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y },
+          });
+        }
+      } else if (inGapR > 0) {
         for (let k = 1; k < sub; k++) {
           const p = polar(cx, cy, r, start + (arcSpan * k) / sub);
-          dots.push({ beat: i, k, x: p.x, y: p.y, r: dotR });
+          dots.push({ beat: i, k, x: p.x, y: p.y, r: inGapR });
         }
       }
       const a = start + arcSpan / 2;
@@ -90,7 +118,7 @@ function circularSubDotLayout(
       });
     }
   }
-  return { dots, groups, spacing, direct: spacing >= SUB_TAP_MIN_SPACING };
+  return { dots, groups, spacing, direct: !inner && spacing >= SUB_TAP_MIN_SPACING, inner };
 }
 
 function linearSubDotLayout(
@@ -132,6 +160,7 @@ function linearSubDotLayout(
     groups,
     spacing: Number.isFinite(minSpacing) ? minSpacing : 0,
     direct: Number.isFinite(minSpacing) && minSpacing >= SUB_TAP_MIN_SPACING,
+    inner: false,
   };
 }
 
@@ -196,6 +225,15 @@ export function subDotAt(layout: SubDotLayout, x: number, y: number): SubHit | n
     return best ? { kind: 'dot', beat: best.dot.beat, k: best.dot.k } : null;
   }
   const maxR = 22;
+  // Inner-ring dots are visible but too small to toggle directly: a tap on one opens its fan.
+  if (layout.inner) {
+    let near: { dot: SubDot; d: number } | null = null;
+    for (const dot of layout.dots) {
+      const d = Math.hypot(x - dot.x, y - dot.y);
+      if (d <= 14 && (!near || d < near.d)) near = { dot, d };
+    }
+    if (near) return { kind: 'group', beat: near.dot.beat };
+  }
   let best: { group: SubGroup; d: number } | null = null;
   for (const group of layout.groups) {
     const d = Math.hypot(x - group.x, y - group.y);

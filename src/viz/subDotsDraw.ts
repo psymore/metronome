@@ -10,8 +10,8 @@ function glowFor(frame: VizFrame, beat: number, k: number): number {
 
 /** Draws every subdivision dot in its in-place position: on/off look, glow only on the heard on
  *  dot. Skips the one beat currently fanned out (drawn separately by `drawSubFan`, on top of
- *  the beat nodes). Shared by the circular and linear renderers so both views use the same
- *  layout and on/off look. */
+ *  the beat nodes). Inner-ring dots include clock-face ticks pointing toward the center.
+ *  Shared by the circular and linear renderers so both views use the same layout and on/off look. */
 export function drawSubdivisionDots(
   ctx: CanvasRenderingContext2D,
   kind: 'circular' | 'linear',
@@ -25,6 +25,18 @@ export function drawSubdivisionDots(
   const fanBeat = frame.subFan && frame.subFan.frac > 0 ? frame.subFan.beat : -1;
   for (const dot of layout.dots) {
     if (dot.beat === fanBeat) continue;
+    if (dot.tick) {
+      ctx.save();
+      ctx.strokeStyle = theme.ring;
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(dot.tick.x1, dot.tick.y1);
+      ctx.lineTo(dot.tick.x2, dot.tick.y2);
+      ctx.stroke();
+      ctx.restore();
+    }
     drawSubDot(
       ctx,
       dot.x,
