@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { circularLayout } from '../../src/viz/geometry';
 import {
   SUB_FAN_DOT_R,
   SUB_FAN_PITCH,
@@ -92,5 +93,34 @@ describe('subDotAt / subFanDotAt', () => {
     ];
     expect(subFanDotAt(fan, 146, 52)).toBe(1);
     expect(subFanDotAt(fan, 300, 300)).toBe(-1);
+  });
+});
+
+describe('inner subdivision ring', () => {
+  it('moves dots to an inner ring when they do not fit between nodes', () => {
+    const layout = subDotLayout('circular', 320, 320, 16, 4);
+    expect(layout.inner).toBe(true);
+    expect(layout.dots).toHaveLength(16 * 3);
+    const { cx, cy, r } = circularLayout(320, 320);
+    const radii = layout.dots.map((d) => Math.hypot(d.x - cx, d.y - cy));
+    for (const rad of radii) {
+      expect(rad).toBeLessThan(r - 15);
+      expect(rad).toBeCloseTo(radii[0] as number, 5);
+    }
+    for (const d of layout.dots) expect(d.tick).toBeDefined();
+  });
+
+  it('keeps dots in the gaps when they fit', () => {
+    const layout = subDotLayout('circular', 320, 320, 4, 4);
+    expect(layout.inner).toBe(false);
+    for (const d of layout.dots) expect(d.tick).toBeUndefined();
+  });
+
+  it('a tap on an inner dot hits its beat group', () => {
+    const layout = subDotLayout('circular', 320, 320, 16, 4);
+    const dot = layout.dots.find((d) => d.beat === 5 && d.k === 2);
+    expect(dot).toBeDefined();
+    if (!dot) return;
+    expect(subDotAt(layout, dot.x, dot.y)).toEqual({ kind: 'group', beat: 5 });
   });
 });
