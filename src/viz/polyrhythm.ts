@@ -295,7 +295,9 @@ function drawLayer(
   if (outlineVerts.length === 0) return;
   ctx.save();
   ctx.lineWidth = 2.5;
-  ctx.strokeStyle = layerColor;
+  // Each outline takes the deep, saturated base tone of its own layer's hue (not the pale accent
+  // the nodes are tinted from), so the line reads as that layer's colour at a glance.
+  ctx.strokeStyle = layer === 'A' ? (theme.nodeAlt ?? theme.accentAlt) : theme.node;
   ctx.beginPath();
   for (const [i, v] of outlineVerts.entries()) {
     if (i === 0) ctx.moveTo(v.x, v.y);
@@ -311,8 +313,6 @@ function drawLayer(
   // dark node vs. its bright mint accent). A flat single layerColor for both levels (the previous
   // approach) collapsed that brightness distinction, leaving normal and accent within one layer
   // hard to tell apart, especially on style kits like Prism whose fill alpha is already subtle.
-  // Connecting lines stay in the plain layerColor regardless of level, so a layer still reads as
-  // one consistent hue across the ring.
   const layerTheme = polyLayerTheme(theme, layerColor);
   const size = spriteSize(nodeRadius);
   for (const [i, v] of nodeVerts.entries()) {

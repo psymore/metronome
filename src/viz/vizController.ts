@@ -32,6 +32,7 @@ export function readTheme(el: Element): VizTheme {
     node: v('--viz-node', '#d23c73'),
     accent: v('--viz-accent', '#ff2f7d'),
     accentAlt: v('--viz-accent-alt', '#f0be6a'),
+    nodeAlt: v('--viz-node-alt', '#8a5a2e'),
     nodeIdle: v('--viz-node-idle', '#5a5a62'),
     hand: v('--viz-hand', '#ff2f7d'),
     label: v('--viz-label', '#b5b5bd'),

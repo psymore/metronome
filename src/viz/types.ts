@@ -9,6 +9,9 @@ export interface VizTheme {
   accent: string;
   /** Contrasting accent used for polyrhythm layer A so the two layers read as distinct colors. */
   accentAlt: string;
+  /** Deep base tone of the `accentAlt` hue (what `node` is to `accent`); colors layer A's
+   *  polyrhythm outline. Falls back to `accentAlt` when a theme doesn't define it. */
+  nodeAlt?: string;
   nodeIdle: string;
   hand: string;
   label: string;

@@ -27,7 +27,6 @@ import { mountErrorFloor } from './ui/errorFloor';
 import { mountInfoButtons } from './ui/infoButtons';
 import { createInfoPopup } from './ui/infoPopup';
 import { mountKnob } from './ui/knob';
-import { mountKnobHint } from './ui/knobHint';
 import { fitColumnLabels } from './ui/labelFit';
 import { mountMenuDrawer } from './ui/menuDrawer';
 import { mountPolyrhythmControls } from './ui/polyrhythmDialog';
@@ -55,10 +54,17 @@ const store = createStore<Settings>(loadSettings(storage));
 store.subscribe((s) => saveSettings(storage, s));
 
 const barCounter = byId('barCounter');
+const barCounterDeleteBtn = byId<HTMLButtonElement>('barCounterDeleteBtn');
 const showIdleBarCounter = (): void => {
   const s = store.get();
   barCounter.textContent = formatIdleBarCounter(s.targetBars, s.loopCount);
 };
+// The small trash beside the loop pill only exists while a loop is actually set.
+const syncBarCounterDelete = (s: Settings): void => {
+  barCounterDeleteBtn.hidden = s.targetBars <= 0;
+};
+syncBarCounterDelete(store.get());
+store.subscribe(syncBarCounterDelete);
 
 const applyTheme = (s: Settings) => {
   document.documentElement.dataset.theme = s.theme;
@@ -303,26 +309,25 @@ function stopPracticeTimer(): void {
   practiceTimerBar.classList.add('is-off');
   practiceTimerButtons.classList.add('is-off');
   practiceFadeBar.style.setProperty('--gone', '0');
-  practicePauseBtn.classList.remove('finished');
+  practicePauseBtn.disabled = false;
   practiceResetBtn.disabled = false;
 }
 
 /** Countdown reached 0 on its own: unlike stopPracticeTimer, the bar and its buttons stay put
- *  instead of vanishing — pause/resume becomes a replay button and Reset is disabled, since
- *  there's nothing left running to reset. */
+ *  instead of vanishing — pause button is disabled and reset button starts a fresh countdown. */
 function finishPracticeTimer(): void {
   clearTimeout(practiceTick);
   clearTimeout(practiceEndTimer);
   practiceTick = undefined;
   practiceEndTimer = undefined;
-  // Anchoring the next resume at 0 elapsed (not practiceTotalSeconds) means pressing replay
+  // Anchoring the next resume at 0 elapsed (not practiceTotalSeconds) means pressing reset
   // starts a fresh countdown instead of instantly hitting the end again.
   practiceElapsedBeforeRun = 0;
   practicePaused = true;
   practiceFinished = true;
   renderPracticeProgress(practiceTotalSeconds); // shows 0:00 / fully drained
-  practicePauseBtn.classList.add('finished');
-  practiceResetBtn.disabled = true;
+  practicePauseBtn.disabled = true;
+  practiceResetBtn.disabled = false;
 }
 
 /** (Re)starts the running countdown from practiceElapsedBeforeRun, whether this is a fresh
@@ -365,7 +370,7 @@ function startPracticeTimer(seconds: number): void {
   practiceFinished = false;
   practiceTimerBar.classList.remove('is-off');
   practiceTimerButtons.classList.remove('is-off');
-  practicePauseBtn.classList.remove('finished');
+  practicePauseBtn.disabled = false;
   practiceResetBtn.disabled = false;
   renderPauseButton();
   renderPracticeProgress(0);
@@ -393,56 +398,63 @@ function resumePracticeTimer(): void {
   runPracticeCountdown();
 }
 
-/** The timer's Reset button (↺ icon): rewinds to the full configured length and stops the
- *  metronome too, but — unlike stopPracticeTimer — leaves the bar on screen (paused at 0
- *  elapsed) instead of dismissing it. Only the Delete button dismisses it. */
-function resetAndStopPracticeTimer(): void {
-  if (engine.running) void transport.toggle(); // stops the metronome; onToggle pauses the timer
+/** The timer's Reset button (↻ icon): rewinds to the full configured length and either starts
+ *  a fresh countdown (if timer is finished) or stops the current one and resets to start. */
+function resetPracticeTimer(): void {
   clearTimeout(practiceTick);
   clearTimeout(practiceEndTimer);
   practiceElapsedBeforeRun = 0;
-  practicePaused = true;
+  practicePaused = false;
   practiceFinished = false;
-  practicePauseBtn.classList.remove('finished');
+  practicePauseBtn.disabled = false;
   practiceResetBtn.disabled = false;
   renderPracticeProgress(0);
   renderPauseButton();
+  runPracticeCountdown();
 }
 
+// Pause button: pause/resume the metronome (and timer in lockstep).
 // Proxies straight to the metronome's own toggle rather than calling pause/resumePracticeTimer
 // itself: onToggle below already pauses/resumes the timer in lockstep with engine.running, so
 // this keeps the timer's pause button and the metronome's play state as one single switch.
-// The "finished" (replay) case needs its own path: the metronome may already be running (it
-// keeps playing after the countdown ends on its own — see runPracticeCountdown), so a plain
-// toggle() there would just stop it instead of starting a fresh countdown.
 practicePauseBtn.addEventListener('click', () => {
-  if (practiceFinished) {
-    startPracticeTimer(store.get().practiceSeconds);
-    if (!engine.running) void transport.toggle();
-    return;
-  }
   void transport.toggle();
 });
-practiceResetBtn.addEventListener('click', resetAndStopPracticeTimer);
+
+// Reset button: rewind timer to the start and begin a fresh countdown (or restart if finished).
+practiceResetBtn.addEventListener('click', () => {
+  resetPracticeTimer();
+  if (!engine.running) void transport.toggle();
+});
 
 // Delete button: inline confirm pattern — first click splits to [ ✕ | ✓ ],
-// ✓ closes timer, ✕ or timeout resets button.
-{
-  let deleteState: 'idle' | 'confirming' = 'idle';
+// ✓ runs onConfirm, ✕ or timeout resets button. Shared by the practice timer's trash button and
+// the smaller one beside the loop pill.
+function mountDeleteConfirm(deleteBtn: HTMLButtonElement, onConfirm: () => void): void {
+  let deleteState: 'idle' | 'confirming' | 'closing' = 'idle';
   let deleteTimeout: ReturnType<typeof setTimeout> | undefined;
+  // The trash icon as authored in index.html, so idle always restores that exact markup.
+  const trashIconHtml = deleteBtn.innerHTML;
+  const CLOSE_MS = 180; // matches capsuleCollapse in styles.css
 
+  /** Plays the capsule's collapse, then swaps the trash icon back in. */
   const resetDeleteBtn = (): void => {
+    if (deleteState !== 'confirming') return;
     clearTimeout(deleteTimeout);
-    deleteTimeout = undefined;
-    deleteState = 'idle';
-    practiceDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M19 6H5M9 6V5c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v1M9 10v8M15 10v8M3 6h18l-1 14c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2L3 6Z" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    practiceDeleteBtn.classList.remove('is-confirming');
+    deleteState = 'closing';
+    deleteBtn.classList.add('is-closing');
+    deleteTimeout = setTimeout(() => {
+      deleteTimeout = undefined;
+      deleteState = 'idle';
+      deleteBtn.innerHTML = trashIconHtml;
+      deleteBtn.classList.remove('is-confirming', 'is-closing');
+    }, CLOSE_MS);
   };
 
-  practiceDeleteBtn.addEventListener('click', () => {
+  deleteBtn.addEventListener('click', () => {
     if (deleteState === 'idle') {
       deleteState = 'confirming';
-      practiceDeleteBtn.classList.add('is-confirming');
+      deleteBtn.classList.add('is-confirming');
 
       const cancelBtn = document.createElement('button');
       cancelBtn.type = 'button';
@@ -459,20 +471,28 @@ practiceResetBtn.addEventListener('click', resetAndStopPracticeTimer);
       confirmBtn.textContent = '✓';
       confirmBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (engine.running) void transport.toggle();
-        stopPracticeTimer();
-        store.set({ practiceSeconds: 0 });
+        onConfirm();
         resetDeleteBtn();
       });
 
-      practiceDeleteBtn.innerHTML = '';
-      practiceDeleteBtn.appendChild(cancelBtn);
-      practiceDeleteBtn.appendChild(confirmBtn);
+      deleteBtn.innerHTML = '';
+      deleteBtn.appendChild(cancelBtn);
+      deleteBtn.appendChild(confirmBtn);
 
       deleteTimeout = setTimeout(resetDeleteBtn, 3000);
     }
   });
 }
+
+mountDeleteConfirm(practiceDeleteBtn, () => {
+  if (engine.running) void transport.toggle();
+  stopPracticeTimer();
+  store.set({ practiceSeconds: 0 });
+});
+// Loop pill's trash: turns the measure loop off; the metronome itself keeps playing.
+mountDeleteConfirm(barCounterDeleteBtn, () => {
+  store.set({ targetBars: 0 });
+});
 
 const knobEl = byId<HTMLCanvasElement>('knob');
 const transport = mountTransport({
@@ -521,7 +541,6 @@ const knob = mountKnob(byId<HTMLCanvasElement>('knob'), {
   isRunning: () => engine.running,
   toggle: () => void transport.toggle(),
 });
-mountKnobHint(byId('knobHint'), storage);
 // Until the initial sounds finish loading (IndexedDB + decode for custom sounds can be slow on
 // mobile), buffers are null and beats would play silently. Block the knob's center tap until
 // they're ready.

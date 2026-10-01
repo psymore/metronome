@@ -64,6 +64,9 @@
   font-family: var(--font-sans);
   --confirm-safe: #57d38c;
   --confirm-danger: #ff5c5c;
+  /* Warning yellow for toasts: sits between the ✕ red (#ff8a8a) and ✓ green (#57d38c) used by
+     the inline confirm buttons, at a matching brightness. */
+  --confirm-warn: #f0c75e;
 
   /* Accent family (theme: Teal, default) — one hue, three roles */
   --pink: #4fb894;
@@ -79,6 +82,7 @@
   --viz-accent: #7fe0bb;
   /* Contrasting warm hue for polyrhythm layer A on this cool theme. */
   --viz-accent-alt: #f0be6a;
+  --viz-node-alt: #a8702f;
   --viz-node-idle: #3a453f;
   --viz-hand: #4fb894;
   --viz-label: #9db0a7;
@@ -107,6 +111,7 @@
   --viz-node: #8a5a2e;
   --viz-accent: #f0be6a;
   --viz-accent-alt: #7fe0bb;
+  --viz-node-alt: #3a9675;
   --viz-node-idle: #4a4330;
   --viz-hand: #d99a3f;
   --viz-label: #a89772;
@@ -130,6 +135,7 @@
   --viz-accent: #91cbff;
   /* Polyrhythm layer A secondary color: teal instead of amber. */
   --viz-accent-alt: #7fe0bb;
+  --viz-node-alt: #3a9675;
   --viz-node-idle: #313a4d;
   --viz-hand: #58a6ff;
   --viz-label: #8fa3c2;
@@ -153,6 +159,7 @@
   --viz-accent: #d8dce4;
   /* Polyrhythm layer A secondary color: teal instead of amber. */
   --viz-accent-alt: #7fe0bb;
+  --viz-node-alt: #3a9675;
   --viz-node-idle: #3e4148;
   --viz-hand: #b0b4bc;
   --viz-label: #8e9199;
@@ -533,20 +540,29 @@ output {
    A plain pill in front of the panel, not blended into its top border — only the digits glow,
    via text-shadow + a themed color, to read as a small digital readout without turning the whole
    button into an LCD panel. */
-.bar-counter {
+/* Holds the loop pill plus, while a loop is set, its small trash button to the pill's left. The
+   wrap (not the pill) is what floats over the panel's top-right corner. */
+.bar-counter-wrap {
   position: absolute;
-  top: -16px;
+  top: -18px;
   right: 10px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+.bar-counter {
   width: max-content;
   max-width: 100%;
-  padding: 7px 18px;
+  padding: 8px 18px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(180deg, var(--panel), var(--panel-lo));
   box-shadow: 0 0 4.2px var(--accent-glow);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--select);
@@ -579,10 +595,27 @@ output {
   grid-column: 1;
   position: relative;
   height: 100%;
-  max-height: 360px;
+  max-height: 390px;
   max-width: 100%;
   aspect-ratio: 1;
-  margin: 12px auto 0;
+  /* Top gap scales with the viewport height rather than being a fixed offset, so the dial sits
+     a touch higher on phones without drifting on taller screens. */
+  margin: clamp(0px, 0.4dvh, 6px) auto 0;
+}
+/* Roomy screens (tablets, desktop windows, big monitors): the column widens a little and the
+   visualiser grows until it is exactly as wide as the panel below it — no further, so the dial
+   never outgrows the controls on a huge monitor. Any height still left over is split evenly
+   above and below it instead of piling up between the dial and the panel. */
+@media (min-width: 720px) and (min-height: 640px) {
+  .app {
+    --app-width: 600px;
+    max-width: var(--app-width);
+  }
+  .stage {
+    /* The column's content width (its max-width minus the 16px side padding on each side). */
+    max-height: calc(var(--app-width) - 32px);
+    align-self: center;
+  }
 }
 .viz {
   width: 100%;
@@ -813,7 +846,7 @@ output {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 22px 18px;
+  padding: 16px 18px 14px;
 }
 .bolt {
   display: none;
@@ -961,57 +994,11 @@ output {
 .dial-col {
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 2px;
   min-width: 0;
 }
-/* Wraps just the knob canvas (not the tempo marking / nudges below it) so .knob-hint can be
-   absolutely positioned over it without disturbing .dial-col's row layout — .knob-hint isn't a
-   sibling grid item of the canvas, so it never competes for a grid cell. Shrinks to the canvas's
-   own rendered size (no explicit width/height here) the same way the bare canvas did before. */
 .knob-wrap {
   position: relative;
-}
-/* A one-time "this turns" cue, shown once (knobHint.ts, gated on localStorage) then removed from
-   the DOM for good. */
-.knob-hint {
-  position: absolute;
-  inset: 0;
-  width: 42%;
-  height: 42%;
-  margin: auto;
-  pointer-events: none;
-  opacity: 0;
-}
-.knob-hint.show {
-  animation: knob-hint-cue 2.4s ease-in-out 1;
-}
-.knob-hint svg {
-  width: 100%;
-  height: 100%;
-  color: var(--select);
-  filter: drop-shadow(0 0 4px var(--select-soft));
-}
-@keyframes knob-hint-cue {
-  0% {
-    opacity: 0;
-    transform: rotate(-16deg);
-  }
-  20% {
-    opacity: 0.9;
-    transform: rotate(12deg);
-  }
-  40% {
-    opacity: 0.9;
-    transform: rotate(-8deg);
-  }
-  65% {
-    opacity: 0.6;
-    transform: rotate(6deg);
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(0deg);
-  }
 }
 /* The BPM dial and play/pause are now one canvas-rendered "knob" (see ui/knob.ts) instead of
    layered DOM elements — drag anywhere on the ring to change tempo, tap the center LCD to
@@ -1046,7 +1033,6 @@ html.depth-25d .knob {
 .nudges {
   display: flex;
   gap: 12px;
-  margin-top: 8px;
 }
 /* Squared-off version of the knob's turned-metal disc (ui/knob.ts): a conic sweep through the
    theme's --copper/--brass/--select stops standing in for its rotated highlight, a
@@ -1126,7 +1112,7 @@ html.depth-25d .knob {
   padding: 10px 14px;
   border-radius: 12px;
   background: #2b2b30;
-  border: 1px solid var(--line);
+  border: 1px solid var(--confirm-warn);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.5);
   font-size: 14px;
   z-index: 10;
@@ -1195,7 +1181,10 @@ html.depth-25d .knob {
   width: min(92vw, 420px);
   max-height: 86vh;
   overflow: auto;
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
+  /* The panel colour lives on the sheet itself, not on an absolutely-positioned ::before: that
+     layer was only as tall as the visible box and scrolled away with the content, so the
+     background visibly "ended" partway down a long sheet. */
+  background: var(--panel);
   color: var(--text);
   border: 1px solid var(--accent-idle);
   border-radius: 8px;
@@ -1205,25 +1194,6 @@ html.depth-25d .knob {
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6);
   position: relative;
-}
-.sheet::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--panel), var(--panel)) padding-box,
-    linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.22) 0%,
-      rgb(255 255 255 / 0.06) 30%,
-      rgb(0 0 0 / 0.25) 65%,
-      rgb(255 255 255 / 0.1) 100%
-    )
-    border-box;
-  z-index: -1;
 }
 .sheet::backdrop {
   background: rgb(0 0 0 / 0.6);
@@ -1451,28 +1421,121 @@ html.depth-25d .knob {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 18px 16px;
 }
 .sig-grid-col {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 18px;
+  height: 100%;
+  text-align: center;
+}
+/* Beats and Note value each get an identical-height half of the column, their own label and
+   control centred inside it. */
+.sig-grid-part {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  height: 100%;
+  align-items: stretch;
   justify-content: center;
-  text-align: center;
+  gap: 10px;
+}
+/* The − / value / + row is the wider one and sets the column's width; the chips spread to those
+   same outer edges instead of sitting narrower in the middle. */
+.sig-grid-part .unit-row--grid {
+  justify-content: space-between;
 }
 .sig-grid-col .sheet-sub {
   margin-bottom: 0;
 }
 /* Breathing room between the Subdivision chips (or their compound-meter hint) and the Beats card
    below them — without it the card sat flush against the chip row. */
+#subdivisionCompoundHint {
+  margin: 12px 0 0;
+  text-align: center;
+}
+#subdivisionCompoundHint.is-idle {
+  visibility: hidden;
+}
 .sig-beats-field {
   margin-top: 16px;
 }
+/* A real button (opens the wheel-picker dialog), so it wears the same raised look and themed
+   edge as the app's other tappable controls instead of reading as a plain label. */
 .sig-grid-result {
-  padding-left: 14px;
-  border-left: 1px solid var(--line);
+  padding: 10px 16px;
+  border: 1px solid color-mix(in srgb, var(--select) 45%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
+  box-shadow: 0 0 6px var(--select-soft);
+  color: var(--select);
   font-size: 30px;
+}
+.sig-grid-result:active {
+  transform: scale(0.96);
+}
+/* Drum pickers in the signature wheel dialog: beats and note value side by side in a recessed
+   well, each three values tall. The picked value sits between two theme-coloured guide lines
+   (a background on the wheel, so they stay put while the values scroll under them) and is drawn
+   full-size in the theme colour; its neighbours are smaller and muted. Scrolling is native
+   scroll-snap (signatureDialog.ts reads the resting position and sets .is-picked). */
+.sig-wheels {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 6px 0 18px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(0 0 0 / 0.5);
+  box-shadow: inset 0 2px 8px rgb(0 0 0 / 0.6);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1;
+}
+.sig-wheels-slash {
+  color: var(--muted);
+  font-weight: 400;
+}
+.sig-wheel {
+  --item: 1.5em;
+  box-sizing: border-box;
+  height: calc(var(--item) * 3);
+  width: 2.4em;
+  padding: var(--item) 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  text-align: center;
+  cursor: ns-resize;
+  /* A scroll container takes the dialog's initial focus; its ring would read as stray side lines. */
+  outline: none;
+  background:
+    linear-gradient(var(--select), var(--select)) 50% 33.33% / 100% 1.5px no-repeat,
+    linear-gradient(var(--select), var(--select)) 50% 66.67% / 100% 1.5px no-repeat;
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+.sig-wheel::-webkit-scrollbar {
+  display: none;
+}
+.sig-wheel > div {
+  height: var(--item);
+  line-height: var(--item);
+  scroll-snap-align: center;
+  color: var(--muted);
+  font-weight: 500;
+  transform: scale(0.6);
+  transition:
+    transform 120ms ease,
+    color 120ms ease;
+}
+.sig-wheel > div.is-picked {
+  color: var(--select);
+  font-weight: 700;
+  transform: none;
 }
 .unit-row--grid {
   display: flex;
@@ -1889,7 +1952,7 @@ html.depth-25d .knob {
    — otherwise they'd sit visibly lower than the pill instead of crossing the border the same way. */
 .practice-timer-buttons {
   position: absolute;
-  top: -22.5px;
+  top: -19px;
   left: 10px;
   z-index: 1;
   display: flex;
@@ -1903,8 +1966,13 @@ html.depth-25d .knob {
    of the barely-there rgb(255 255 255 / 0.08) default, so they read as "on" even before a
    press. */
 .practice-icon-btn {
-  width: 45px;
-  height: 45px;
+  /* Button, opened-capsule and inner ✕/✓ sizes; .is-small overrides all three together. */
+  --btn-size: 38px;
+  --capsule-size: 78px;
+  --inner-size: 30px;
+  flex: none;
+  width: var(--btn-size);
+  height: var(--btn-size);
   border-radius: 50%;
   border: 1.5px solid color-mix(in srgb, var(--select) 50%, transparent);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
@@ -1918,8 +1986,8 @@ html.depth-25d .knob {
   place-items: center;
 }
 .practice-icon-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 .practice-icon-btn .icon-resume-timer,
 .practice-icon-btn .icon-replay-timer {
@@ -1977,64 +2045,115 @@ html.depth-25d .knob {
 }
 /* Inline confirm pattern on Delete button: splits into [ ✕ | ✓ ] */
 .practice-icon-btn.is-confirming {
-  width: auto;
-  border-radius: 50%;
-  padding: 0;
+  /* Fixed width (not auto) so the keyframes below can actually interpolate it: one capsule
+     with flat top/bottom edges and round ends, holding the two round buttons. */
+  box-sizing: border-box;
+  width: var(--capsule-size);
+  border-radius: 999px;
+  padding: 0 4px;
   display: flex;
-  gap: 0;
-  background: transparent;
-  box-shadow: none;
-  animation: deleteButtonExpand 200ms ease-out;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  animation: capsuleExpand 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-@keyframes deleteButtonExpand {
-  from {
-    width: 45px;
-  }
-  to {
-    width: auto;
-  }
-}
-.practice-icon-btn.is-confirming .confirm-cancel-btn,
-.practice-icon-btn.is-confirming .confirm-confirm-btn {
-  width: 45px;
-  height: 45px;
-  padding: 0;
-  border-radius: 50%;
-  border: 1.5px solid;
-  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
+.practice-icon-btn.is-confirming:active {
+  transform: none;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45);
-  font-size: 16px;
+    0 8px 16px rgb(0 0 0 / 0.45),
+    0 0 8px var(--select-soft);
+}
+@keyframes capsuleExpand {
+  from {
+    width: var(--btn-size);
+  }
+  to {
+    width: var(--capsule-size);
+  }
+}
+/* Closing: main.ts adds .is-closing, waits for this to finish, then restores the trash icon. */
+.practice-icon-btn.is-confirming.is-closing {
+  animation: capsuleCollapse 180ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  pointer-events: none;
+}
+@keyframes capsuleCollapse {
+  from {
+    width: var(--capsule-size);
+  }
+  to {
+    width: var(--btn-size);
+  }
+}
+/* The loop pill's trash: the same button and confirm capsule, scaled down to the pill's height. */
+.practice-icon-btn.is-small {
+  --btn-size: 36px;
+  --capsule-size: 74px;
+  --inner-size: 28px;
+  border-width: 1px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -2px 4px rgb(0 0 0 / 0.6),
+    0 0 4.2px var(--accent-glow);
+}
+.practice-icon-btn.is-small svg {
+  width: 19px;
+  height: 19px;
+}
+.practice-icon-btn.is-small.is-confirming {
+  padding: 0 3px;
+}
+.practice-icon-btn.is-small.is-confirming .confirm-cancel-btn,
+.practice-icon-btn.is-small.is-confirming .confirm-confirm-btn {
+  font-size: 13px;
+}
+.practice-icon-btn[hidden] {
+  display: none;
+}
+.practice-icon-btn.is-confirming .confirm-cancel-btn,
+.practice-icon-btn.is-confirming .confirm-confirm-btn {
+  flex: none;
+  width: var(--inner-size);
+  height: var(--inner-size);
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
+  font-size: 14px;
+  line-height: 1;
   font-family: inherit;
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: all 100ms ease;
+  animation: capsuleItemIn 180ms ease-out 60ms backwards;
 }
+@keyframes capsuleItemIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+.practice-icon-btn.is-closing .confirm-cancel-btn,
+.practice-icon-btn.is-closing .confirm-confirm-btn {
+  animation: capsuleItemOut 120ms ease-in forwards;
+}
+@keyframes capsuleItemOut {
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+/* Same ✕/✓ colours as the practice dialog's Start confirm (.wide-btn.is-confirming). */
 .practice-icon-btn.is-confirming .confirm-cancel-btn {
   color: #ff8a8a;
-  border-color: rgb(255 92 92 / 0.4);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45),
-    0 0 8px rgb(255 92 92 / 0.25);
 }
 .practice-icon-btn.is-confirming .confirm-confirm-btn {
   color: #57d38c;
-  border-color: rgb(87 211 140 / 0.4);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -3px 6px rgb(0 0 0 / 0.6),
-    0 8px 16px rgb(0 0 0 / 0.45),
-    0 0 8px rgb(87 211 140 / 0.25);
 }
 .practice-icon-btn.is-confirming .confirm-cancel-btn:active,
 .practice-icon-btn.is-confirming .confirm-confirm-btn:active {
   transform: scale(0.9);
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.6);
 }
 .switch {
   position: relative;
@@ -2066,6 +2185,49 @@ html.depth-25d .knob {
   background: var(--select);
   transform: translateX(18px);
 }
+/* Lock glyph inside the knob (beats-tappable switch): open while on, closed while off. Switches
+   without these icons are unaffected. */
+.switch-knob {
+  display: grid;
+  place-items: center;
+  color: #14130d;
+}
+.switch-knob svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
+}
+.switch[aria-checked="true"] .icon-lock-closed,
+.switch:not([aria-checked="true"]) .icon-lock-open {
+  display: none;
+}
+/* Head row (Beats label + lock switch) set apart from the beat row below it. */
+.sig-beats-field > span:first-child {
+  margin-bottom: 10px;
+}
+.lock-sheet {
+  width: min(86vw, 340px);
+}
+.lock-sheet h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.lock-sheet p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.lock-sheet-actions {
+  display: flex;
+  gap: 10px;
+}
+/* The committing action of a two-button row: filled with the theme colour. */
+.wide-btn.primary {
+  border-color: var(--select);
+  background: var(--select);
+  color: #14130d;
+  font-weight: 700;
+}
 .hint {
   color: var(--muted);
   font-size: 12px;
@@ -2083,6 +2245,10 @@ html.depth-25d .knob {
   border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
   box-shadow: 0 0 4.2px var(--accent-glow);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .wide-btn.danger {
   color: #ff8a8a;
@@ -2159,6 +2325,10 @@ html.depth-25d .knob {
   font-family: inherit;
   cursor: pointer;
   transition: all 100ms ease;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .wide-btn.is-confirming .confirm-cancel-btn {
   border-radius: 12px 0 0 12px;

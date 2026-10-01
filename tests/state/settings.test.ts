@@ -191,61 +191,10 @@ describe('level helpers', () => {
     expect(groupSizes(6, 4)).toEqual([3, 3]);
   });
 
-  it('accentProfile accents the first pulse and each later group head as medium', () => {
+  it('accentProfile accents only the first pulse', () => {
     expect(accentProfile(2, 4)).toEqual(['accent', 'normal']);
-    expect(accentProfile(3, 4)).toEqual(['accent', 'normal', 'normal']);
-    expect(accentProfile(4, 4)).toEqual(['accent', 'normal', 'medium', 'normal']);
-    expect(accentProfile(5, 4)).toEqual(['accent', 'normal', 'normal', 'medium', 'normal']);
-    expect(accentProfile(6, 8)).toEqual([
-      'accent',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-    ]);
-    expect(accentProfile(7, 8)).toEqual([
-      'accent',
-      'normal',
-      'medium',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-    ]);
-    expect(accentProfile(9, 8)).toEqual([
-      'accent',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-    ]);
-    expect(accentProfile(12, 8)).toEqual([
-      'accent',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-    ]);
-    expect(accentProfile(6, 4)).toEqual([
-      'accent',
-      'normal',
-      'normal',
-      'medium',
-      'normal',
-      'normal',
-    ]);
+    expect(accentProfile(4, 4)).toEqual(['accent', 'normal', 'normal', 'normal']);
+    expect(accentProfile(6, 8)).toEqual(['accent', 'normal', 'normal', 'normal', 'normal', 'normal']);
   });
 
   it('recognises compound meters as multiples of 3 eighth-note beats', () => {
@@ -302,7 +251,7 @@ describe('level helpers', () => {
     expect(withSignature(6, 8)).toEqual({
       beatsPerBar: 6,
       beatUnit: 8,
-      levels: ['accent', 'normal', 'normal', 'medium', 'normal', 'normal'],
+      levels: ['accent', 'normal', 'normal', 'normal', 'normal', 'normal'],
       subOff: [],
     });
     expect(withSignature(0, 4).beatsPerBar).toBe(1);

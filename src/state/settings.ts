@@ -221,15 +221,10 @@ export function groupSizes(n: number, beatUnit: BeatUnit): number[] {
   }
 }
 
-/** First pulse `accent`, each later group head `medium`, everything else `normal`. */
-export function accentProfile(beatsPerBar: number, beatUnit: BeatUnit): BeatLevel[] {
-  const levels: BeatLevel[] = [];
-  groupSizes(beatsPerBar, beatUnit).forEach((size, groupIndex) => {
-    for (let i = 0; i < size; i++) {
-      levels.push(groupIndex === 0 && i === 0 ? 'accent' : i === 0 ? 'medium' : 'normal');
-    }
-  });
-  return levels;
+/** Default pattern for a signature: only the first pulse is `accent`, every other beat `normal`
+ *  (no secondary group accents) — the user adds any further accents themselves. */
+export function accentProfile(beatsPerBar: number, _beatUnit: BeatUnit): BeatLevel[] {
+  return Array.from({ length: beatsPerBar }, (_, i) => defaultLevel(i));
 }
 
 export function nextLevel(level: BeatLevel): BeatLevel {
