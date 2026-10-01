@@ -6,7 +6,13 @@ import {
   nodeRadius,
   polar,
 } from './geometry';
-import { polyNodeRadius, polyPositions, polyStageLayout } from './polyGeometry';
+import {
+  polyConcentricPositions,
+  polyNodeRadius,
+  polyPositions,
+  polyStageLayout,
+  usePolyConcentricLayout,
+} from './polyGeometry';
 
 export type PolyHit =
   | { kind: 'node'; layer: 'A' | 'B'; index: number }
@@ -46,6 +52,9 @@ export function polyBeatAt(
   getSplitFrac: (key: string) => number,
 ): PolyHit | null {
   const { cx, cy, radius } = polyStageLayout(width, height);
+  if (usePolyConcentricLayout(a, b, radius)) {
+    return polyBeatAtConcentric(x, y, cx, cy, radius, a, b);
+  }
   const nodeR = polyNodeRadius(a, b, radius);
   const {
     nodePosA: vertsA,
@@ -102,6 +111,33 @@ export function polyBeatAt(
     };
   }
   return bestNode?.hit ?? null;
+}
+
+/** Concentric-rings hit test: no split/hub/pair states exist here (the two rings' different radii
+ *  already keep coincident indices apart), so this is a direct nearest-node lookup across both
+ *  rings. */
+function polyBeatAtConcentric(
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  radius: number,
+  a: number,
+  b: number,
+): PolyHit | null {
+  const { vertsA, vertsB, nodeRadiusA, nodeRadiusB } = polyConcentricPositions(a, b, cx, cy, radius);
+  let best: { hit: PolyHit; d: number } | null = null;
+  const hitRA = nodeRadiusA * 1.8;
+  for (const [i, v] of vertsA.entries()) {
+    const d = Math.hypot(x - v.x, y - v.y);
+    if (d <= hitRA && (!best || d < best.d)) best = { hit: { kind: 'node', layer: 'A', index: i }, d };
+  }
+  const hitRB = nodeRadiusB * 1.8;
+  for (const [i, v] of vertsB.entries()) {
+    const d = Math.hypot(x - v.x, y - v.y);
+    if (d <= hitRB && (!best || d < best.d)) best = { hit: { kind: 'node', layer: 'B', index: i }, d };
+  }
+  return best?.hit ?? null;
 }
 
 /** Index of the beat node under (x, y), in CSS pixels relative to the canvas, or -1. */

@@ -4,7 +4,13 @@ import { MUTE_GLOW_SCALE } from './geometry';
 import { type NodeSprites, spriteSize } from './nodeSprite';
 import { darken, getNodeStyleKit, lighten, metalDisc } from './nodeStyleKit';
 import type { PolyFrame } from './polyFrame';
-import { polyNodeRadius, polyPositions, polyStageLayout } from './polyGeometry';
+import {
+  polyConcentricPositions,
+  polyNodeRadius,
+  polyPositions,
+  polyStageLayout,
+  usePolyConcentricLayout,
+} from './polyGeometry';
 import type { VizTheme } from './types';
 
 /** Warm red-coral used to hint "tap to close" on a branched pair's hub node — deliberately
@@ -48,8 +54,12 @@ export function drawPolyrhythm(
   sprites: NodeSprites,
   style: NodeStyleName,
 ): void {
-  ctx.clearRect(0, 0, size.width, size.height);
   const { cx, cy, radius } = polyStageLayout(size.width, size.height);
+  if (usePolyConcentricLayout(frame.a, frame.b, radius)) {
+    drawPolyrhythmConcentric(ctx, size, frame, theme, sprites, style);
+    return;
+  }
+  ctx.clearRect(0, 0, size.width, size.height);
   const NODE_RADIUS = polyNodeRadius(frame.a, frame.b, radius);
   const { vertsA, vertsB, nodePosA, nodePosB, pairs } = polyPositions(
     frame.a,
@@ -151,6 +161,70 @@ export function drawPolyrhythm(
       drawPairHub(ctx, p, va, vb, NODE_RADIUS, theme, hubAlpha);
     }
   }
+}
+
+/** Concentric-rings drawing path, used once {@link usePolyConcentricLayout} fires: layer A and B
+ *  each get their own ring (no split/hub/combined-node logic — the two rings' different radii
+ *  already keep coincident indices apart), with a thin line linking each coincident pair's outer
+ *  and inner nodes. */
+function drawPolyrhythmConcentric(
+  ctx: CanvasRenderingContext2D,
+  size: { width: number; height: number },
+  frame: PolyFrame,
+  theme: VizTheme,
+  sprites: NodeSprites,
+  style: NodeStyleName,
+): void {
+  ctx.clearRect(0, 0, size.width, size.height);
+  const { cx, cy, radius } = polyStageLayout(size.width, size.height);
+  const layout = polyConcentricPositions(frame.a, frame.b, cx, cy, radius);
+
+  const glowA = frame.reducedMotion ? 0 : frame.glowA;
+  const glowB = frame.reducedMotion ? 0 : frame.glowB;
+
+  ctx.save();
+  ctx.strokeStyle = theme.label;
+  ctx.globalAlpha = 0.4;
+  ctx.lineWidth = 1.25;
+  ctx.beginPath();
+  for (const link of layout.links) {
+    ctx.moveTo(link.ax, link.ay);
+    ctx.lineTo(link.bx, link.by);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  const noSkip = new Set<number>();
+  drawLayer(
+    ctx,
+    layout.vertsA,
+    layout.vertsA,
+    layout.nodeRadiusA,
+    theme.accentAlt,
+    frame.activeIndexA,
+    glowA,
+    frame.levelsA,
+    theme,
+    noSkip,
+    style,
+    sprites,
+    'A',
+  );
+  drawLayer(
+    ctx,
+    layout.vertsB,
+    layout.vertsB,
+    layout.nodeRadiusB,
+    theme.accent,
+    frame.activeIndexB,
+    glowB,
+    frame.levelsB,
+    theme,
+    noSkip,
+    style,
+    sprites,
+    'B',
+  );
 }
 
 function drawPairHub(

@@ -1,8 +1,7 @@
-import { format, t } from '../i18n/i18n';
+import { t } from '../i18n/i18n';
 import { formatTimeLeft } from '../state/practiceTimer';
 import { clampPracticeSeconds, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
-import { createConfirmGate } from './confirmGate';
 import { byId, closeOnBackdropClick } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
 
@@ -27,21 +26,27 @@ export function mountPracticeTimerDialog({
   const practiceTimeUp = byId<HTMLButtonElement>('practiceTimeUp');
   const practiceTimerApply = byId<HTMLButtonElement>('practiceTimerApply');
 
-  const practiceConfirm = createConfirmGate(practiceTimerApply, {
-    idleText: () => t('practiceTimer.apply'),
-    armedText: () =>
-      format('practiceTimer.confirm', { time: formatTimeLeft(0, store.get().practiceSeconds) }),
-  });
+  let confirmState: 'idle' | 'confirming' = 'idle';
+  let confirmTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  const resetConfirm = (): void => {
+    clearTimeout(confirmTimeout);
+    confirmTimeout = undefined;
+    confirmState = 'idle';
+    practiceTimerApply.innerHTML = '';
+    practiceTimerApply.textContent = t('practiceTimer.apply');
+    practiceTimerApply.classList.remove('is-confirming');
+  };
 
   byId('timerBtn').addEventListener('click', () => {
-    practiceConfirm.disarm();
+    resetConfirm();
     dialog.showModal();
   });
   closeOnBackdropClick(dialog);
 
   const setPracticeSeconds = (seconds: number): void => {
     store.set({ practiceSeconds: clampPracticeSeconds(seconds) });
-    practiceConfirm.disarm();
+    resetConfirm();
   };
   practiceMinutesInput.addEventListener('input', () => {
     const ss = store.get().practiceSeconds % 60;
@@ -59,9 +64,36 @@ export function mountPracticeTimerDialog({
   );
   practiceTimerApply.addEventListener('click', () => {
     if (store.get().practiceSeconds <= 0) return;
-    if (practiceConfirm.tap()) {
-      dialog.close();
-      onStartPractice();
+
+    if (confirmState === 'idle') {
+      confirmState = 'confirming';
+      practiceTimerApply.classList.add('is-confirming');
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'confirm-cancel-btn';
+      cancelBtn.textContent = '✕';
+      cancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetConfirm();
+      });
+
+      const confirmBtn = document.createElement('button');
+      confirmBtn.type = 'button';
+      confirmBtn.className = 'confirm-confirm-btn';
+      confirmBtn.textContent = '✓';
+      confirmBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dialog.close();
+        onStartPractice();
+        resetConfirm();
+      });
+
+      practiceTimerApply.innerHTML = '';
+      practiceTimerApply.appendChild(cancelBtn);
+      practiceTimerApply.appendChild(confirmBtn);
+
+      confirmTimeout = setTimeout(resetConfirm, 3000);
     }
   });
 

@@ -510,7 +510,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
   function resize(): void {
     const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
+    if (rect.width < 1 || rect.height < 1) return;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     cssWidth = rect.width;
     cssHeight = rect.height;

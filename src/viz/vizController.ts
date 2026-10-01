@@ -9,6 +9,7 @@ import { circularBeatAt, linearBeatAt, polyBeatAt } from './hitTest';
 import { linearVisualizer } from './linear';
 import { NodeSpriteCache, spriteSize } from './nodeSprite';
 import { computePolyFrame } from './polyFrame';
+import { polyStageLayout, usePolyConcentricLayout } from './polyGeometry';
 import { drawPolyrhythm, polyLayerTheme } from './polyrhythm';
 import { shouldAnimate } from './renderPolicy';
 import { subDotAt, subDotLayout, subFanDotAt, subFanLayout } from './subDots';
@@ -109,6 +110,8 @@ export class VizController {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     if (s.polyrhythm.enabled) {
+      const { radius } = polyStageLayout(this.size.width, this.size.height);
+      const concentric = usePolyConcentricLayout(s.polyrhythm.a, s.polyrhythm.b, radius);
       const hit = polyBeatAt(
         x,
         y,
@@ -121,7 +124,8 @@ export class VizController {
       if (!hit) {
         // Tapping empty space (not any node, not the close button itself) also closes whatever
         // pair is currently open — the small close-button hit area was easy to miss, so this
-        // gives a much bigger, more forgiving target for the same action.
+        // gives a much bigger, more forgiving target for the same action. No pairs ever open in
+        // concentric mode (the two rings never share a vertex position), so this is a no-op there.
         let closedAny = false;
         for (const [key, anim] of this.polyPairAnim) {
           if (anim.opening) {
@@ -132,21 +136,21 @@ export class VizController {
         if (closedAny) this.invalidate();
         return;
       }
-      if (hit.kind === 'pair') {
+      if (!concentric && hit.kind === 'pair') {
         // First tap on a still-coincident pair: start its branch-out animation, do NOT cycle
         // either layer's level. The user can then tap each half individually.
         this.animatePair(hit.pairKey, true);
         this.invalidate();
         return;
       }
-      if (hit.kind === 'pair-close') {
+      if (!concentric && hit.kind === 'pair-close') {
         // Tap on the original vertex position between the two split nodes: collapse back to the
         // symmetric rest state. Levels themselves are preserved; only the visual split closes.
         this.animatePair(hit.pairKey, false);
         this.invalidate();
         return;
       }
-      this.onPolyBeatTap?.(hit.layer, hit.index);
+      if (hit.kind === 'node') this.onPolyBeatTap?.(hit.layer, hit.index);
       return;
     }
     const sub = patternFromSettings(s).subdivision;

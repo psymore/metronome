@@ -162,6 +162,14 @@ export function resizeLevels(levels: readonly BeatLevel[], n: number): BeatLevel
   return Array.from({ length: n }, (_, i) => levels[i] ?? defaultLevel(i));
 }
 
+/** Corrects stale persisted state from before beat 1 defaulted to accent: if every entry is
+ *  still plain `normal` (i.e. untouched by the user), accent the first one. Any array with even
+ *  one deliberately-set beat (accent/medium/mute anywhere) is left exactly as persisted. */
+function ensureFirstAccent(levels: readonly BeatLevel[]): BeatLevel[] {
+  if (levels.length === 0 || levels.some((l) => l !== 'normal')) return [...levels];
+  return [...levels].map((l, i) => (i === 0 ? 'accent' : l));
+}
+
 export function isCompoundMeter(beatsPerBar: number, beatUnit: BeatUnit): boolean {
   return beatUnit === 8 && beatsPerBar > 3 && beatsPerBar % 3 === 0;
 }
@@ -326,7 +334,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     bpm: typeof r.bpm === 'number' ? clampBpm(r.bpm) : d.bpm,
     beatsPerBar,
     beatUnit: isBeatUnit(r.beatUnit) ? r.beatUnit : d.beatUnit,
-    levels: resizeLevels(levels, beatsPerBar),
+    levels: ensureFirstAccent(resizeLevels(levels, beatsPerBar)),
     visualizer: r.visualizer === 'linear' ? 'linear' : 'circular',
     syncOffsetMs: Math.round(
       clampNumber(r.syncOffsetMs, d.syncOffsetMs, -SYNC_OFFSET_LIMIT_MS, SYNC_OFFSET_LIMIT_MS),
@@ -374,8 +382,8 @@ export function sanitizeSettings(raw: unknown): Settings {
         b,
         soundIdA: isSoundId(rp.soundIdA) ? rp.soundIdA : d.polyrhythm.soundIdA,
         soundIdB: isSoundId(rp.soundIdB) ? rp.soundIdB : d.polyrhythm.soundIdB,
-        levelsA: resizePolyLevels(rawA, a),
-        levelsB: resizePolyLevels(rawB, b),
+        levelsA: ensureFirstAccent(resizePolyLevels(rawA, a)),
+        levelsB: ensureFirstAccent(resizePolyLevels(rawB, b)),
       };
     })(),
   };

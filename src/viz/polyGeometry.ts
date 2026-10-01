@@ -41,6 +41,44 @@ export function polyStageLayout(width: number, height: number) {
   return { cx: width / 2, cy: height / 2, radius };
 }
 
+/** Below this center-to-center spacing on a single shared ring, poly nodes start to crowd/overlap
+ *  — the same kind of threshold `circularSubDotLayout` uses to switch a beat's subdivisions from
+ *  in-gap dots to an inner ring. Below it, polyrhythm drawing switches to two concentric rings
+ *  instead of one shared ring with split/hub conjunctions. */
+const POLY_CONCENTRIC_SPACING_THRESHOLD = 30;
+
+/** Smallest angular gap (radians) between any two neighboring tick marks once layer A's `a`
+ *  evenly-spaced positions and layer B's `b` are merged onto one ring — i.e. the real crowding a
+ *  shared ring has to deal with, not either layer's own spacing alone. Coincident positions (where
+ *  `i/a === j/b`) are deduped via an exact-integer comparison (ticks counted in units of `1/(a*b)`)
+ *  so a shared vertex (always true for index 0) never reads as a zero-width gap. */
+function minAngularGap(a: number, b: number): number {
+  const total = a * b;
+  const ticks = new Set<number>();
+  for (let i = 0; i < a; i++) ticks.add(i * b);
+  for (let j = 0; j < b; j++) ticks.add(j * a);
+  const sorted = Array.from(ticks).sort((x, y) => x - y);
+  if (sorted.length < 2) return 2 * Math.PI;
+  let min = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < sorted.length; i++) {
+    const curr = sorted[i] as number;
+    const next = sorted[(i + 1) % sorted.length] as number;
+    const gap = next > curr ? next - curr : total - curr + next;
+    min = Math.min(min, gap);
+  }
+  return (min / total) * 2 * Math.PI;
+}
+
+/** True once a single shared ring would pack layer A and B's interleaved nodes too tight to read
+ *  — the signal the concentric-rings drawing/hit-test/tap paths use to take over from the
+ *  split/hub ones. Must look at the two layers' *merged* positions, not each layer's own spacing:
+ *  e.g. 15:14 has 15 and 14 nodes that are individually well spaced, but interleaved on one ring
+ *  they're nearly on top of each other. */
+export function usePolyConcentricLayout(a: number, b: number, radius: number): boolean {
+  const spacing = radius * minAngularGap(a, b);
+  return spacing < POLY_CONCENTRIC_SPACING_THRESHOLD;
+}
+
 /** Stable identifier for a coincident pair — used as a key by the expansion animation state. */
 export function pairKey(aIndex: number, bIndex: number): string {
   return `${aIndex}|${bIndex}`;
@@ -149,4 +187,71 @@ export function polyPositions(
     }
   }
   return { vertsA, vertsB, nodePosA, nodePosB, pairs };
+}
+
+/** A coincident-pair link in concentric mode: the short connecting line from the outer node to
+ *  its matching inner node, drawn instead of a split/hub conjunction. */
+export interface PolyConcentricLink {
+  aIndex: number;
+  bIndex: number;
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+}
+
+export interface PolyConcentricLayout {
+  vertsA: PolyVertex[];
+  vertsB: PolyVertex[];
+  nodeRadiusA: number;
+  nodeRadiusB: number;
+  links: PolyConcentricLink[];
+}
+
+function concentricNodeRadius(count: number, radius: number): number {
+  const spacing = circularNodeSpacing(count, radius);
+  return Math.max(4, Math.min(16, radius * 0.16, spacing * 0.48));
+}
+
+/**
+ * Two-ring layout used once {@link usePolyConcentricLayout} fires: the layer with more beats sits
+ * on the outer ring at `radius`, the other on an inner ring at `radius * 0.6`. Each ring is its
+ * own plain polygon (no split/offset), so coincident indices never overlap — they're simply at
+ * different radii. `links` carries the coincident-pair positions so the caller can draw a short
+ * connecting line between them instead of a combined/hub node.
+ */
+export function polyConcentricPositions(
+  a: number,
+  b: number,
+  cx: number,
+  cy: number,
+  radius: number,
+): PolyConcentricLayout {
+  const outerIsA = a >= b;
+  const outerCount = outerIsA ? a : b;
+  const innerCount = outerIsA ? b : a;
+  const innerRadius = radius * 0.6;
+  const outerVerts = polygonVertices(outerCount, cx, cy, radius);
+  const innerVerts = polygonVertices(innerCount, cx, cy, innerRadius);
+  const vertsA = outerIsA ? outerVerts : innerVerts;
+  const vertsB = outerIsA ? innerVerts : outerVerts;
+  const nodeRadiusA = outerIsA
+    ? concentricNodeRadius(outerCount, radius)
+    : concentricNodeRadius(innerCount, innerRadius);
+  const nodeRadiusB = outerIsA
+    ? concentricNodeRadius(innerCount, innerRadius)
+    : concentricNodeRadius(outerCount, radius);
+  const links = polyPairs(a, b).map((p) => {
+    const va = vertsA[p.aIndex];
+    const vb = vertsB[p.bIndex];
+    return {
+      aIndex: p.aIndex,
+      bIndex: p.bIndex,
+      ax: va?.x ?? cx,
+      ay: va?.y ?? cy,
+      bx: vb?.x ?? cx,
+      by: vb?.y ?? cy,
+    };
+  });
+  return { vertsA, vertsB, nodeRadiusA, nodeRadiusB, links };
 }

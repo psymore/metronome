@@ -202,7 +202,7 @@ export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
       suppressNextClick = true;
     }
     if (!wasDragging) return;
-    if (Math.abs(dx) > drawerWidth * 0.5) finishDragClose();
+    if (Math.abs(dx) > drawerWidth * 0.3) finishDragClose();
     else snapOpen();
   });
   drawer.addEventListener('pointercancel', () => {

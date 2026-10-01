@@ -1610,9 +1610,10 @@ html.depth-25d .knob {
   font-weight: 600;
   font-size: 16px;
   line-height: 1;
-  padding-right: 1px;
+  padding: 0;
   display: grid;
   place-items: center;
+  text-align: center;
 }
 .info-btn:active {
   transform: scale(0.9);
@@ -1786,6 +1787,7 @@ html.depth-25d .knob {
   bottom: 100%;
   margin-bottom: 6px;
   display: flex;
+  flex-direction: row-reverse;
   align-items: center;
   gap: 8px;
 }
@@ -2069,6 +2071,46 @@ html.depth-25d .knob {
 }
 .wide-btn:active {
   /* No scale() — see the note on .square-btn:active. */
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
+}
+.wide-btn.is-confirming {
+  padding: 0;
+  display: flex;
+  gap: 0;
+  animation: splitButtonExpand 200ms ease-out;
+}
+@keyframes splitButtonExpand {
+  from {
+    border-radius: 12px;
+  }
+  to {
+    border-radius: 12px;
+  }
+}
+.wide-btn.is-confirming .confirm-cancel-btn,
+.wide-btn.is-confirming .confirm-confirm-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
+  background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%) padding-box;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+.wide-btn.is-confirming .confirm-cancel-btn {
+  border-radius: 12px 0 0 12px;
+  color: #ff8a8a;
+  border-right: none;
+}
+.wide-btn.is-confirming .confirm-confirm-btn {
+  border-radius: 0 12px 12px 0;
+  color: #57d38c;
+  border-left: none;
+}
+.wide-btn.is-confirming .confirm-cancel-btn:active,
+.wide-btn.is-confirming .confirm-confirm-btn:active {
   transform: translateY(1px);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
 }
