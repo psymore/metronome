@@ -82,12 +82,35 @@ declined) and may still be running on port 5173 — check before starting anothe
   half) and `.confirm-confirm-btn` (green, right half) child button styling. Smooth 200ms
   expansion animation. Both buttons get press-state translateY transform.
 
+### Batch 4 — practice timer control bar refactored to 3-button architecture (committed, not yet tested by user)
+
+- **Renamed button functions**: `practiceStopBtn` → `practiceResetBtn` (↺ icon, single-click reset).
+  Replaces the old stop button that was dual-purpose. New middle button resets timer to configured
+  duration in one tap.
+- **Replaced close button with Delete** (`practiceDeleteBtn`, 🗑 icon). Uses same inline confirm
+  pattern as practice timer modal: first click splits to [ ✕ Cancel | ✓ Confirm ]. Clicking ✓
+  closes timer and sets `practiceSeconds` to 0; clicking ✕ or 3s timeout returns to trash icon.
+  State managed via `deleteState` and `deleteTimeout` in `main.ts`.
+- **Pause/Resume/Replay** button stays on left (unchanged logic).
+- **i18n updates**: Added `practiceTimer.resetAriaLabel` and `practiceTimer.deleteAriaLabel` keys
+  in English and Turkish.
+- **CSS styling** (`src/styles.css`): Replaced `.practice-icon-btn.armed` pulse effect with new
+  `.practice-icon-btn.is-confirming` state. Buttons expand from circular (45px) to side-by-side
+  pair (45px each) via `deleteButtonExpand` animation. Cancel button red, Confirm green, both
+  round with matching shadow/border styling as regular icon buttons.
+
 ## Next step
 
-1. User tests all of this on their phone: polyrhythm concentric mode (already confirmed once, but
-   worth a final pass), first-beat accent (both fresh/cleared storage and their current stale
-   storage), info-button "i" centering, practice timer bar's left/right swap, and **new**: practice
-   timer modal's inline confirm split-button flow (Start → [ ✕ | ✓ ] → either confirm or auto-reset).
+1. User tests all of this on their phone:
+   - Polyrhythm concentric mode (already confirmed once, worth a final pass)
+   - First-beat accent (both fresh/cleared storage and current stale storage)
+   - Info-button "i" centering
+   - Practice timer bar's left/right swap
+   - Practice timer modal's inline confirm (Start → [ ✕ | ✓ ] → confirm or auto-reset)
+   - **New**: Practice timer control bar 3-button layout:
+     - Left: Play/Pause/Replay cycles correctly
+     - Middle: Reset (↺) resets timer to configured duration in one click
+     - Right: Delete (🗑) shows inline confirm on first click, closes timer on ✓, returns to icon on ✕ or timeout
 2. If the first-beat-accent fix doesn't actually address what they saw, come back to
    `src/state/settings.ts`'s `ensureFirstAccent` with real repro steps from the user rather than
    guessing again.
