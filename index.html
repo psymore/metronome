@@ -326,21 +326,20 @@
         <div id="dialHub" class="dial-hub" aria-hidden="true"></div>
       </section>
 
-      <div id="practiceTimerBar" class="practice-timer-bar is-off">
-        <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
-        <div id="practiceFadeBar" class="practice-energy" aria-hidden="true">
-          <span class="energy-particle"></span>
-          <span class="energy-particle"></span>
-          <span class="energy-particle"></span>
-          <span class="energy-particle"></span>
-        </div>
-      </div>
-
       <div class="side">
         <section class="panel controls" data-i18n-aria-label="controls.ariaLabel" aria-label="Tempo controls">
           <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
           <button type="button" id="barCounter" class="bar-counter">Bar −</button>
           <div id="practiceTimerButtons" class="practice-timer-buttons is-off">
+            <div id="practiceTimerBar" class="practice-timer-bar is-off">
+              <output id="practiceTimeLeft" class="practice-time-left">0:00</output>
+              <div id="practiceFadeBar" class="practice-energy" aria-hidden="true">
+                <span class="energy-particle"></span>
+                <span class="energy-particle"></span>
+                <span class="energy-particle"></span>
+                <span class="energy-particle"></span>
+              </div>
+            </div>
             <button type="button" id="practicePauseBtn" class="practice-icon-btn" aria-label="Pause timer">
               <svg class="icon-pause-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
               <svg class="icon-resume-timer" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>

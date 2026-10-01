@@ -573,19 +573,16 @@ output {
 }
 
 /* Sized from the grid row's own (flexible) height rather than a fixed viewport fraction, so it
-   shrinks automatically to whatever room is left — see .app's grid-template-rows.
-   Explicit grid-row (rather than relying on auto-placement) so it's guaranteed to land in the
-   same cell as .practice-timer-bar, which deliberately shares this row — otherwise the
-   auto-placement algorithm would see that cell as "occupied" and bump .stage down a row. */
+   shrinks automatically to whatever room is left — see .app's grid-template-rows. */
 .stage {
   grid-row: 2 / 3;
   grid-column: 1;
   position: relative;
   height: 100%;
-  max-height: 320px;
+  max-height: 360px;
   max-width: 100%;
   aspect-ratio: 1;
-  margin: 0 auto;
+  margin: 12px auto 0;
 }
 .viz {
   width: 100%;
@@ -1780,35 +1777,17 @@ html.depth-25d .knob {
 .round-step-btn:active {
   transform: scale(0.92);
 }
-/*
- * A tall strip along the left edge instead of a row of its own: explicitly placed into the
- * *same* grid cell as .stage (grid-row: 2, the app's flexible row) rather than getting a row
- * of its own. position: absolute would have looked simpler, but its inset properties resolve
- * against the nearest *positioned* ancestor, not the grid area — .app has no such ancestor, so
- * top/bottom insets landed relative to the whole page and overlapped the header. Staying a
- * normal (static) grid item placed into .stage's cell means its top/bottom are the row's own
- * boundaries for free — right under the header down to the top of the controls panel. It never
- * changes .stage's own size: the row is minmax(0, 1fr), and this item's min-content height is
- * ~0 (see .practice-energy's min-height: 0), so it doesn't push the flexible row's floor up.
- * justify-self: start keeps it pinned to the left edge of the (single, full-width) column
- * instead of centered like .stage's own square box is. align-self: start (rather than stretch)
- * plus an explicit height lets the bar stop well short of the row's bottom edge instead of
- * running the full height down to the controls panel.
- */
+/* The countdown sits right above the timer buttons, exactly as wide as their row. It is
+   absolutely positioned so the buttons keep their place on the panel border. */
 .practice-timer-bar {
-  grid-row: 2 / 3;
-  grid-column: 1;
-  justify-self: start;
-  align-self: start;
-  height: 90%;
-  margin: 10px 0 0;
-  width: 46px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 6px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding-top: 6px;
-  overflow: hidden;
+  gap: 8px;
 }
 .practice-timer-bar.is-off {
   opacity: 0;
@@ -1833,7 +1812,7 @@ html.depth-25d .knob {
  */
 .practice-energy {
   position: relative;
-  width: 14px;
+  height: 8px;
   flex: 1 1 auto;
   min-height: 0;
   border-radius: 999px;
@@ -1846,48 +1825,40 @@ html.depth-25d .knob {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, var(--brass), var(--select));
+  background: linear-gradient(90deg, var(--select), var(--brass));
   box-shadow: 0 0 10px var(--select-soft);
   /* No transition: animating clip-path isn't compositor-only like transform/opacity, so easing
      it every second competed with the visualiser's own per-frame paint for main-thread time —
      the rotating beat indicator would visibly stutter once a second while the timer ran. A
      plain step to the new level each second costs nothing extra. */
-  clip-path: inset(calc(var(--gone, 0) * 1%) 0 0 0);
+  clip-path: inset(0 calc(var(--gone, 0) * 1%) 0 0);
 }
 .energy-particle {
   position: absolute;
-  left: 50%;
-  bottom: 0%;
+  top: 50%;
+  margin-top: -2.5px;
   width: 5px;
   height: 5px;
-  margin-left: -2.5px;
   border-radius: 50%;
   background: var(--brass);
   box-shadow:
     0 0 8px 2px var(--brass),
     0 0 16px var(--select-soft);
   opacity: 0;
-  animation: energyRise 2.4s ease-in infinite;
+  animation: energyRun 2.4s ease-in infinite;
 }
 .energy-particle:nth-child(2) {
   animation-delay: 0.6s;
-  left: 30%;
 }
 .energy-particle:nth-child(3) {
   animation-delay: 1.2s;
-  left: 70%;
 }
 .energy-particle:nth-child(4) {
   animation-delay: 1.8s;
 }
-/* bottom: 0% -> 100% instead of a fixed translateY(-50px): a fixed pixel rise only covered a
-   fraction of the timer bar once it grew tall (see .practice-timer-bar), so the particles
-   looked stuck near the very bottom. Percentages resolve against the (relatively positioned)
-   .practice-energy container's own height, so the rise always spans its full length no matter
-   how tall that ends up being. */
-@keyframes energyRise {
+@keyframes energyRun {
   0% {
-    bottom: 0%;
+    left: 0%;
     opacity: 0;
   }
   15% {
@@ -1897,15 +1868,16 @@ html.depth-25d .knob {
     opacity: 0.8;
   }
   100% {
-    bottom: 100%;
+    left: 100%;
     opacity: 0;
   }
 }
 .practice-time-left {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text);
+  flex-shrink: 0;
 }
 /* Moved off the timer bar and onto the controls panel: floats above the panel's top-left corner
    the same way .bar-counter floats above the top-right. .bar-counter's own height (~32px) puts
