@@ -272,7 +272,8 @@ const practiceTimerButtons = byId('practiceTimerButtons');
 const practiceFadeBar = byId('practiceFadeBar');
 const practiceTimeLeft = byId('practiceTimeLeft');
 const practicePauseBtn = byId<HTMLButtonElement>('practicePauseBtn');
-const practiceStopBtn = byId<HTMLButtonElement>('practiceStopBtn');
+const practiceResetBtn = byId<HTMLButtonElement>('practiceResetBtn');
+const practiceDeleteBtn = byId<HTMLButtonElement>('practiceDeleteBtn');
 
 function renderPracticeProgress(elapsedSeconds: number): void {
   practiceFadeBar.style.setProperty(
@@ -303,12 +304,12 @@ function stopPracticeTimer(): void {
   practiceTimerButtons.classList.add('is-off');
   practiceFadeBar.style.setProperty('--gone', '0');
   practicePauseBtn.classList.remove('finished');
-  practiceStopBtn.disabled = false;
+  practiceResetBtn.disabled = false;
 }
 
 /** Countdown reached 0 on its own: unlike stopPracticeTimer, the bar and its buttons stay put
- *  instead of vanishing — pause/resume becomes a replay button and Stop is disabled, since
- *  there's nothing left running to stop. */
+ *  instead of vanishing — pause/resume becomes a replay button and Reset is disabled, since
+ *  there's nothing left running to reset. */
 function finishPracticeTimer(): void {
   clearTimeout(practiceTick);
   clearTimeout(practiceEndTimer);
@@ -321,7 +322,7 @@ function finishPracticeTimer(): void {
   practiceFinished = true;
   renderPracticeProgress(practiceTotalSeconds); // shows 0:00 / fully drained
   practicePauseBtn.classList.add('finished');
-  practiceStopBtn.disabled = true;
+  practiceResetBtn.disabled = true;
 }
 
 /** (Re)starts the running countdown from practiceElapsedBeforeRun, whether this is a fresh
@@ -365,7 +366,7 @@ function startPracticeTimer(seconds: number): void {
   practiceTimerBar.classList.remove('is-off');
   practiceTimerButtons.classList.remove('is-off');
   practicePauseBtn.classList.remove('finished');
-  practiceStopBtn.disabled = false;
+  practiceResetBtn.disabled = false;
   renderPauseButton();
   renderPracticeProgress(0);
   runPracticeCountdown();
@@ -392,9 +393,9 @@ function resumePracticeTimer(): void {
   runPracticeCountdown();
 }
 
-/** The timer's own square Stop icon: rewinds to the full configured length and stops the
+/** The timer's Reset button (↺ icon): rewinds to the full configured length and stops the
  *  metronome too, but — unlike stopPracticeTimer — leaves the bar on screen (paused at 0
- *  elapsed) instead of dismissing it. Only the new × button dismisses it. */
+ *  elapsed) instead of dismissing it. Only the Delete button dismisses it. */
 function resetAndStopPracticeTimer(): void {
   if (engine.running) void transport.toggle(); // stops the metronome; onToggle pauses the timer
   clearTimeout(practiceTick);
@@ -403,7 +404,7 @@ function resetAndStopPracticeTimer(): void {
   practicePaused = true;
   practiceFinished = false;
   practicePauseBtn.classList.remove('finished');
-  practiceStopBtn.disabled = false;
+  practiceResetBtn.disabled = false;
   renderPracticeProgress(0);
   renderPauseButton();
 }
@@ -422,31 +423,55 @@ practicePauseBtn.addEventListener('click', () => {
   }
   void transport.toggle();
 });
-practiceStopBtn.addEventListener('click', resetAndStopPracticeTimer);
+practiceResetBtn.addEventListener('click', resetAndStopPracticeTimer);
 
-// × (close) button: two-tap confirm to avoid accidental off — first tap arms it for 2 s,
-// second tap within the window turns the timer fully off (sets practiceSeconds to 0 and hides
-// the bar).  An armed-state CSS class on the button gives a visible warning glow.
+// Delete button: inline confirm pattern — first click splits to [ ✕ | ✓ ],
+// ✓ closes timer, ✕ or timeout resets button.
 {
-  const closeBtn = byId<HTMLButtonElement>('practiceCloseBtn');
-  let closeBtnArmed: ReturnType<typeof setTimeout> | undefined;
-  closeBtn.addEventListener('click', () => {
-    if (closeBtnArmed === undefined) {
-      // First tap: arm for 2 s.
-      closeBtnArmed = setTimeout(() => {
-        closeBtnArmed = undefined;
-        closeBtn.classList.remove('armed');
-      }, 2000);
-      closeBtn.classList.add('armed');
-      return;
+  let deleteState: 'idle' | 'confirming' = 'idle';
+  let deleteTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  const resetDeleteBtn = (): void => {
+    clearTimeout(deleteTimeout);
+    deleteTimeout = undefined;
+    deleteState = 'idle';
+    practiceDeleteBtn.innerHTML = '';
+    practiceDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M3 6h18M8 6V4c0-1 0.5-1.5 1.5-1.5h5c1 0 1.5 0.5 1.5 1.5v2M10 11v6M14 11v6M6 8h1l1 11c0 1 0.5 1.5 1.5 1.5h6c1 0 1.5-0.5 1.5-1.5l1-11h1" /></svg>';
+    practiceDeleteBtn.classList.remove('is-confirming');
+  };
+
+  practiceDeleteBtn.addEventListener('click', () => {
+    if (deleteState === 'idle') {
+      deleteState = 'confirming';
+      practiceDeleteBtn.classList.add('is-confirming');
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'confirm-cancel-btn';
+      cancelBtn.textContent = '✕';
+      cancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetDeleteBtn();
+      });
+
+      const confirmBtn = document.createElement('button');
+      confirmBtn.type = 'button';
+      confirmBtn.className = 'confirm-confirm-btn';
+      confirmBtn.textContent = '✓';
+      confirmBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (engine.running) void transport.toggle();
+        stopPracticeTimer();
+        store.set({ practiceSeconds: 0 });
+        resetDeleteBtn();
+      });
+
+      practiceDeleteBtn.innerHTML = '';
+      practiceDeleteBtn.appendChild(cancelBtn);
+      practiceDeleteBtn.appendChild(confirmBtn);
+
+      deleteTimeout = setTimeout(resetDeleteBtn, 3000);
     }
-    // Second tap within 2 s: confirm — turn timer fully off, and stop the metronome with it.
-    clearTimeout(closeBtnArmed);
-    closeBtnArmed = undefined;
-    closeBtn.classList.remove('armed');
-    if (engine.running) void transport.toggle();
-    stopPracticeTimer();
-    store.set({ practiceSeconds: 0 });
   });
 }
 
