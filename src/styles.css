@@ -573,19 +573,16 @@ output {
 }
 
 /* Sized from the grid row's own (flexible) height rather than a fixed viewport fraction, so it
-   shrinks automatically to whatever room is left — see .app's grid-template-rows.
-   Explicit grid-row (rather than relying on auto-placement) so it's guaranteed to land in the
-   same cell as .practice-timer-bar, which deliberately shares this row — otherwise the
-   auto-placement algorithm would see that cell as "occupied" and bump .stage down a row. */
+   shrinks automatically to whatever room is left — see .app's grid-template-rows. */
 .stage {
   grid-row: 2 / 3;
   grid-column: 1;
   position: relative;
   height: 100%;
-  max-height: 320px;
+  max-height: 360px;
   max-width: 100%;
   aspect-ratio: 1;
-  margin: 0 auto;
+  margin: 12px auto 0;
 }
 .viz {
   width: 100%;
