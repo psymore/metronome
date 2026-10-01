@@ -4,12 +4,14 @@ If you are a fresh session: read `CLAUDE.md` first, then this file, then act on 
 
 ## Where things stand (2026-10-01)
 
-On `master`, **uncommitted** changes. Two batches this session:
+On `master`, **all changes committed**. Two batches this session:
 
 1. Polyrhythm concentric-rings drawing mode (verified good by the user already — see below).
 2. Three unverified fixes: first-beat accent correction, info-button icon centering, practice
    timer bar layout swap. **None of these three has been tested** — the user is hitting a weekly
    usage limit and asked for code only, no browser/build/test runs, and will test on their own.
+3. Practice timer modal refactored to inline confirm pattern (committed in same session). Replaces
+   "tap again to confirm" ring with split-button UI.
 
 ### Batch 1 — polyrhythm concentric rings (user-confirmed working)
 
@@ -69,14 +71,25 @@ declined) and may still be running on port 5173 — check before starting anothe
 - **Do not run the browser or any test/build/lint commands unless explicitly asked** — this
   session's user hit a usage limit and wants code-only turns with them doing the testing.
 
+### Batch 3 — practice timer modal inline confirm (committed, not yet tested by user)
+
+- `src/ui/practiceTimerDialog.ts`: Removed `createConfirmGate` dependency. Replaced "tap again to
+  confirm" pattern with inline split-button UI. On first click of "Start", button transitions to
+  state `confirming` and shows two child buttons side-by-side: [ ✕ Cancel ] and [ ✓ Confirm ].
+  Clicking ✓ starts the timer and closes modal; clicking ✕ or waiting 3 seconds returns button
+  to idle "Start" state. State management via `confirmState` and `confirmTimeout`.
+- `src/styles.css`: Added `.wide-btn.is-confirming` rule with `.confirm-cancel-btn` (red, left
+  half) and `.confirm-confirm-btn` (green, right half) child button styling. Smooth 200ms
+  expansion animation. Both buttons get press-state translateY transform.
+
 ## Next step
 
 1. User tests all of this on their phone: polyrhythm concentric mode (already confirmed once, but
    worth a final pass), first-beat accent (both fresh/cleared storage and their current stale
-   storage), info-button "i" centering, and the practice timer bar's left/right swap.
+   storage), info-button "i" centering, practice timer bar's left/right swap, and **new**: practice
+   timer modal's inline confirm split-button flow (Start → [ ✕ | ✓ ] → either confirm or auto-reset).
 2. If the first-beat-accent fix doesn't actually address what they saw, come back to
    `src/state/settings.ts`'s `ensureFirstAccent` with real repro steps from the user rather than
    guessing again.
-3. Once confirmed: commit (no attribution line) — nothing from this session has been committed yet.
-4. Remaining work from `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`:
+3. Remaining work from `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`:
    Play Console setup (user side), AAB build and signing, closed testing, production release.
