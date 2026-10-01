@@ -379,6 +379,11 @@ output {
     max(16px, calc(env(safe-area-inset-bottom) + 8px));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  /* minmax(0, …), not the implicit auto column: an auto track grows to its widest item, and the
+     square stage (width derived from its height) can be wider than a narrow phone once the row
+     is tall — e.g. installed/standalone, with no browser URL bar — pushing the whole column,
+     top bar and panel included, off the right edge. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 .topbar {
