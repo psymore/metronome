@@ -2,6 +2,9 @@ import { t } from '../i18n/i18n';
 import type { Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { angleDelta, bpmAfterRotation } from './dialMath';
+import { renderMetalTexture } from './metalTexture';
+
+export { conicOrLinearGradient } from './metalTexture';
 
 /**
  * Builds stop colors by reading the current --brass/--select/--copper CSS variables from the
@@ -70,97 +73,6 @@ function rgba([r, g, b]: [number, number, number], alpha: number): string {
 function lighten([r, g, b]: [number, number, number], amount: number): [number, number, number] {
   const mix = (c: number) => Math.round(c + (255 - c) * amount);
   return [mix(r), mix(g), mix(b)];
-}
-
-/** `createConicGradient` only exists from Safari 16.4 / Chrome 99 — falls back to a diagonal
- *  `createLinearGradient` with the same stops on older browsers (notably iOS 15.x) instead of
- *  throwing a TypeError. This runs synchronously during the knob's initial `resize()`, before
- *  `setBootLoaderHidden(true)`, so an unhandled throw here would fail the whole app's boot, not
- *  just this texture. Same fallback shape as `metalSweepGradient` in `viz/nodeStyleKit.ts`. */
-export function conicOrLinearGradient(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  stops: readonly [number, string][],
-): CanvasGradient {
-  const gradient =
-    typeof ctx.createConicGradient === 'function'
-      ? ctx.createConicGradient(Math.PI / 4, x, y)
-      : ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-  for (const [offset, color] of stops) gradient.addColorStop(offset, color);
-  return gradient;
-}
-
-/** Pre-rendered once per (radius, theme): the conic brushed-steel face, sampled and rotated
- *  live instead of recomputing its gradient every frame. */
-function renderMetalTexture(
-  radius: number,
-  dpr: number,
-  stops: readonly [number, string][],
-): OffscreenCanvas | HTMLCanvasElement {
-  const diameter = radius * 2;
-  const canvas =
-    typeof OffscreenCanvas !== 'undefined'
-      ? new OffscreenCanvas(diameter * dpr, diameter * dpr)
-      : document.createElement('canvas');
-  if (!(canvas instanceof OffscreenCanvas)) {
-    canvas.width = diameter * dpr;
-    canvas.height = diameter * dpr;
-  }
-  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | null;
-  if (!ctx) return canvas;
-  ctx.scale(dpr, dpr);
-  const c = radius;
-
-  ctx.fillStyle = conicOrLinearGradient(ctx, c, c, radius, stops);
-  ctx.beginPath();
-  ctx.arc(c, c, radius, 0, Math.PI * 2);
-  ctx.fill();
-
-  const depth = ctx.createRadialGradient(c, c, 0, c, c, radius);
-  depth.addColorStop(0.0, 'rgba(255, 255, 255, 0.08)');
-  depth.addColorStop(0.7, 'rgba(0, 0, 0, 0.12)');
-  depth.addColorStop(1.0, 'rgba(0, 0, 0, 0.55)');
-  ctx.fillStyle = depth;
-  ctx.beginPath();
-  ctx.arc(c, c, radius, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Lathed grain: randomized ring width/spacing/opacity instead of a clean sine wave, so it
-  // reads as machined metal rather than a perfectly regular pattern.
-  for (let r = 2; r < radius; r += 0.9 + Math.random() * 0.9) {
-    ctx.beginPath();
-    ctx.arc(c, c, r, 0, Math.PI * 2);
-    const opacity = (0.25 + Math.random() * 0.75) * 0.14;
-    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-    ctx.lineWidth = 0.35 + Math.random() * 0.45;
-    ctx.stroke();
-  }
-
-  // Anisotropic highlight: a single directional light sweep baked into the unrotated texture,
-  // so it rotates together with the disc at draw time (ctx.rotate(rotation) in render()) — the
-  // reflection appears to move across the metal as the knob turns, for free, no extra cost.
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(c, c, radius, 0, Math.PI * 2);
-  ctx.clip();
-  const highlightAngle = -Math.PI / 3;
-  const hl = ctx.createLinearGradient(
-    c + Math.cos(highlightAngle) * radius,
-    c + Math.sin(highlightAngle) * radius,
-    c - Math.cos(highlightAngle) * radius,
-    c - Math.sin(highlightAngle) * radius,
-  );
-  hl.addColorStop(0, 'rgba(255, 255, 255, 0.32)');
-  hl.addColorStop(0.18, 'rgba(255, 255, 255, 0.06)');
-  hl.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-  hl.addColorStop(0.82, 'rgba(0, 0, 0, 0.08)');
-  hl.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
-  ctx.fillStyle = hl;
-  ctx.fillRect(0, 0, diameter, diameter);
-  ctx.restore();
-  return canvas;
 }
 
 /** Pre-rendered once per (radius, teeth, theme): the whole ring of outer notches, unrotated —

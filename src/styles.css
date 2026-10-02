@@ -463,7 +463,7 @@ output {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--select) 20%, transparent);
+  border: 1px solid var(--pink);
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   color: var(--pink);
   display: flex;
@@ -643,8 +643,9 @@ output {
   height: var(--hub, 52px);
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  display: block;
   border: 2px solid var(--pink);
-  background: var(--panel);
+  background: transparent;
   box-shadow:
     0 0 0 4px var(--edge),
     0 0 0 6px var(--copper);
@@ -656,32 +657,11 @@ output {
 .stage[data-polyrhythm="true"] .dial-hub {
   display: none;
 }
-/* Fills the whole disc with a radiant flash, not just its rim — a radial-gradient overlay
-   that's invisible at rest and only appears for the 260ms of the pulse itself. */
-.dial-hub::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--pink) 0%, transparent 72%);
-  opacity: 0;
-}
 /* Gives the hub some life on every beat — reuses the play button's own pulse keyframes since
    both share the same resting box-shadow layers. A triggered 260ms animation, not a continuous
    one, so it costs nothing while idle or hidden. */
 .dial-hub.pulse {
   animation: beatPulse 260ms ease-out;
-}
-.dial-hub.pulse::after {
-  animation: hubGlowFill 260ms ease-out;
-}
-@keyframes hubGlowFill {
-  from {
-    opacity: 0.85;
-  }
-  to {
-    opacity: 0;
-  }
 }
 /* Shown the instant Play is tapped, while start() awaits AudioContext.resume() — without it the
    dial gives no feedback for up to 5s (the transport's stuck-context timeout) and looks frozen. */
@@ -1316,7 +1296,9 @@ html.depth-25d .knob {
   display: block;
   padding: 12px 14px;
   border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--brass) 28%, var(--line));
   background: var(--panel-lo);
+  box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--brass) 48%, transparent);
   color: var(--text);
   text-decoration: none;
 }
@@ -1339,9 +1321,10 @@ html.depth-25d .knob {
   min-width: 44px;
   padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid var(--accent-idle);
+  border: 1px solid color-mix(in srgb, var(--brass) 28%, var(--accent-idle));
   background: linear-gradient(135deg, #3a362c 0%, #211f18 55%, #121108 100%);
   box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, var(--brass) 42%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6),
     0 8px 16px rgb(0 0 0 / 0.45);
@@ -1352,6 +1335,7 @@ html.depth-25d .knob {
   border-color: var(--select);
   color: var(--select);
   box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, var(--brass) 54%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.14),
     inset 0 -3px 6px rgb(0 0 0 / 0.6),
     0 0 10px var(--select-soft);
@@ -1714,6 +1698,30 @@ html.depth-25d .knob {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  align-items: center;
+}
+#soundDialog .field-master {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px), (pointer: coarse) {
+  #soundDialog input[type="range"] {
+    height: 40px;
+    touch-action: none;
+  }
+  #soundDialog .sound-level-card--accent-medium {
+    height: 380px;
+    margin-top: 22px;
+  }
+  #soundDialog input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -9px;
+  }
+  #soundDialog input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
 }
 .field input[type="number"] {
   width: 100%;
@@ -1735,8 +1743,10 @@ html.depth-25d .knob {
   gap: 2px;
 }
 .field-value .field-value-input {
-  width: 3.4em;
-  padding: 2px 6px;
+  box-sizing: border-box;
+  width: 6.42em;
+  height: 2.86em;
+  padding: 5px 12px;
   text-align: center;
   border-radius: 6px;
   border: 1px solid var(--line);
@@ -2375,6 +2385,161 @@ html.depth-25d .knob {
 .slot-row .sound-trigger {
   flex: 1;
   min-width: 0;
+}
+.sound-slot-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.sound-level-card-subheader {
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+.sound-level-card {
+  box-sizing: border-box;
+  height: 180px;
+  padding: 12px 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel-lo), color-mix(in srgb, var(--panel-lo) 72%, var(--panel)));
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 4px;
+}
+.sound-level-card--accent-medium {
+  height: 380px;
+  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  row-gap: 6px;
+}
+.sound-level-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+}
+.sound-level-card-header > .sound-slot-label {
+  align-self: flex-start;
+}
+.sound-level-card-volume {
+  box-sizing: border-box;
+  height: 100%;
+  margin: 0;
+  padding: 2px 2px 0;
+  background: transparent;
+  align-content: start;
+  gap: 4px;
+}
+.sound-level-card-volume > span {
+  align-items: center;
+}
+.sound-slot-row {
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+.sound-slot-row .sound-trigger {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  width: 0;
+  max-width: none;
+  height: 40px;
+  min-width: 0;
+  padding: 7px 25px 7px 8px;
+  border-radius: 8px;
+  background-position: calc(100% - 8px) center;
+  background-size: 10px 7px;
+  font-size: 13px;
+  box-shadow: none;
+}
+.sound-slot-row .small-btn {
+  box-sizing: border-box;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+}
+@media (max-width: 480px) {
+  .sound-level-card {
+    height: 224px;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .sound-level-card--accent-medium {
+    grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .sound-slot-row {
+    align-self: stretch;
+  }
+  .sound-slot-row .sound-trigger {
+    flex: 1 1 0;
+    width: 0;
+    max-width: none;
+    height: 50px;
+  }
+  .sound-slot-row .small-btn {
+    width: 50px;
+    height: 50px;
+  }
+}
+.sound-level-key {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px 10px;
+  margin: 4px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+.sound-level-item {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  min-height: 58px;
+  min-width: 0;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  text-transform: capitalize;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 120ms ease;
+}
+.sound-level-item:active {
+  transform: scale(0.94);
+}
+.sound-level-item:active::after,
+.sound-level-item.btn-flash::after {
+  content: none;
+}
+.sound-level-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.sound-level-item .sound-level-icon {
+  width: 128px;
+  height: 128px;
+  margin: -47px;
+  pointer-events: none;
+}
+.sound-level-item > span {
+  position: relative;
+  z-index: 1;
 }
 .small-btn {
   padding: 8px 12px;

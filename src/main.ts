@@ -22,6 +22,7 @@ import { mountBarCounterDialog } from './ui/barCounterDialog';
 import { mountClickFx } from './ui/clickFx';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
+import { mountDialHub } from './ui/dialHub';
 import { byId } from './ui/dom';
 import { mountErrorFloor } from './ui/errorFloor';
 import { mountInfoButtons } from './ui/infoButtons';
@@ -184,7 +185,8 @@ store.subscribe((s, prev) => {
   if (s.polyrhythm.soundIdB !== prev.polyrhythm.soundIdB) void applyPolySound('polyB');
 });
 
-const dialHub = byId('dialHub');
+const dialHub = byId<HTMLCanvasElement>('dialHub');
+mountDialHub(dialHub);
 const viz = new VizController(
   byId<HTMLCanvasElement>('viz'),
   {

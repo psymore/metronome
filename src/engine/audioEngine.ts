@@ -225,11 +225,18 @@ export class AudioEngine {
     return { sampleRate: buffer.sampleRate, channels };
   }
 
-  async preview(pcm: PcmData): Promise<void> {
+  async preview(pcm: PcmData, levelGain = 1): Promise<void> {
     await this.ctx.resume();
     const source = this.ctx.createBufferSource();
     source.buffer = this.toBuffer(pcm);
-    source.connect(this.master);
+    const gain = this.ctx.createGain();
+    gain.gain.value = levelGain;
+    source.connect(gain);
+    gain.connect(this.master);
+    source.onended = () => {
+      source.disconnect();
+      gain.disconnect();
+    };
     source.start(this.ctx.currentTime + 0.01);
   }
 

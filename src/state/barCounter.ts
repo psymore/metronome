@@ -14,13 +14,10 @@ export function barCounterProgress(barIndex: number, targetBars: number): BarCou
 }
 
 /** Formats the bar counter display for the current raw bar index. */
-export function formatBarCounter(barIndex: number, targetBars: number, loopCount: number): string {
-  const { bar, loop } = barCounterProgress(barIndex, targetBars);
+export function formatBarCounter(barIndex: number, targetBars: number, _loopCount: number): string {
+  const { bar } = barCounterProgress(barIndex, targetBars);
   if (targetBars <= 0) return format('barCounter.plain', { n: bar });
-  if (loopCount === 1) return format('barCounter.withTarget', { n: bar, total: targetBars });
-  if (loopCount === 0)
-    return format('barCounter.withInfiniteLoop', { bar, total: targetBars, loop });
-  return format('barCounter.withLoop', { bar, total: targetBars, loop, loopTotal: loopCount });
+  return format('barCounter.withTarget', { n: bar, total: targetBars });
 }
 
 /** True once targetBars have played loopCount times in full (never for an infinite loop or no target). */
@@ -32,10 +29,8 @@ export function barCounterFinished(
   return targetBars > 0 && loopCount !== 0 && barIndex >= targetBars * loopCount;
 }
 
-/** The counter while stopped: a dash for the bar, plus the target and loop count when set. */
-export function formatIdleBarCounter(targetBars: number, loopCount: number): string {
-  if (targetBars <= 0) return format('barCounter.idle', {});
-  if (loopCount === 1) return format('barCounter.idleWithTarget', { total: targetBars });
-  if (loopCount === 0) return format('barCounter.idleWithInfiniteLoop', { total: targetBars });
-  return format('barCounter.idleWithLoop', { total: targetBars, loopTotal: loopCount });
+/** Shows the next bar while stopped, retaining the target when a bar limit is set. */
+export function formatIdleBarCounter(targetBars: number, _loopCount: number): string {
+  if (targetBars <= 0) return format('barCounter.plain', { n: 1 });
+  return format('barCounter.withTarget', { n: 1, total: targetBars });
 }

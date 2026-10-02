@@ -1,114 +1,76 @@
 # FOLLOWUP — session handoff
 
-If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step" immediately.
+If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step"
+immediately.
 
-## Where things stand (2026-10-01)
+## Where things stand (2026-10-02)
 
-On `master`, **all changes committed and pushed**. This session was a long UI-polish pass, driven
-by the user testing live on their phone and a large desktop monitor. Everything below was looked
-at by the user as it landed unless marked otherwise.
+All current local work is being committed and pushed on `master`. This update preserves the
+previously open items below; the recent work was UI polish and preview audio behavior, not a
+replacement for those follow-ups.
 
-### Latest: knob app icon, long-press fix, narrow-phone fix (not browser-checked)
+### Recent work: Sounds modal, counter, and center hub
 
-- **App icon** is now the BPM knob redrawn in SVG (`public/icon.svg`): gear teeth, teal metal
-  face, indicator tick, dark LCD with only a play glyph (digits are unreadable at icon size), on
-  the panel's shaded warm grey with a drop shadow. The user liked the look from the PNG preview.
-  PNGs were regenerated with a one-off `sharp` call (svg → `pwa-64/192/512`,
-  `maskable-icon-512x512`, `apple-touch-icon-180x180`), not with `pwa-assets-generator`.
-- **Not updated for the new icon:** `public/favicon.ico`, everything in `src-tauri/icons/`, and
-  the Android launcher icon (`android/`, needs a new Play release).
-- **Long-press text selection:** the global `button` rule in `src/styles.css` has
-  `user-select: none` + `-webkit-touch-callout: none`, so holding +/- no longer opens the native
-  copy menu.
-- **Right edge cut off in the installed app** (fd1b666): `.app` uses
-  `grid-template-columns: minmax(0, 1fr)`. Confirmed working by the user on their 400px phone.
+- Sounds modal selectors sit below Accent and Other beats labels at every screen size, fill their
+  selector row, and keep a fixed square preview button beside them. Accent/Medium and Other beats
+  cards have no card borders.
+- The four beat-level icons use the existing metronome sphere renderer. Their enlarged transparent
+  canvas prevents the circular pulse glow being clipped into a square. Preview gain follows the
+  corresponding Accent, Medium, or Normal volume; Mute remains silent. Master gain remains
+  downstream in the audio chain.
+- Master and per-level percentage inputs use mobile-friendly numeric text entry with a Done
+  keyboard action. Volume sliders remain the primary controls; slider/value pairs stay synchronized.
+- Loop/bar counter is continuous in unlimited mode (`Bar 1`, `Bar 2`, …) and uses localized loop
+  progress when a limit is set. Turkish Signature remains `Ölçü`; signature behavior was left
+  untouched.
+- Circular-mode center hub is now a dedicated 2D canvas. Its texture uses the shared BPM-knob
+  brushed-metal painter and fixed palette based on the old center fill (`#221f18`), independent of
+  the active theme. The face is filled (no black inset/hole). The original theme-driven hub border
+  and outer ring colors remain unchanged. Hub remains hidden in Line and polyrhythm modes.
+- The top-left menu button border now matches its icon via `var(--pink)`. Menu chip and privacy
+  link top-left edge highlights were also strengthened.
 
-**Checks that were skipped** (user asked for no browser and no tests, usage limit):
+### Validation completed for recent changes
 
-- The long-press fix was not tried on a phone or in a browser.
-- The icon was only viewed as the 192px PNG; not seen installed, in a maskable (round) crop, or
-  at 64px. The knob's outer radius is 200/512, just inside the maskable safe zone.
-- Phones narrower than 400px (320/360px) were not checked. The column can't overflow any more,
-  but the controls panel (knob + two 64px button columns) may get tight at 320px.
-- No `npm test` / `npm run build` / lint run after these changes.
+- `npm run build` passed, including TypeScript and production Vite/PWA build.
+- Targeted Biome checks passed for `main.ts`, `knob.ts`, `dialHub.ts`, and `metalTexture.ts`.
+- `git diff --check` passed.
+- Visual check in the shared browser confirmed the filled, fixed graphite/bronze-neutral metal
+  hub and preserved outer rings.
+- Vite warns that Node 22.11.0 is below its recommended 22.12.0 minimum; builds succeed.
+- No tests were added. The user has requested not to add tests or commit/push during the earlier
+  UI iteration; the user has now explicitly authorized committing and pushing all local changes.
 
-### Practice timer buttons and inline delete confirm
+### Earlier follow-ups still open
 
-- Timer bar icons redrawn as inline SVG (`index.html`): filled play/pause, a "replay" reset icon
-  (open circle, sharp filled arrowhead at 12 o'clock), an empty outline trash can.
-- Buttons shrank 45px → 38px. Sizes live in three CSS variables on `.practice-icon-btn`
-  (`--btn-size`, `--capsule-size`, `--inner-size`); `.is-small` overrides them.
-- Delete confirm is one capsule (flat top/bottom, round ends) that expands from the round button
-  and collapses again on cancel/timeout (`capsuleExpand` / `capsuleCollapse`, `.is-closing`). The
-  ✕ / ✓ inside use the same colours as the practice dialog's Start confirm.
-- `main.ts`: the confirm logic is now `mountDeleteConfirm(button, onConfirm)`, shared by the
-  timer's trash and a new small trash beside the loop pill (`#barCounterDeleteBtn`, shown only
-  while `targetBars > 0`; it turns the loop off and leaves the metronome playing).
-- The loop pill and its trash sit in `.bar-counter-wrap` (the wrap is what is absolutely
-  positioned now, not the pill).
-- Loop dialog's Apply now uses the same split ✕ / ✓ confirm as the practice dialog's Start
-  (`src/ui/barCounterDialog.ts`).
+- **App icon:** `public/icon.svg` is the BPM knob SVG. `public/favicon.ico`, `src-tauri/icons/`,
+  and the Android launcher icon have not been regenerated. Android icon changes require a new Play
+  release.
+- **Phone checks:** ask whether the app icon, +/- long-press behavior, signature wheel finger
+  scrolling, Save, and Cancel behave correctly on the physical Android phone. Narrow 320/360px
+  phones also have not been checked.
+- **Timer/loop overlap:** timer and loop can both be active; their button groups may crowd or
+  overlap on narrow phones. Ask whether both should be allowed simultaneously, then fix if desired.
+- **Stale tests:** `npm test` previously had six known failures in
+  `tests/state/barCounter.test.ts` and `tests/i18n/i18n.test.ts`; expectations use old “Bar”
+  strings while current translations use Loop/Repeat wording. No recent test run was requested.
+- **Android Play Store:** Play Console setup (user side), AAB build/signing, closed testing, and
+  production release remain open per
+  `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`.
 
-**Open:** with both the timer and a loop active, the two button groups crowd each other on a
-narrow phone, and the timer's open capsule can overlap the loop trash. The user wants to decide
-later whether both should be allowed at once.
+### Standing instructions
 
-### Signature dialog
-
-- Beats and Note value sit in two equal-height halves (`.sig-grid-part`), same width.
-- The result fraction is a button (`#sigResultBtn`) that opens `#sigWheelDialog`: two
-  scroll-snap drum pickers side by side (beats 1–16, note value 2/4/8/16), picked value between
-  two theme-coloured guide lines. Nothing applies while scrolling; **Save** commits both wheels,
-  **Cancel** / backdrop leaves the signature alone. Logic in `src/ui/signatureDialog.ts`
-  (`mountWheel`). Checked in a desktop browser at phone size; real finger scrolling on the phone
-  was not confirmed by the user yet.
-- The "tap beats" switch shows a lock icon (open/closed) and asks for confirmation in
-  `#beatsLockDialog` before locking; unlocking is instant.
-- The compound-meter hint keeps its line when not applicable (`.is-idle`, visibility hidden) so
-  the sheet doesn't shift.
-
-### Defaults and visuals
-
-- `accentProfile` (`src/state/settings.ts`) now accents only the first beat; no more `medium`
-  group heads. Applies to fresh storage and whenever the signature changes. Two existing tests
-  were updated to match.
-- Polyrhythm outlines use the deep tone of each layer's own hue: layer B `theme.node`, layer A
-  the new `theme.nodeAlt` (`--viz-node-alt`, per theme in `styles.css`).
-- Toasts have a warning-yellow border (`--confirm-warn`).
-- `.sheet` background moved off the `::before` layer onto the sheet itself (it used to scroll
-  away on long sheets).
-- The one-time knob rotation hint was removed (`src/ui/knobHint.ts` deleted). The user plans a
-  proper guided intro later instead.
-
-### Layout
-
-- Tempo marking now sits above the knob; the knob and nudges are tighter; panel padding reduced.
-- `.stage` max-height 390px, top margin `clamp(0px, 0.4dvh, 6px)`.
-- Wide screens (`min-width: 720px` and `min-height: 640px`): column is 600px and the dial grows
-  until it is as wide as the panel, centred in the leftover height. The user liked this.
-
-### Known failing tests (pre-existing, not from this session)
-
-`npm test`: 6 failures in `tests/state/barCounter.test.ts` and `tests/i18n/i18n.test.ts`. They
-expect "Bar 3"-style strings; the translations were renamed to "Loop …/Repeat …" in an earlier
-commit without updating the tests. Fix is to update the expected strings.
-
-### Standing instructions (apply going forward)
-
-- **Never work in a git worktree for this project.** Plain local branches in the main directory.
-- **Never add `Co-Authored-By` or any attribution line to any commit in this repo.**
-- The user tests live on a physical Android phone (Chrome) against the dev server's Network URL
+- **Never work in a git worktree for this project.** Use plain local branches in the main directory.
+- The user tests on a physical Android phone (Chrome) against the dev server Network URL
   (`http://<LAN-IP>:5173/`).
-- The user is near a weekly usage limit: keep turns cheap, no plans, no new tests unless asked,
-  and don't run test/build reflexively after small edits.
+- Keep turns economical; do not add tests unless asked. Avoid reflexive build/test runs for tiny
+  changes.
 
 ## Next step
 
-0. Ask the user how the new icon and the +/- long-press fix behave on the phone; if the icon
-   stays, regenerate `favicon.ico`, the Tauri icons (`npx tauri icon`) and the Android icon.
-1. Ask the user how the wheel picker feels on the phone (finger scrolling, Save/Cancel).
-2. Decide with the user whether the timer and the loop may be active at once; if yes, fix the
-   crowding/overlap of the two button groups on narrow screens.
-3. Offer to fix the 6 stale "Bar → Loop" test expectations.
-4. Remaining work from `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`:
-   Play Console setup (user side), AAB build and signing, closed testing, production release.
+1. Ask how the app icon, +/- long-press fix, and signature wheel feel on the phone; check 320/360px
+   widths if relevant. If the icon stays, regenerate `favicon.ico`, the Tauri icons (`npx tauri
+   icon`), and the Android icon.
+2. Ask whether timer and loop may be active together; if yes, address narrow-screen crowding.
+3. Offer to update the six stale Bar-to-Loop test expectations.
+4. Continue the Android Play Store release tasks in the plan linked above.

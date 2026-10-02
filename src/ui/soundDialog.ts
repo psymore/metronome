@@ -4,14 +4,36 @@ import { importSoundFile } from '../sounds/importSound';
 import type { SoundLibrary } from '../sounds/soundLibrary';
 import type { SoundMeta, SoundStore } from '../sounds/soundStore';
 import { BUILTIN_SOUNDS } from '../sounds/synth';
-import { DEFAULT_SETTINGS, type Settings } from '../state/settings';
+import { type BeatLevel, DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
+import { drawNode } from '../viz/drawNode';
+import { readTheme } from '../viz/vizController';
 import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
 import { mountSoundPicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 import type { Toast } from './toast';
 
 type SlotKey = 'accentSoundId' | 'normalSoundId';
+
+function mountPercentValueInput(
+  input: HTMLInputElement,
+  setPercent: (percent: number) => void,
+): void {
+  input.addEventListener('focus', () => input.select());
+  input.addEventListener('input', () => {
+    const digits = input.value.replace(/\D/g, '').slice(0, 3);
+    if (input.value !== digits) input.value = digits;
+    if (digits === '') return;
+    const percent = Math.min(100, Number(digits));
+    input.value = String(percent);
+    setPercent(percent);
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    input.blur();
+  });
+}
 
 export interface SoundDialogDeps {
   store: Store<Settings>;
@@ -31,6 +53,9 @@ export function mountSoundDialog({
   toast,
 }: SoundDialogDeps): void {
   const dialog = byId<HTMLDialogElement>('soundDialog');
+  const soundLevelIcons = Array.from(
+    dialog.querySelectorAll<HTMLCanvasElement>('[data-sound-level-icon]'),
+  );
   const selects: Record<SlotKey, HTMLSelectElement> = {
     accentSoundId: byId<HTMLSelectElement>('accentSelect'),
     normalSoundId: byId<HTMLSelectElement>('normalSelect'),
@@ -127,7 +152,7 @@ export function mountSoundDialog({
   function renderGain(input: HTMLInputElement, valueInput: HTMLInputElement, gain: number): void {
     const percent = Math.round(gain * 100);
     input.value = String(percent);
-    valueInput.value = String(percent);
+    if (document.activeElement !== valueInput) valueInput.value = String(percent);
     updateRangeFill(input);
   }
 
@@ -142,6 +167,94 @@ export function mountSoundDialog({
     fillSelect(selects.normalSoundId, s.normalSoundId);
     renderGains(s);
     renderList();
+  }
+
+  function renderSoundLevelIcon(
+    canvas: HTMLCanvasElement,
+    level: BeatLevel,
+    glow: number,
+    s: Settings,
+  ): void {
+    const theme = readTheme(document.documentElement);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const size = canvas.closest('.sound-level-item') ? 128 : 32;
+    const pixelSize = Math.round(size * dpr);
+    if (canvas.width !== pixelSize || canvas.height !== pixelSize) {
+      canvas.width = pixelSize;
+      canvas.height = pixelSize;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    drawNode(ctx, size / 2, size / 2, 11, level, glow, theme, s.nodeStyle);
+  }
+
+  function renderSoundLevelIcons(s: Settings): void {
+    for (const canvas of soundLevelIcons) {
+      const level = canvas.dataset.soundLevelIcon;
+      if (level === 'accent' || level === 'medium' || level === 'normal' || level === 'mute')
+        renderSoundLevelIcon(canvas, level, 0, s);
+    }
+  }
+
+  const phaseAnimations = new Map<
+    HTMLButtonElement,
+    { frame: number; timer: number; idlePixels: ImageData }
+  >();
+  function cancelPhaseAnimations(s: Settings): void {
+    for (const [button, animation] of phaseAnimations) {
+      cancelAnimationFrame(animation.frame);
+      window.clearTimeout(animation.timer);
+      const canvas = button.querySelector<HTMLCanvasElement>('[data-sound-level-icon]');
+      const level = button.dataset.previewLevel;
+      if (
+        canvas &&
+        (level === 'accent' || level === 'medium' || level === 'normal' || level === 'mute')
+      ) {
+        renderSoundLevelIcon(canvas, level, 0, s);
+      }
+    }
+    phaseAnimations.clear();
+  }
+
+  function animateSoundLevel(button: HTMLButtonElement, level: BeatLevel): void {
+    const canvas = button.querySelector<HTMLCanvasElement>('[data-sound-level-icon]');
+    if (!canvas) return;
+    const previousAnimation = phaseAnimations.get(button);
+    if (previousAnimation) {
+      cancelAnimationFrame(previousAnimation.frame);
+      window.clearTimeout(previousAnimation.timer);
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.putImageData(previousAnimation.idlePixels, 0, 0);
+    }
+    renderSoundLevelIcon(canvas, level, 0, store.get());
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const idlePixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const startedAt = performance.now();
+    const duration = 360;
+    let frame = 0;
+    const timer = window.setTimeout(() => {
+      cancelAnimationFrame(frame);
+      ctx.putImageData(idlePixels, 0, 0);
+      phaseAnimations.delete(button);
+    }, duration + 20);
+    const drawFrame = (now: number): void => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const glow = progress < 0.14 ? progress / 0.14 : ((1 - progress) / 0.86) ** 1.7;
+      renderSoundLevelIcon(canvas, level, glow, store.get());
+      if (progress < 1) {
+        frame = requestAnimationFrame(drawFrame);
+        phaseAnimations.set(button, { frame, timer, idlePixels });
+      } else {
+        window.clearTimeout(timer);
+        ctx.putImageData(idlePixels, 0, 0);
+        phaseAnimations.delete(button);
+      }
+    };
+    frame = requestAnimationFrame(drawFrame);
+    phaseAnimations.set(button, { frame, timer, idlePixels });
   }
 
   async function remove(sound: SoundMeta): Promise<void> {
@@ -195,12 +308,13 @@ export function mountSoundDialog({
     key: 'accentGain' | 'mediumGain' | 'normalGain',
   ): void {
     input.addEventListener('input', () => {
+      valueInput.value = input.value;
       store.set({ [key]: Number(input.value) / 100 });
       updateRangeFill(input);
     });
-    valueInput.addEventListener('input', () => {
-      if (valueInput.value === '') return;
-      const percent = Math.min(100, Math.max(0, Number(valueInput.value)));
+    mountPercentValueInput(valueInput, (percent) => {
+      input.value = String(percent);
+      updateRangeFill(input);
       store.set({ [key]: percent / 100 });
     });
   }
@@ -212,12 +326,13 @@ export function mountSoundDialog({
   const volumeValue = byId<HTMLInputElement>('volumeValue');
   const hapticsToggle = byId<HTMLButtonElement>('hapticsToggle');
   volumeInput.addEventListener('input', () => {
+    volumeValue.value = volumeInput.value;
     store.set({ volume: Number(volumeInput.value) / 100 });
     updateRangeFill(volumeInput);
   });
-  volumeValue.addEventListener('input', () => {
-    if (volumeValue.value === '') return;
-    const percent = Math.min(100, Math.max(0, Number(volumeValue.value)));
+  mountPercentValueInput(volumeValue, (percent) => {
+    volumeInput.value = String(percent);
+    updateRangeFill(volumeInput);
     store.set({ volume: percent / 100 });
   });
   hapticsToggle.addEventListener('click', () => {
@@ -226,7 +341,7 @@ export function mountSoundDialog({
   const renderVolumeAndHaptics = (s: Settings): void => {
     const percent = Math.round(s.volume * 100);
     volumeInput.value = String(percent);
-    volumeValue.value = String(percent);
+    if (document.activeElement !== volumeValue) volumeValue.value = String(percent);
     updateRangeFill(volumeInput);
     hapticsToggle.setAttribute('aria-checked', String(s.haptics));
   };
@@ -237,6 +352,21 @@ export function mountSoundDialog({
     button.addEventListener('click', () => {
       const key = button.dataset.preview as SlotKey;
       void previewSound(store.get()[key]);
+    });
+  }
+  for (const button of dialog.querySelectorAll<HTMLButtonElement>('[data-preview-level]')) {
+    button.addEventListener('click', () => {
+      const level = button.dataset.previewLevel;
+      if (level === 'accent' || level === 'medium') {
+        const s = store.get();
+        void previewSound(s.accentSoundId, level === 'accent' ? s.accentGain : s.mediumGain);
+      } else if (level === 'normal') {
+        const s = store.get();
+        void previewSound(s.normalSoundId, s.normalGain);
+      }
+      if (level === 'accent' || level === 'medium' || level === 'normal' || level === 'mute') {
+        animateSoundLevel(button, level);
+      }
     });
   }
 
@@ -268,6 +398,10 @@ export function mountSoundDialog({
   closeOnBackdropClick(dialog);
 
   store.subscribe((s, prev) => {
+    if (s.nodeStyle !== prev.nodeStyle || s.theme !== prev.theme) {
+      cancelPhaseAnimations(s);
+      renderSoundLevelIcons(s);
+    }
     if (s.accentSoundId !== prev.accentSoundId || s.normalSoundId !== prev.normalSoundId) render(s);
     else if (
       s.accentGain !== prev.accentGain ||
@@ -276,4 +410,5 @@ export function mountSoundDialog({
     )
       renderGains(s);
   });
+  renderSoundLevelIcons(store.get());
 }
