@@ -318,6 +318,7 @@
           <span class="seg-thumb" aria-hidden="true"></span>
           <button type="button" role="radio" class="seg-btn" data-viz="circular" aria-checked="true" data-i18n="viz.circle">Circle</button>
           <button type="button" role="radio" class="seg-btn" data-viz="linear" aria-checked="false" data-i18n="viz.line">Line</button>
+          <span class="seg-mode-label" data-i18n="sigDialog.modePolyrhythm" hidden>Polyrhythm</span>
         </div>
       </header>
 
@@ -427,7 +428,7 @@
           <h3 class="sheet-sub" data-i18n="sigDialog.beatsTitle">Beats</h3>
           <div class="num-picker num-picker--row">
             <button type="button" id="beatsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBeats" aria-label="Fewer beats">−</button>
-            <input type="number" id="beatsValue" class="num-value" inputmode="numeric" min="1" max="16" step="1" value="4" data-i18n-aria-label="sigDialog.beatsAriaLabel" aria-label="Beats" />
+            <input type="text" id="beatsValue" class="num-value numeric-text-input" inputmode="numeric" enterkeyhint="done" maxlength="2" min="1" max="16" value="4" data-i18n-aria-label="sigDialog.beatsAriaLabel" aria-label="Beats" />
             <button type="button" id="beatsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBeats" aria-label="More beats">+</button>
           </div>
           </div>
@@ -449,6 +450,7 @@
         <button type="button" role="radio" class="chip" data-subdivision="2" aria-checked="false" data-i18n="subdivision.eighths">8ths</button>
         <button type="button" role="radio" class="chip" data-subdivision="3" aria-checked="false" data-i18n="subdivision.triplets">Triplets</button>
         <button type="button" role="radio" class="chip" data-subdivision="4" aria-checked="false" data-i18n="subdivision.sixteenths">16ths</button>
+        <button type="button" role="radio" class="chip" data-subdivision="8" aria-checked="false" data-i18n="subdivision.thirtyseconds">32nds</button>
       </div>
       <p class="sub-label" id="subdivisionCompoundHint" data-i18n="subdivision.compoundHint" hidden>Eighths are already the beat's subdivision</p>
       <div class="field sig-beats-field" data-standard-block>
@@ -469,7 +471,7 @@
         <h3 class="sheet-sub" data-i18n="sigDialog.polyLayerA">Layer A</h3>
         <div class="num-picker num-picker--row">
           <button type="button" id="polyADown" class="round-step-btn" data-i18n-aria-label="nudge.fewerPolyA" aria-label="Fewer Layer A events">−</button>
-          <input type="number" id="polyAValue" class="num-value" inputmode="numeric" min="2" max="16" step="1" value="3" data-i18n-aria-label="sigDialog.polyAAriaLabel" aria-label="Layer A events" />
+          <input type="text" id="polyAValue" class="num-value numeric-text-input" inputmode="numeric" enterkeyhint="done" maxlength="2" min="2" max="16" value="3" data-i18n-aria-label="sigDialog.polyAAriaLabel" aria-label="Layer A events" />
           <button type="button" id="polyAUp" class="round-step-btn" data-i18n-aria-label="nudge.morePolyA" aria-label="More Layer A events">+</button>
         </div>
         <div class="slot">
@@ -483,7 +485,7 @@
         <h3 class="sheet-sub" data-i18n="sigDialog.polyLayerB">Layer B</h3>
         <div class="num-picker num-picker--row">
           <button type="button" id="polyBDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerPolyB" aria-label="Fewer Layer B events">−</button>
-          <input type="number" id="polyBValue" class="num-value" inputmode="numeric" min="2" max="16" step="1" value="4" data-i18n-aria-label="sigDialog.polyBAriaLabel" aria-label="Layer B events" />
+          <input type="text" id="polyBValue" class="num-value numeric-text-input" inputmode="numeric" enterkeyhint="done" maxlength="2" min="2" max="16" value="4" data-i18n-aria-label="sigDialog.polyBAriaLabel" aria-label="Layer B events" />
           <button type="button" id="polyBUp" class="round-step-btn" data-i18n-aria-label="nudge.morePolyB" aria-label="More Layer B events">+</button>
         </div>
         <div class="slot">
@@ -508,7 +510,7 @@
       <p class="sub-label" data-i18n="songLength.subLabel">0 = off</p>
       <div class="num-picker num-picker--row">
         <button type="button" id="targetBarsDown" class="round-step-btn" data-i18n-aria-label="nudge.fewerBars" aria-label="Fewer bars">−</button>
-        <input type="number" id="targetBarsValue" class="num-value" inputmode="numeric" min="0" max="999" step="1" value="0" data-i18n-aria-label="songLength.valueAriaLabel" aria-label="Song length in bars" />
+        <input type="text" id="targetBarsValue" class="num-value numeric-text-input" inputmode="numeric" enterkeyhint="done" maxlength="3" min="0" max="999" value="0" data-i18n-aria-label="songLength.valueAriaLabel" aria-label="Song length in bars" />
         <button type="button" id="targetBarsUp" class="round-step-btn" data-i18n-aria-label="nudge.moreBars" aria-label="More bars">+</button>
       </div>
       <button type="button" id="targetBarsApply" class="wide-btn" data-i18n="songLength.apply">Apply</button>
@@ -556,12 +558,12 @@
         <div class="num-picker">
           <div class="time-fields">
             <div class="time-field">
-              <input id="practiceMinutesInput" type="number" min="0" max="180" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.minutesAriaLabel" aria-label="Minutes" />
+              <input id="practiceMinutesInput" class="numeric-text-input" type="text" min="0" max="180" maxlength="3" inputmode="numeric" enterkeyhint="done" data-i18n-aria-label="practiceTimer.minutesAriaLabel" aria-label="Minutes" />
               <span class="time-field-label" data-i18n="practiceTimer.minutesShort">min</span>
             </div>
             <span class="time-sep" aria-hidden="true">:</span>
             <div class="time-field">
-              <input id="practiceSecondsInput" type="number" min="0" max="59" step="1" inputmode="numeric" data-i18n-aria-label="practiceTimer.secondsAriaLabel" aria-label="Seconds" />
+              <input id="practiceSecondsInput" class="numeric-text-input" type="text" min="0" max="59" maxlength="2" inputmode="numeric" enterkeyhint="done" data-i18n-aria-label="practiceTimer.secondsAriaLabel" aria-label="Seconds" />
               <span class="time-field-label" data-i18n="practiceTimer.secondsShort">sec</span>
             </div>
           </div>
@@ -601,6 +603,7 @@
             <button type="button" role="radio" class="chip" data-theme-option="amber" aria-checked="false" data-i18n="theme.amber">Amber</button>
             <button type="button" role="radio" class="chip" data-theme-option="blue" aria-checked="false" data-i18n="theme.blue">Blue</button>
             <button type="button" role="radio" class="chip" data-theme-option="chrome" aria-checked="false" data-i18n="theme.chrome">Chrome</button>
+            <button type="button" role="radio" class="chip" data-theme-option="light" aria-checked="false" data-i18n="theme.light">Light</button>
           </div>
         </div>
         <div class="field">
@@ -639,7 +642,7 @@
 
         <h3 class="sheet-sub" data-i18n="menu.advanced">Advanced</h3>
         <label class="field">
-          <span><span data-i18n="syncOffset.label">Visual sync offset</span> <span class="field-value"><input type="number" id="offsetValue" class="field-value-input" inputmode="numeric" min="-200" max="200" step="1" value="0" data-i18n-aria-label="syncOffset.ariaLabel" aria-label="Visual sync offset in milliseconds" /> ms</span></span>
+          <span><span data-i18n="syncOffset.label">Visual sync offset</span> <span class="field-value"><input type="text" id="offsetValue" class="field-value-input numeric-text-input" inputmode="decimal" enterkeyhint="done" maxlength="4" pattern="-?[0-9]*" min="-200" max="200" value="0" data-i18n-aria-label="syncOffset.ariaLabel" aria-label="Visual sync offset in milliseconds" /> ms</span></span>
           <input id="offsetInput" type="range" min="-200" max="200" step="1" />
           <div class="sub-head">
             <small class="sub-label" data-i18n="syncOffset.subLabel">Fixes flash/click lag</small>

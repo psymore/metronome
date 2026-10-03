@@ -142,7 +142,7 @@ function linearSubDotLayout(
       const x0 = nodeX(cell.col, cell.rowCount);
       const last = cell.col === cell.rowCount - 1;
       const from = x0 + gap;
-      const to = last ? x0 + cellW / 2 - 5 : nodeX(cell.col + 1, cell.rowCount) - gap;
+      const to = last ? x0 + cellW - gap : nodeX(cell.col + 1, cell.rowCount) - gap;
       const spacing = (to - from) / sub;
       const dotR = fullDotR > 0 ? Math.min(fullDotR, subDotRadius(nodeR, spacing)) : 0;
       const y = rowY(cell.row);

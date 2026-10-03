@@ -3,6 +3,7 @@ import { clampTargetBars, isLoopCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
+import { mountIntegerInput } from './numericInput';
 import type { Toast } from './toast';
 
 export function mountBarCounterDialog({
@@ -53,9 +54,7 @@ export function mountBarCounterDialog({
   };
   mountHoldRepeat(byId('targetBarsDown'), () => setPendingTargetBars(pendingTargetBars - 1));
   mountHoldRepeat(byId('targetBarsUp'), () => setPendingTargetBars(pendingTargetBars + 1));
-  targetBarsValue.addEventListener('input', () => {
-    if (targetBarsValue.value !== '') setPendingTargetBars(Number(targetBarsValue.value));
-  });
+  mountIntegerInput(targetBarsValue, setPendingTargetBars);
 
   const barCounterBtn = byId('barCounter');
   const flashCounter = () => {

@@ -5,6 +5,7 @@ import { clampPolyCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
+import { mountIntegerInput } from './numericInput';
 import { mountSoundPicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 
@@ -57,12 +58,8 @@ export function mountPolyrhythmControls({
   mountHoldRepeat(byId('polyAUp'), () => setA(store.get().polyrhythm.a + 1));
   mountHoldRepeat(byId('polyBDown'), () => setB(store.get().polyrhythm.b - 1));
   mountHoldRepeat(byId('polyBUp'), () => setB(store.get().polyrhythm.b + 1));
-  aValue.addEventListener('input', () => {
-    if (aValue.value !== '') setA(Number(aValue.value));
-  });
-  bValue.addEventListener('input', () => {
-    if (bValue.value !== '') setB(Number(bValue.value));
-  });
+  mountIntegerInput(aValue, setA);
+  mountIntegerInput(bValue, setB);
 
   async function fillSoundSelect(select: HTMLSelectElement, current: string): Promise<void> {
     const builtin = document.createElement('optgroup');

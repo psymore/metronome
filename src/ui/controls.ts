@@ -21,12 +21,19 @@ export interface ControlsDeps {
 }
 
 /** Badge text for each subdivision value (1 = off, never shown). */
-const SUBDIVISION_BADGE: Record<Subdivision, string> = { 1: '', 2: '8', 3: '3', 4: '16' };
+const SUBDIVISION_BADGE: Record<Subdivision, string> = {
+  1: '',
+  2: '8',
+  3: '3',
+  4: '16',
+  8: '32',
+};
 const SUBDIVISION_I18N_KEY: Record<Subdivision, string> = {
   1: 'subdivision.off',
   2: 'subdivision.eighths',
   3: 'subdivision.triplets',
   4: 'subdivision.sixteenths',
+  8: 'subdivision.thirtyseconds',
 };
 
 export function mountControls({ store, toggle }: ControlsDeps): void {

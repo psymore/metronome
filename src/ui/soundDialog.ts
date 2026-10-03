@@ -9,31 +9,12 @@ import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
 import { readTheme } from '../viz/vizController';
 import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
+import { mountIntegerInput } from './numericInput';
 import { mountSoundPicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 import type { Toast } from './toast';
 
 type SlotKey = 'accentSoundId' | 'normalSoundId';
-
-function mountPercentValueInput(
-  input: HTMLInputElement,
-  setPercent: (percent: number) => void,
-): void {
-  input.addEventListener('focus', () => input.select());
-  input.addEventListener('input', () => {
-    const digits = input.value.replace(/\D/g, '').slice(0, 3);
-    if (input.value !== digits) input.value = digits;
-    if (digits === '') return;
-    const percent = Math.min(100, Number(digits));
-    input.value = String(percent);
-    setPercent(percent);
-  });
-  input.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter') return;
-    event.preventDefault();
-    input.blur();
-  });
-}
 
 export interface SoundDialogDeps {
   store: Store<Settings>;
@@ -312,11 +293,15 @@ export function mountSoundDialog({
       store.set({ [key]: Number(input.value) / 100 });
       updateRangeFill(input);
     });
-    mountPercentValueInput(valueInput, (percent) => {
-      input.value = String(percent);
-      updateRangeFill(input);
-      store.set({ [key]: percent / 100 });
-    });
+    mountIntegerInput(
+      valueInput,
+      (percent) => {
+        input.value = String(percent);
+        updateRangeFill(input);
+        store.set({ [key]: percent / 100 });
+      },
+      { min: 0, max: 100, maxDigits: 3 },
+    );
   }
   mountGainSlider(accentGainInput, accentGainValue, 'accentGain');
   mountGainSlider(mediumGainInput, mediumGainValue, 'mediumGain');
@@ -330,11 +315,15 @@ export function mountSoundDialog({
     store.set({ volume: Number(volumeInput.value) / 100 });
     updateRangeFill(volumeInput);
   });
-  mountPercentValueInput(volumeValue, (percent) => {
-    volumeInput.value = String(percent);
-    updateRangeFill(volumeInput);
-    store.set({ volume: percent / 100 });
-  });
+  mountIntegerInput(
+    volumeValue,
+    (percent) => {
+      volumeInput.value = String(percent);
+      updateRangeFill(volumeInput);
+      store.set({ volume: percent / 100 });
+    },
+    { min: 0, max: 100, maxDigits: 3 },
+  );
   hapticsToggle.addEventListener('click', () => {
     store.set({ haptics: !store.get().haptics });
   });

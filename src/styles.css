@@ -58,6 +58,7 @@
   --line: #443f30;
   --text: #f2ead9;
   --muted: #a2967d;
+  --knob-face: #050a07;
   --radius: 4px;
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-score: "EB Garamond", "Palatino Linotype", Georgia, serif;
@@ -166,6 +167,49 @@
   --viz-glow: #d8dce4;
   --viz-core: #f4f5f7;
   --accent-idle: rgb(176 180 188 / 0.18);
+}
+
+/* Theme: Light — soft paper surfaces with a consistent teal accent. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #dcd0bb;
+  --bg-hi: #e7ddca;
+  --panel: #fffefa;
+  --panel-lo: #f5f3eb;
+  --edge: #d8d8ce;
+  --line: #d8d9cf;
+  --text: #263a36;
+  --muted: #687b75;
+  --knob-face: #eaf0e9;
+  --knob-metal-hi: #eef0ed;
+  --knob-metal-mid: #aeb5b8;
+  --knob-metal-lo: #6e777d;
+  --knob-brass: #68737a;
+
+  --pink: #147765;
+  --pink-soft: rgb(20 119 101 / 0.18);
+  --select: #147765;
+  --select-soft: rgb(20 119 101 / 0.16);
+  --brass: #1b8872;
+  --brass-soft: rgb(27 136 114 / 0.2);
+  --copper: #0e5d50;
+  --viz-ring: #aebcb5;
+  --viz-spoke: #d8dfda;
+  --viz-node: #0e5d50;
+  --viz-accent: #147765;
+  --viz-accent-alt: #ad7028;
+  --viz-node-alt: #9a6424;
+  --viz-node-idle: #d5ddd7;
+  --viz-hand: #147765;
+  --viz-label: #687b75;
+  --viz-glow: #1b8872;
+  --viz-core: #f8fffb;
+  --viz-poly-line-width: 3.5;
+  --viz-subfan-fill: rgb(255 254 250 / 0.76);
+  --accent-idle: rgb(20 119 101 / 0.16);
+  --confirm-safe: #19734a;
+  --confirm-danger: #b42318;
+  --confirm-warn: #8a5b00;
 }
 
 * {
@@ -520,6 +564,31 @@ output {
 }
 .seg:has(.seg-btn[data-viz="linear"][aria-checked="true"]) .seg-thumb {
   transform: translateX(100%);
+}
+.seg.is-polyrhythm {
+  width: auto;
+  min-width: 0;
+  padding: 1px;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(180deg, #100f0c, #1a1812) padding-box,
+    conic-gradient(
+        from 0deg,
+        #4fb894,
+        #d99a3f,
+        #58a6ff,
+        #b0b4bc,
+        #4fb894
+      )
+      border-box;
+  box-shadow: 0 0 8px var(--select-soft);
+}
+.seg-mode-label {
+  padding: 6px 14px;
+  color: var(--select);
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
 }
 .seg-btn {
   position: relative;
@@ -1411,13 +1480,14 @@ html.depth-25d .knob {
    not a full third grid track of its own — it's a border on the result column). */
 .sig-grid {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 18px 16px;
 }
 .sig-grid-col {
+  min-width: 0;
   display: grid;
   grid-auto-rows: 1fr;
   gap: 18px;
@@ -1723,7 +1793,8 @@ html.depth-25d .knob {
     height: 24px;
   }
 }
-.field input[type="number"] {
+.field input[type="number"],
+.field input.numeric-text-input {
   width: 100%;
   padding: 8px;
   border-radius: 10px;
@@ -1735,7 +1806,7 @@ html.depth-25d .knob {
 }
 /* A compact tappable value (Volume %, Visual sync offset ms) inline in a .field's label row —
    the same "tap to type" idea as .num-value, just small enough to sit in a text line instead of
-   its own card. Scoped under .field-value so it outweighs .field input[type="number"] above
+   its own card. Scoped under .field-value so it outweighs the generic .field input rule above
    (same specificity, later in source) instead of inheriting its full-width sizing. */
 .field-value {
   display: inline-flex;
@@ -1780,10 +1851,11 @@ html.depth-25d .knob {
   gap: 10px;
 }
 /* The value box (Beats, polyrhythm layer counts, Song length) — same dark box/border/tabular-nums
-   look as .time-fields input. A real <input type="number"> everywhere it's used now, so the
-   spin-button removal below applies unconditionally rather than being scoped to .time-fields. */
+   look as .time-fields input. */
 .num-value {
+  box-sizing: border-box;
   min-width: 3.2em;
+  width: 4em;
   padding: 6px 10px;
   text-align: center;
   border-radius: 10px;
@@ -1795,6 +1867,11 @@ html.depth-25d .knob {
   font-size: 20px;
   font-weight: 600;
   -moz-appearance: textfield;
+}
+.num-picker--row .num-value {
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
 }
 .num-value::-webkit-inner-spin-button,
 .num-value::-webkit-outer-spin-button {
@@ -1818,7 +1895,8 @@ html.depth-25d .knob {
   text-transform: uppercase;
   color: var(--muted);
 }
-.time-fields input[type="number"] {
+.time-fields input[type="number"],
+.time-fields input.numeric-text-input {
   width: 3.2em;
   text-align: center;
   font-family: var(--font-sans);
@@ -1826,8 +1904,8 @@ html.depth-25d .knob {
   /* Custom +/- steppers make the native spin buttons redundant clutter. */
   -moz-appearance: textfield;
 }
-.time-fields input[type="number"]::-webkit-inner-spin-button,
-.time-fields input[type="number"]::-webkit-outer-spin-button {
+.time-fields input.numeric-text-input::-webkit-inner-spin-button,
+.time-fields input.numeric-text-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -2707,9 +2785,198 @@ html.depth-25d .knob {
   }
 }
 
+@media (min-width: 720px) {
+  #signatureDialog {
+    box-sizing: border-box;
+    width: min(92vw, 560px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
     animation: none !important;
   }
+}
+
+:root[data-theme="light"] .title-btn {
+  color: var(--text);
+}
+:root[data-theme="light"] .title-btn::after {
+  background: linear-gradient(90deg, #147765, #68a994);
+  opacity: 0.42;
+}
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .header-btn,
+:root[data-theme="light"] .square-btn,
+:root[data-theme="light"] .drawer,
+:root[data-theme="light"] .icon-btn,
+:root[data-theme="light"] .chip,
+:root[data-theme="light"] .sig-grid-result,
+:root[data-theme="light"] .round-step-btn,
+:root[data-theme="light"] .practice-icon-btn,
+:root[data-theme="light"] .wide-btn,
+:root[data-theme="light"] .wide-btn.is-confirming .confirm-cancel-btn,
+:root[data-theme="light"] .wide-btn.is-confirming .confirm-confirm-btn,
+:root[data-theme="light"] .practice-icon-btn.is-confirming .confirm-cancel-btn,
+:root[data-theme="light"] .practice-icon-btn.is-confirming .confirm-confirm-btn {
+  background: linear-gradient(145deg, #fffefa, #f2f1e9);
+}
+:root[data-theme="light"] .seg,
+:root[data-theme="light"] .segmented,
+:root[data-theme="light"] .sig-wheels {
+  background: linear-gradient(180deg, #eeede5, #f8f7f1);
+  box-shadow: inset 0 1px 3px rgb(41 57 51 / 0.1);
+}
+:root[data-theme="light"] .subdivision-badge {
+  background: #fffefa;
+  border-color: #d8d9cf;
+  color: #52665f;
+  box-shadow: 0 1px 3px rgb(41 57 51 / 0.1);
+}
+:root[data-theme="light"] .nudge::before {
+  background: #e7eee9;
+  box-shadow:
+    inset 0 1px 3px rgb(41 57 51 / 0.12),
+    0 0 0 1px rgb(41 57 51 / 0.12);
+}
+:root[data-theme="light"] .toast {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgb(41 57 51 / 0.18);
+}
+:root[data-theme="light"] .debug {
+  background: rgb(255 254 250 / 0.94);
+  color: var(--text);
+}
+:root[data-theme="light"] .wide-btn.danger,
+:root[data-theme="light"] .wide-btn.is-confirming .confirm-cancel-btn {
+  color: #a52820;
+}
+:root[data-theme="light"] .wide-btn.is-confirming .confirm-confirm-btn {
+  color: #176544;
+}
+:root[data-theme="light"] .sheet,
+:root[data-theme="light"] .info-popup {
+  box-shadow:
+    0 18px 48px rgb(41 57 51 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.85);
+}
+:root[data-theme="light"] .panel {
+  background: linear-gradient(145deg, #f6efdf, #e9dfcc);
+  border-color: #cec2ad;
+  box-shadow:
+    0 10px 26px rgb(73 59 37 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.72),
+    inset 0 -2px 5px rgb(73 59 37 / 0.08);
+}
+:root[data-theme="light"] .panel::before {
+  background:
+    linear-gradient(#f6efdf, #f6efdf) padding-box,
+    linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.68) 0%,
+      rgb(255 255 255 / 0.16) 30%,
+      rgb(73 59 37 / 0.16) 65%,
+      rgb(255 255 255 / 0.32) 100%
+    )
+    border-box;
+}
+:root[data-theme="light"] .seg.is-polyrhythm {
+  background:
+    linear-gradient(110deg, #e1efea 0%, #fffefa 38%, #f5ead8 100%) padding-box,
+    conic-gradient(
+        from 0deg,
+        #4fb894,
+        #d99a3f,
+        #58a6ff,
+        #b0b4bc,
+        #4fb894
+      )
+      border-box;
+  box-shadow:
+    0 2px 8px rgb(41 57 51 / 0.12),
+    0 0 10px rgb(79 184 148 / 0.12);
+}
+:root[data-theme="light"] .seg-mode-label {
+  color: #344b44;
+  font-weight: 600;
+}
+:root[data-theme="light"] .header-btn,
+:root[data-theme="light"] .square-btn,
+:root[data-theme="light"] .icon-btn,
+:root[data-theme="light"] .chip,
+:root[data-theme="light"] .sig-grid-result,
+:root[data-theme="light"] .round-step-btn,
+:root[data-theme="light"] .practice-icon-btn,
+:root[data-theme="light"] .wide-btn {
+  border-color: var(--line);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 2px 7px rgb(41 57 51 / 0.09);
+}
+:root[data-theme="light"] .chip[aria-checked="true"],
+:root[data-theme="light"] .chip.active,
+:root[data-theme="light"] .header-btn[aria-expanded="true"] {
+  border-color: var(--select);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 0 0 1px var(--select-soft),
+    0 3px 9px rgb(20 119 101 / 0.14);
+}
+:root[data-theme="light"] .square-btn svg {
+  filter: drop-shadow(0 1px 1px rgb(41 57 51 / 0.16));
+}
+:root[data-theme="light"] .drawer {
+  box-shadow: 12px 0 36px rgb(41 57 51 / 0.16);
+}
+:root[data-theme="light"] .drawer-body > .field {
+  background: linear-gradient(145deg, #f0efe7, #e9e9df);
+  border: 1px solid #d9dbd0;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.82),
+    0 2px 6px rgb(41 57 51 / 0.07);
+}
+:root[data-theme="light"] .drawer-body > .sheet-sub {
+  color: #52665f;
+}
+:root[data-theme="light"] .chip--preview {
+  background: linear-gradient(145deg, #f6efdf, #e9dfcc);
+}
+:root[data-theme="light"] .knob {
+  filter: drop-shadow(0 8px 14px rgb(38 75 63 / 0.22));
+}
+:root[data-theme="light"] .nudge {
+  border-color: #aeb5b8;
+  background:
+    radial-gradient(circle at 33% 28%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0) 42%),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgb(255 255 255 / 0.14) 0px,
+      rgb(255 255 255 / 0.14) 0.6px,
+      rgb(48 58 63 / 0.06) 0.6px,
+      rgb(48 58 63 / 0.06) 1.6px
+    ),
+    conic-gradient(
+      from 210deg,
+      #6e777d,
+      #eef0ed,
+      #aeb5b8,
+      #eef0ed,
+      #6e777d,
+      #6e777d
+    );
+  color: #3d484d;
+  text-shadow:
+    0 1px 1px rgb(255 255 255 / 0.8),
+    0 0 2px rgb(35 45 50 / 0.2);
+  box-shadow:
+    0 1px 3px rgb(41 57 51 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+:root[data-theme="light"] .nudge::before {
+  background: #e3e8e4;
+  box-shadow:
+    inset 0 1px 3px rgb(41 57 51 / 0.14),
+    0 0 0 1px rgb(41 57 51 / 0.18);
 }

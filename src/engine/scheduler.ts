@@ -1,4 +1,4 @@
-import { type BeatLevel, isSubOn } from '../state/settings';
+import { type BeatLevel, isSubOn, type Subdivision } from '../state/settings';
 import { secondsPerBeat } from './timing';
 
 export interface BeatEvent {
@@ -18,8 +18,8 @@ export interface Pattern {
   bpm: number;
   beatsPerBar: number;
   levels: readonly BeatLevel[];
-  /** Clicks per beat interval: 1 = just the beat, 2/3/4 = 8th/triplet/16th subdivision clicks. */
-  subdivision: 1 | 2 | 3 | 4;
+  /** Clicks per beat interval: 1 = just the beat, 2/3/4/8 = 8th/triplet/16th/32nd clicks. */
+  subdivision: Subdivision;
   /** Pulses per felt beat: 1 for simple meters, 3 for compound meters (BPM is the dotted quarter,
    *  each pulse an eighth). */
   pulsesPerBeat: 1 | 3;

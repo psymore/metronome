@@ -163,6 +163,10 @@ describe('sanitizeSettings', () => {
     };
     expect(sanitizeSettings(JSON.parse(JSON.stringify(s)))).toEqual(s);
   });
+
+  it('keeps the light theme selection', () => {
+    expect(sanitizeSettings({ ...defaultSettings(), theme: 'light' }).theme).toBe('light');
+  });
 });
 
 describe('level helpers', () => {
@@ -240,6 +244,12 @@ describe('level helpers', () => {
       pulsesPerBeat: 1,
       subOff: [],
     });
+  });
+
+  it('keeps 32nd-note subdivisions in simple meters', () => {
+    const s = sanitizeSettings({ ...defaultSettings(), subdivision: 8 });
+    expect(s.subdivision).toBe(8);
+    expect(patternFromSettings(s).subdivision).toBe(8);
   });
 
   it('patternFromSettings keeps pulsesPerBeat 1 for a non-compound 7/8', () => {

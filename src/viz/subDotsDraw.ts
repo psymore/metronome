@@ -87,7 +87,7 @@ export function drawSubFan(
     2 * SUB_FAN_PAD,
     SUB_FAN_PAD,
   );
-  ctx.fillStyle = 'rgb(0 0 0 / 0.55)';
+  ctx.fillStyle = theme.subFanFill ?? 'rgb(0 0 0 / 0.55)';
   ctx.fill();
   ctx.strokeStyle = theme.ring;
   ctx.stroke();

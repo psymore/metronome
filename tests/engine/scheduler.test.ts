@@ -173,6 +173,15 @@ describe('Scheduler', () => {
     expect(subdivisions[1]).toBeCloseTo(0.05 + (2 * 0.5) / 3, 9);
   });
 
+  it('places seven extra clicks per beat for a 32nd-note subdivision', () => {
+    const { s, subdivisions } = setup({ subdivision: 8 }, 0.3);
+    s.start(0);
+    expect(subdivisions).toHaveLength(7);
+    subdivisions.forEach((time, i) => {
+      expect(time).toBeCloseTo(0.05 + ((i + 1) * 0.5) / 8, 9);
+    });
+  });
+
   it('compound meter (pulsesPerBeat 3) schedules six pulses 1/3 s apart at 60 BPM', () => {
     const { s, beats } = setup(
       {

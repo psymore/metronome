@@ -12,6 +12,20 @@ export { conicOrLinearGradient } from './metalTexture';
  */
 function themeMatchStops(el: Element): readonly [number, string][] {
   const css = getComputedStyle(el);
+  const metalHi = css.getPropertyValue('--knob-metal-hi').trim();
+  const metalMid = css.getPropertyValue('--knob-metal-mid').trim();
+  const metalLo = css.getPropertyValue('--knob-metal-lo').trim();
+  if (metalHi && metalMid && metalLo) {
+    return [
+      [0.0, metalLo],
+      [0.18, metalHi],
+      [0.35, metalLo],
+      [0.52, metalMid],
+      [0.7, metalHi],
+      [0.88, metalLo],
+      [1.0, metalLo],
+    ];
+  }
   const hi = css.getPropertyValue('--brass').trim() || '#7fe0bb';
   const mid = css.getPropertyValue('--select').trim() || '#4fb894';
   const lo = css.getPropertyValue('--copper').trim() || '#2f7a5f';
@@ -45,6 +59,8 @@ export interface Knob {
 interface KnobTheme {
   /** Hex string, for direct fillStyle/strokeStyle use. */
   brass: string;
+  face: string;
+  light: boolean;
   /** Same color as an [r, g, b] tuple, for building rgba() strings at custom (animated)
    *  alpha — the LCD glow needs to fade in and out, which a fixed CSS var can't do. */
   brassRgb: [number, number, number];
@@ -60,8 +76,16 @@ function hexToRgb(hex: string): [number, number, number] {
 
 function readKnobTheme(el: Element): KnobTheme {
   const css = getComputedStyle(el);
-  const brass = css.getPropertyValue('--brass').trim() || '#7fe0bb';
-  return { brass, brassRgb: hexToRgb(brass) };
+  const brass =
+    css.getPropertyValue('--knob-brass').trim() ||
+    css.getPropertyValue('--brass').trim() ||
+    '#7fe0bb';
+  return {
+    brass,
+    face: css.getPropertyValue('--knob-face').trim() || '#050a07',
+    light: document.documentElement.dataset.theme === 'light',
+    brassRgb: hexToRgb(brass),
+  };
 }
 
 function rgba([r, g, b]: [number, number, number], alpha: number): string {
@@ -123,6 +147,7 @@ function renderSideWall(
   thickness: number,
   perspectiveY: number,
   dpr: number,
+  light: boolean,
 ): OffscreenCanvas | HTMLCanvasElement {
   const pad = 4;
   const w = (radius + pad) * 2;
@@ -144,11 +169,11 @@ function renderSideWall(
     ctx.beginPath();
     ctx.ellipse(cx, cy + i, radius, radius * perspectiveY, 0, 0, Math.PI * 2);
     const grad = ctx.createLinearGradient(cx - radius, 0, cx + radius, 0);
-    grad.addColorStop(0.0, '#0c0c0d');
-    grad.addColorStop(0.3, '#3a3a3e');
-    grad.addColorStop(0.6, '#101012');
-    grad.addColorStop(0.85, '#48484d');
-    grad.addColorStop(1.0, '#08080a');
+    grad.addColorStop(0.0, light ? '#a6afa8' : '#0c0c0d');
+    grad.addColorStop(0.3, light ? '#e4e8e1' : '#3a3a3e');
+    grad.addColorStop(0.6, light ? '#909a92' : '#101012');
+    grad.addColorStop(0.85, light ? '#f3f4ee' : '#48484d');
+    grad.addColorStop(1.0, light ? '#78847c' : '#08080a');
     ctx.fillStyle = grad;
     ctx.fill();
   }
@@ -219,9 +244,11 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
       return;
     assetsFor = { radius: g.outerRadius, tilted: g.tilted, themeName: currentThemeName };
     const stops = themeMatchStops(canvas);
-    metalTexture = renderMetalTexture(g.innerRadius, dpr, stops);
+    metalTexture = renderMetalTexture(g.innerRadius, dpr, stops, theme.light);
     teethRing = renderTeethRing(g.outerRadius, g.toothDepth, TOOTH_COUNT, dpr);
-    sideWall = g.tilted ? renderSideWall(g.outerRadius, g.thickness, g.perspectiveY, dpr) : null;
+    sideWall = g.tilted
+      ? renderSideWall(g.outerRadius, g.thickness, g.perspectiveY, dpr, theme.light)
+      : null;
   }
 
   function isInsideCenter(clientX: number, clientY: number): boolean {
@@ -303,7 +330,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
       g.innerRadius,
     );
     ringGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-    ringGrad.addColorStop(0.5, 'rgba(20, 20, 22, 0.9)');
+    ringGrad.addColorStop(0.5, theme.light ? 'rgba(41, 58, 51, 0.35)' : 'rgba(20, 20, 22, 0.9)');
     ringGrad.addColorStop(1, 'rgba(180, 180, 186, 0.4)');
     c2d.strokeStyle = ringGrad;
     c2d.lineWidth = Math.max(1.5, g.outerRadius * 0.017);
@@ -330,7 +357,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     c2d.beginPath();
     c2d.arc(0, 0, g.coreRadius, 0, Math.PI * 2);
-    c2d.fillStyle = '#050a07';
+    c2d.fillStyle = theme.face;
     c2d.fill();
 
     const flashLeft = Math.max(0, flashUntil - performance.now());

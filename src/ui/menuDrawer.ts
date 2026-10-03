@@ -14,6 +14,7 @@ import { glowIntensity, MUTE_GLOW_SCALE } from '../viz/geometry';
 import { readTheme } from '../viz/vizController';
 import { createConfirmGate } from './confirmGate';
 import { byId, updateRangeFill } from './dom';
+import { mountIntegerInput } from './numericInput';
 
 export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
   const drawer = byId<HTMLDialogElement>('menuDrawer');
@@ -222,13 +223,11 @@ export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
     store.set({ syncOffsetMs: Number(offsetInput.value) });
     updateRangeFill(offsetInput);
   });
-  offsetValue.addEventListener('input', () => {
-    if (offsetValue.value === '') return;
-    const ms = Math.min(
-      SYNC_OFFSET_LIMIT_MS,
-      Math.max(-SYNC_OFFSET_LIMIT_MS, Number(offsetValue.value)),
-    );
-    store.set({ syncOffsetMs: ms });
+  mountIntegerInput(offsetValue, (syncOffsetMs) => store.set({ syncOffsetMs }), {
+    min: -SYNC_OFFSET_LIMIT_MS,
+    max: SYNC_OFFSET_LIMIT_MS,
+    maxDigits: 3,
+    allowNegative: true,
   });
   for (const button of themeButtons) {
     button.addEventListener('click', () => {

@@ -51,7 +51,7 @@ export function circularLayout(width: number, height: number) {
 }
 
 export function linearLayout(width: number, height: number) {
-  const pad = Math.max(24, width * 0.08);
+  const pad = Math.max(34, width * 0.08);
   return { left: pad, width: Math.max(10, width - pad * 2), y: height / 2 };
 }
 
@@ -78,11 +78,11 @@ export function nodeRadius(span: number, spacing: number): number {
 /**
  * Radius of the subdivision dots, spread evenly along the visible gap between two beat nodes
  * (`spacing` = that gap's length / subdivision, center to center). 40% of a beat node when there
- * is room, shrinking to keep 3px between neighbouring dots; 0 (skip drawing) under 2px.
+ * is room, shrinking to keep 3px between neighbouring dots; 0 (skip drawing) under 1.5px.
  */
 export function subDotRadius(nodeR: number, spacing: number): number {
   const r = Math.min(nodeR * 0.4, spacing / 2 - 1.5);
-  return r >= 2 ? r : 0;
+  return r >= 1.5 ? r : 0;
 }
 
 export const MAX_PER_ROW = 4;
@@ -109,8 +109,8 @@ export function beatLayoutGrid(count: number, maxPerRow = MAX_PER_ROW): BeatCell
 
 /**
  * X position of column `col` (of `rowCount` nodes in that row) on a track of the given width.
- * Cells are sized for a full row of `maxPerRow` so spacing stays consistent across rows; a
- * shorter row is centered as a group rather than stretched to fill the full width.
+ * A full row reserves one equal interval after its last beat for the bar line. Shorter rows are
+ * centered with that final interval included, so all intervals stay the same size.
  */
 export function linearGridX(
   col: number,
@@ -122,13 +122,13 @@ export function linearGridX(
   const cell = width / maxPerRow;
   const rowWidth = cell * rowCount;
   const rowLeft = left + (width - rowWidth) / 2;
-  return rowLeft + cell * (col + 0.5);
+  return rowLeft + cell * col;
 }
 
 /**
  * X of the moving stick while beat `col` (of `rowCount` in its row) is playing, `phase` 0..1
  * through it, on the same cell grid as `linearGridX`: on the sphere at phase 0, on the next
- * sphere at phase 1. The row's last beat sweeps only half a cell, ending on the row's bar line.
+ * sphere at phase 1. The row's last beat sweeps a full cell to the row's bar line.
  */
 export function linearGridStickX(
   col: number,
@@ -139,8 +139,7 @@ export function linearGridStickX(
   maxPerRow = MAX_PER_ROW,
 ): number {
   const cell = width / maxPerRow;
-  const span = col < rowCount - 1 ? cell : cell / 2;
-  return linearGridX(col, rowCount, left, width, maxPerRow) + span * phase;
+  return linearGridX(col, rowCount, left, width, maxPerRow) + cell * phase;
 }
 
 /** Y position of `row` (of `rows` total), stacked symmetrically around `centerY` with fixed spacing. */

@@ -66,9 +66,9 @@ describe('linearLayout', () => {
     expect(linearLayout(320, 320).y).toBe(160);
   });
 
-  it('insets the track horizontally by at least 24px or 8% of width', () => {
+  it('insets the track horizontally by at least 34px or 8% of width', () => {
     const narrow = linearLayout(200, 300);
-    expect(narrow.left).toBe(24);
+    expect(narrow.left).toBe(34);
     const wide = linearLayout(1000, 300);
     expect(wide.left).toBe(80);
   });
@@ -141,16 +141,17 @@ describe('beatLayoutGrid', () => {
 });
 
 describe('linearGridX / linearGridY', () => {
-  it('centers a full row of 4 across the track width', () => {
-    // track from 0 to 400, cell width = 100, centers at 50, 150, 250, 350
-    expect(linearGridX(0, 4, 0, 400)).toBe(50);
-    expect(linearGridX(3, 4, 0, 400)).toBe(350);
+  it('reserves a full interval after the final beat for the bar line', () => {
+    // Track from 0 to 400: four 100px intervals, nodes at 0..300 and bar line at 400.
+    expect(linearGridX(0, 4, 0, 400)).toBe(0);
+    expect(linearGridX(3, 4, 0, 400) + 100).toBe(400);
   });
 
-  it('centers a short row (fewer than 4) as a group, not stretched to full width', () => {
-    // 2 nodes, cell width 100: row is 200 wide, centered -> starts at 100
-    expect(linearGridX(0, 2, 0, 400)).toBe(150);
-    expect(linearGridX(1, 2, 0, 400)).toBe(250);
+  it('centers a short row together with its full interval to the bar line', () => {
+    // 2 nodes plus their bar interval occupy 3 * 100px and are centered in the 400px track.
+    expect(linearGridX(0, 2, 0, 400)).toBe(100);
+    expect(linearGridX(1, 2, 0, 400)).toBe(200);
+    expect(linearGridX(1, 2, 0, 400) + 100).toBe(300);
   });
 
   it('puts the grid stick on each sphere at phase 0 and on the next sphere at phase 1 (full row)', () => {
@@ -158,20 +159,20 @@ describe('linearGridX / linearGridY', () => {
       expect(linearGridStickX(col, 0, 4, 10, 400)).toBe(linearGridX(col, 4, 10, 400));
       expect(linearGridStickX(col, 1, 4, 10, 400)).toBe(linearGridX(col + 1, 4, 10, 400));
     }
-    expect(linearGridStickX(1, 0.5, 4, 10, 400)).toBe(210); // halfway between 160 and 260
+    expect(linearGridStickX(1, 0.5, 4, 10, 400)).toBe(160);
   });
 
   it('keeps the grid stick on the spheres of a short, centered row', () => {
-    // 3 nodes, cell 100, row centered: spheres at 110, 210, 310 (left = 10)
-    expect(linearGridStickX(0, 0, 3, 10, 400)).toBe(110);
-    expect(linearGridStickX(0, 1, 3, 10, 400)).toBe(210);
-    expect(linearGridStickX(1, 0.25, 3, 10, 400)).toBe(235);
-    expect(linearGridStickX(2, 0, 3, 10, 400)).toBe(310);
+    // 3 nodes, cell 100, row centered with the final bar interval: spheres at 60, 160, 260.
+    expect(linearGridStickX(0, 0, 3, 10, 400)).toBe(60);
+    expect(linearGridStickX(0, 1, 3, 10, 400)).toBe(160);
+    expect(linearGridStickX(1, 0.25, 3, 10, 400)).toBe(185);
+    expect(linearGridStickX(2, 0, 3, 10, 400)).toBe(260);
   });
 
-  it("ends the last beat's sweep on the row's bar line, half a cell past the sphere", () => {
-    expect(linearGridStickX(3, 1, 4, 10, 400)).toBe(410); // full row: track end
-    expect(linearGridStickX(1, 1, 2, 0, 400)).toBe(300); // short row: its own bar line
+  it("ends the last beat's sweep one full cell past its sphere", () => {
+    expect(linearGridStickX(3, 1, 4, 10, 400)).toBe(410);
+    expect(linearGridStickX(1, 1, 2, 0, 400)).toBe(300);
   });
 
   it('stacks rows symmetrically around the center', () => {
@@ -202,7 +203,7 @@ describe('subDotRadius', () => {
     expect(subDotRadius(17, 10)).toBeCloseTo(3.5);
   });
 
-  it('is 0 (not drawn) when the dots would not fit', () => {
-    expect(subDotRadius(17, 6)).toBe(0);
+  it('is 0 (not drawn) below the minimum visible radius', () => {
+    expect(subDotRadius(17, 5.9)).toBe(0);
   });
 });

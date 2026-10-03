@@ -294,7 +294,7 @@ function drawLayer(
 ): void {
   if (outlineVerts.length === 0) return;
   ctx.save();
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = theme.polyLineWidth ?? 2.5;
   // Each outline takes the deep, saturated base tone of its own layer's hue (not the pale accent
   // the nodes are tinted from), so the line reads as that layer's colour at a glance.
   ctx.strokeStyle = layer === 'A' ? (theme.nodeAlt ?? theme.accentAlt) : theme.node;

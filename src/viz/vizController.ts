@@ -26,6 +26,7 @@ export interface VizSource {
 export function readTheme(el: Element): VizTheme {
   const css = getComputedStyle(el);
   const v = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+  const polyLineWidth = Number.parseFloat(v('--viz-poly-line-width', '2.5'));
   return {
     ring: v('--viz-ring', '#b9b9c0'),
     spoke: v('--viz-spoke', '#8e8e96'),
@@ -38,6 +39,8 @@ export function readTheme(el: Element): VizTheme {
     label: v('--viz-label', '#b5b5bd'),
     glow: v('--viz-glow', '#ff2f7d'),
     core: v('--viz-core', '#fff3f7'),
+    subFanFill: v('--viz-subfan-fill', 'rgb(0 0 0 / 0.55)'),
+    ...(Number.isFinite(polyLineWidth) ? { polyLineWidth } : {}),
   };
 }
 

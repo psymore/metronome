@@ -20,6 +20,7 @@ export function renderMetalTexture(
   radius: number,
   dpr: number,
   stops: MetalStops,
+  light = false,
 ): OffscreenCanvas | HTMLCanvasElement {
   const diameter = radius * 2;
   const useOffscreen = typeof OffscreenCanvas !== 'undefined';
@@ -41,9 +42,9 @@ export function renderMetalTexture(
   ctx.fill();
 
   const depth = ctx.createRadialGradient(c, c, 0, c, c, radius);
-  depth.addColorStop(0.0, 'rgba(255, 255, 255, 0.08)');
-  depth.addColorStop(0.7, 'rgba(0, 0, 0, 0.12)');
-  depth.addColorStop(1.0, 'rgba(0, 0, 0, 0.55)');
+  depth.addColorStop(0.0, light ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.08)');
+  depth.addColorStop(0.7, light ? 'rgba(0, 0, 0, 0.04)' : 'rgba(0, 0, 0, 0.12)');
+  depth.addColorStop(1.0, light ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.55)');
   ctx.fillStyle = depth;
   ctx.beginPath();
   ctx.arc(c, c, radius, 0, Math.PI * 2);
@@ -72,8 +73,8 @@ export function renderMetalTexture(
   hl.addColorStop(0, 'rgba(255, 255, 255, 0.32)');
   hl.addColorStop(0.18, 'rgba(255, 255, 255, 0.06)');
   hl.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-  hl.addColorStop(0.82, 'rgba(0, 0, 0, 0.08)');
-  hl.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+  hl.addColorStop(0.82, light ? 'rgba(0, 0, 0, 0.04)' : 'rgba(0, 0, 0, 0.08)');
+  hl.addColorStop(1, light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.28)');
   ctx.fillStyle = hl;
   ctx.fillRect(0, 0, diameter, diameter);
   ctx.restore();

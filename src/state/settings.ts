@@ -3,11 +3,11 @@ import { clampBpm } from '../engine/timing';
 
 export type BeatLevel = 'accent' | 'medium' | 'normal' | 'mute';
 export type VisualizerKind = 'circular' | 'linear';
-export const SUBDIVISIONS = [1, 2, 3, 4] as const;
+export const SUBDIVISIONS = [1, 2, 3, 4, 8] as const;
 export type Subdivision = (typeof SUBDIVISIONS)[number];
 export const BEAT_UNITS = [2, 4, 8, 16] as const;
 export type BeatUnit = (typeof BEAT_UNITS)[number];
-export const THEMES = ['teal', 'amber', 'blue', 'chrome'] as const;
+export const THEMES = ['teal', 'amber', 'blue', 'chrome', 'light'] as const;
 export type ThemeName = (typeof THEMES)[number];
 export const NODE_STYLES = ['classic', 'metallic', 'wireframe', 'frosted'] as const;
 export type NodeStyleName = (typeof NODE_STYLES)[number];

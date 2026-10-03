@@ -9,11 +9,8 @@ export const linearVisualizer: Visualizer = {
   draw(ctx, { width, height }, frame, theme, sprites, style) {
     ctx.clearRect(0, 0, width, height);
     const n = frame.beatsPerBar;
-    const { track, cells, rows, nodeR, tick, reach, rowGap, gap, rowY, nodeX } = linearMetrics(
-      width,
-      height,
-      n,
-    );
+    const { track, cells, rows, nodeR, tick, reach, rowGap, gap, cellW, rowY, nodeX } =
+      linearMetrics(width, height, n);
     // Row tick marks stop halfway to the next row rather than running into its marks.
     const rowTick = rows > 1 ? Math.min(tick, rowGap / 2) : tick;
     const barTick = rows > 1 ? Math.min(tick * 1.4, rowGap / 2) : tick * 1.4;
@@ -30,8 +27,7 @@ export const linearVisualizer: Visualizer = {
       const to =
         nextCol < cell.rowCount
           ? nodeX(nextCol, cell.rowCount) - gap
-          : nodeX(cell.col, cell.rowCount) + gap;
-      if (nextCol >= cell.rowCount) continue; // no connecting segment past the last node in a row
+          : nodeX(cell.col, cell.rowCount) + cellW - gap;
       ctx.beginPath();
       ctx.moveTo(from, y);
       ctx.lineTo(to, y);
@@ -45,10 +41,7 @@ export const linearVisualizer: Visualizer = {
       const y = rowY(row);
       for (let col = 0; col <= rowCount; col++) {
         // col === rowCount is the bar line at the right end of this row; it has no sphere.
-        const x =
-          col < rowCount
-            ? nodeX(col, rowCount)
-            : nodeX(rowCount - 1, rowCount) + track.width / 4 / 2;
+        const x = col < rowCount ? nodeX(col, rowCount) : nodeX(rowCount - 1, rowCount) + cellW;
         const isEnd = col === rowCount;
         const h = isEnd ? barTick : rowTick;
         ctx.beginPath();
@@ -65,9 +58,8 @@ export const linearVisualizer: Visualizer = {
       }
     }
 
-    // Subdivision dots, spread evenly along the visible line between two nodes (inside the same
-    // `gap` the line itself stops at, so a dot never sits on a node). A row's last beat has only
-    // half a cell to the bar line; its dots shrink to fit there, capped at the full-size ones.
+    // Subdivision dots, spread evenly along the visible line between beats and from each row's
+    // last beat to its bar line.
     if (frame.subdivision > 1) {
       drawSubdivisionDots(ctx, 'linear', width, height, frame, theme);
     }

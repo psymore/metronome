@@ -4,6 +4,7 @@ import { clampPracticeSeconds, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { byId, closeOnBackdropClick } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
+import { mountIntegerInput } from './numericInput';
 
 export interface PracticeTimerDialogDeps {
   store: Store<Settings>;
@@ -48,13 +49,13 @@ export function mountPracticeTimerDialog({
     store.set({ practiceSeconds: clampPracticeSeconds(seconds) });
     resetConfirm();
   };
-  practiceMinutesInput.addEventListener('input', () => {
+  mountIntegerInput(practiceMinutesInput, (minutes) => {
     const ss = store.get().practiceSeconds % 60;
-    setPracticeSeconds(Number(practiceMinutesInput.value) * 60 + ss);
+    setPracticeSeconds(minutes * 60 + ss);
   });
-  practiceSecondsInput.addEventListener('input', () => {
+  mountIntegerInput(practiceSecondsInput, (seconds) => {
     const mm = Math.floor(store.get().practiceSeconds / 60);
-    setPracticeSeconds(mm * 60 + Number(practiceSecondsInput.value));
+    setPracticeSeconds(mm * 60 + seconds);
   });
   mountHoldRepeat(practiceTimeDown, () =>
     setPracticeSeconds(store.get().practiceSeconds - PRACTICE_STEP_SECONDS),

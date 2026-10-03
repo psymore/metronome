@@ -12,6 +12,10 @@ export interface VizTheme {
   /** Deep base tone of the `accentAlt` hue (what `node` is to `accent`); colors layer A's
    *  polyrhythm outline. Falls back to `accentAlt` when a theme doesn't define it. */
   nodeAlt?: string;
+  /** Polyrhythm outline width; theme-specific for visibility against different surfaces. */
+  polyLineWidth?: number;
+  /** Backdrop fill for the expanded subdivision-click capsule. */
+  subFanFill?: string;
   nodeIdle: string;
   hand: string;
   label: string;

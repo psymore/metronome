@@ -37,6 +37,22 @@ describe('subDotLayout', () => {
     expect(l.direct).toBe(false);
   });
 
+  it('opens a seven-click fan for 32nds in line mode', () => {
+    const l = subDotLayout('linear', 390, 320, 4, 8);
+    expect(l.direct).toBe(false);
+    const group = l.groups[3];
+    if (!group) throw new Error('Expected the final beat subdivision group');
+    const fan = subFanLayout(group, 7, 390, 320);
+    expect(fan).toHaveLength(7);
+    expect(fan[6]?.x).toBe((fan[0]?.x ?? 0) + 6 * SUB_FAN_PITCH);
+  });
+
+  it('keeps compact line-mode dots visible for 32nds at a typical phone canvas size', () => {
+    const l = subDotLayout('linear', 460, 460, 16, 8);
+    expect(l.dots).toHaveLength(16 * 7);
+    expect(l.dots.every((dot) => dot.r >= 1.5)).toBe(true);
+  });
+
   it('points circle groups outward and line groups up', () => {
     const c = subDotLayout('circular', 390, 320, 4, 2).groups[0];
     // beat 0's gap is between 12 o'clock and 3 o'clock: outward means up-right, away from center
