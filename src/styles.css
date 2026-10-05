@@ -169,26 +169,31 @@
   --accent-idle: rgb(176 180 188 / 0.18);
 }
 
-/* Theme: Light — soft paper surfaces with a consistent teal accent. */
+/* Theme: Light — paper surfaces with a consistent teal accent. Prism (the wireframe beat style)
+   is not offered here; see nodeStyleForTheme in state/settings.ts. */
+:root[data-theme="light"] [data-node-style-option="wireframe"] {
+  display: none;
+}
 :root[data-theme="light"] {
   color-scheme: light;
-  /* Background cooled toward gray-green so the panel, cards and knob read as one cool family. */
-  --bg: #d2d9d1;
-  --bg-hi: #e4eae2;
-  --panel: #fffefa;
-  --panel-lo: #f2f5ef;
-  --edge: #cdd6cf;
-  --line: #c5cfc7;
-  --text: #263a36;
+  /* Warm paper background: the page and the dial field read as one sheet, and the cream panels
+     and knob sit on it without the grey-green cast the old background gave them. */
+  --bg: #ece6d6;
+  --bg-hi: #f7f3e8;
+  --panel: #fffdf6;
+  --panel-lo: #f4efe2;
+  --edge: #d8cfbb;
+  --line: #cbbfa6;
+  --text: #2a2820;
   /* Darkened from #687b75: 4.75:1 on the bg, 6.2:1 on the panel (was 2.95:1). */
-  --muted: #4a5f58;
-  --knob-face: #eaf0e9;
-  --knob-metal-hi: #eef0ed;
-  --knob-metal-mid: #aeb5b8;
-  --knob-metal-lo: #6e777d;
+  --muted: #5f5744;
+  --knob-face: #f3eee2;
+  --knob-metal-hi: #f6f2e8;
+  --knob-metal-mid: #c9bfa8;
+  --knob-metal-lo: #8a8170;
   /* The knob's BPM number, "BPM" label and play icon are drawn in this token, so it is set to the
      near-black text color rather than the old gray metal. */
-  --knob-brass: #263a36;
+  --knob-brass: #2a2820;
 
   /* Teal text darkened from #147765: 5.25:1 on the bg (was 3.57:1). */
   --pink: #0f5f52;
@@ -198,9 +203,9 @@
   --brass: #1b8872;
   --brass-soft: rgb(27 136 114 / 0.2);
   --copper: #0e5d50;
-  --viz-ring: #aebcb5;
+  --viz-ring: #bdb296;
   /* Spokes and Line-view dividers, strengthened from #d8dfda so they read on the cooler bg. */
-  --viz-spoke: #b5c3bb;
+  --viz-spoke: #c4b9a0;
   /* Normal beats are a dark teal and the accent beat a deeper one, so the translucent Prism and
      Frosted styles stay readable on the light bg and the downbeat still outranks the rest. The
      beat kits in viz/nodeStyleKit.ts derive every highlight and shade from these, so this
@@ -209,15 +214,15 @@
   --viz-accent: #0a3d35;
   --viz-accent-alt: #ad7028;
   --viz-node-alt: #9a6424;
-  /* Muted beats are drawn from this, and Prism/Frosted draw it at low alpha. #d5ddd7 was nearly the
-     bg color and vanished; #62786f is the lightest tone where Prism's wireframe cone still reads. */
-  --viz-node-idle: #62786f;
+  /* Muted beats are drawn from this. A warm grey-brown ink, 3.9:1 on the paper bg and 4.8:1 on
+     the panel, so a muted beat reads as a quiet mark rather than vanishing into the page. */
+  --viz-node-idle: #7a705c;
   --viz-hand: #0f5f52;
-  --viz-label: #4a5f58;
+  --viz-label: #5c5444;
   --viz-glow: #1b8872;
-  --viz-core: #f8fffb;
+  --viz-core: #fffdf6;
   --viz-poly-line-width: 3.5;
-  --viz-subfan-fill: rgb(255 254 250 / 0.76);
+  --viz-subfan-fill: rgb(255 253 246 / 0.76);
   --accent-idle: rgb(15 95 82 / 0.16);
   --confirm-safe: #19734a;
   --confirm-danger: #b42318;
@@ -2966,33 +2971,33 @@ html.depth-25d .knob {
 :root[data-theme="light"] .wide-btn.is-confirming .confirm-confirm-btn,
 :root[data-theme="light"] .practice-icon-btn.is-confirming .confirm-cancel-btn,
 :root[data-theme="light"] .practice-icon-btn.is-confirming .confirm-confirm-btn {
-  background: linear-gradient(145deg, #fffefa, #f2f1e9);
+  background: linear-gradient(145deg, #fffdf6, #f4efe2);
 }
 :root[data-theme="light"] .seg,
 :root[data-theme="light"] .segmented,
 :root[data-theme="light"] .sig-wheels {
-  background: linear-gradient(180deg, #eeede5, #f8f7f1);
-  box-shadow: inset 0 1px 3px rgb(41 57 51 / 0.1);
+  background: linear-gradient(180deg, #ebe4d2, #faf6ec);
+  box-shadow: inset 0 1px 3px rgb(60 50 30 / 0.1);
 }
 :root[data-theme="light"] .subdivision-badge {
-  background: #fffefa;
-  border-color: #d8d9cf;
-  color: #52665f;
-  box-shadow: 0 1px 3px rgb(41 57 51 / 0.1);
+  background: #fffdf6;
+  border-color: #d8cfbb;
+  color: #5c5444;
+  box-shadow: 0 1px 3px rgb(60 50 30 / 0.1);
 }
 :root[data-theme="light"] .nudge::before {
-  background: #e7eee9;
+  background: #e8e0cc;
   box-shadow:
-    inset 0 1px 3px rgb(41 57 51 / 0.12),
-    0 0 0 1px rgb(41 57 51 / 0.12);
+    inset 0 1px 3px rgb(60 50 30 / 0.12),
+    0 0 0 1px rgb(60 50 30 / 0.12);
 }
 :root[data-theme="light"] .toast {
   background: var(--panel);
   color: var(--text);
-  box-shadow: 0 8px 24px rgb(41 57 51 / 0.18);
+  box-shadow: 0 8px 24px rgb(60 50 30 / 0.18);
 }
 :root[data-theme="light"] .debug {
-  background: rgb(255 254 250 / 0.94);
+  background: rgb(255 253 246 / 0.94);
   color: var(--text);
 }
 :root[data-theme="light"] .wide-btn.danger,
@@ -3005,39 +3010,39 @@ html.depth-25d .knob {
 :root[data-theme="light"] .sheet,
 :root[data-theme="light"] .info-popup {
   box-shadow:
-    0 18px 48px rgb(41 57 51 / 0.18),
+    0 18px 48px rgb(60 50 30 / 0.18),
     inset 0 1px 0 rgb(255 255 255 / 0.85);
 }
 :root[data-theme="light"] .panel {
-  background: linear-gradient(145deg, #f1f5ef, #e2e9e1);
-  border-color: #c3cdc5;
+  background: linear-gradient(145deg, #f4efe2, #e6dec9);
+  border-color: #cbbfa6;
   box-shadow:
-    0 10px 26px rgb(41 57 51 / 0.16),
+    0 10px 26px rgb(60 50 30 / 0.16),
     inset 0 1px 0 rgb(255 255 255 / 0.72),
-    inset 0 -2px 5px rgb(41 57 51 / 0.08);
+    inset 0 -2px 5px rgb(60 50 30 / 0.08);
 }
 :root[data-theme="light"] .panel::before {
   background:
-    linear-gradient(#f1f5ef, #f1f5ef) padding-box,
+    linear-gradient(#f4efe2, #f4efe2) padding-box,
     linear-gradient(
       135deg,
       rgb(255 255 255 / 0.68) 0%,
       rgb(255 255 255 / 0.16) 30%,
-      rgb(41 57 51 / 0.16) 65%,
+      rgb(60 50 30 / 0.16) 65%,
       rgb(255 255 255 / 0.32) 100%
     )
     border-box;
 }
 :root[data-theme="light"] .seg.is-polyrhythm {
   background:
-    linear-gradient(110deg, #e1efea 0%, #fffefa 38%, #f5ead8 100%) padding-box,
+    linear-gradient(110deg, #efe9d9 0%, #fffdf6 38%, #f5ead8 100%) padding-box,
     conic-gradient(from 0deg, #4fb894, #d99a3f, #58a6ff, #b0b4bc, #4fb894) border-box;
   box-shadow:
-    0 2px 8px rgb(41 57 51 / 0.12),
+    0 2px 8px rgb(60 50 30 / 0.12),
     0 0 10px rgb(79 184 148 / 0.12);
 }
 :root[data-theme="light"] .seg-mode-label {
-  color: #344b44;
+  color: #3b382b;
   font-weight: 600;
 }
 :root[data-theme="light"] .header-btn,
@@ -3051,7 +3056,7 @@ html.depth-25d .knob {
   border-color: var(--line);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.9),
-    0 2px 7px rgb(41 57 51 / 0.09);
+    0 2px 7px rgb(60 50 30 / 0.09);
 }
 :root[data-theme="light"] .chip[aria-checked="true"],
 :root[data-theme="light"] .chip.active,
@@ -3063,42 +3068,42 @@ html.depth-25d .knob {
     0 3px 9px rgb(20 119 101 / 0.14);
 }
 :root[data-theme="light"] .square-btn svg {
-  filter: drop-shadow(0 1px 1px rgb(41 57 51 / 0.16));
+  filter: drop-shadow(0 1px 1px rgb(60 50 30 / 0.16));
 }
 :root[data-theme="light"] .drawer {
-  box-shadow: 12px 0 36px rgb(41 57 51 / 0.16);
+  box-shadow: 12px 0 36px rgb(60 50 30 / 0.16);
 }
 :root[data-theme="light"] .drawer-body > .field {
-  background: linear-gradient(145deg, #eff3ee, #e2e8e1);
-  border: 1px solid #cdd6cf;
+  background: linear-gradient(145deg, #fbf7ec, #efe8d6);
+  border: 1px solid #d8cfbb;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.82),
-    0 2px 6px rgb(41 57 51 / 0.07);
+    0 2px 6px rgb(60 50 30 / 0.07);
 }
 :root[data-theme="light"] .drawer-body > .sheet-sub {
-  color: #52665f;
+  color: #5c5444;
 }
 /* Beat-style cards: same gradient and hairline as the other menu cards (.drawer-body > .field),
    instead of their own beige. */
 :root[data-theme="light"] .chip--preview {
-  background: linear-gradient(145deg, #eff3ee, #e2e8e1);
-  border-color: #cdd6cf;
+  background: linear-gradient(145deg, #fbf7ec, #efe8d6);
+  border-color: #d8cfbb;
 }
 /* 2.5D toggle (and any other .switch): off = gray track with a white thumb, on = the teal
    selected state from the base rules. */
 :root[data-theme="light"] .switch {
   background: #cfd7d0;
-  border-color: #b9c4bc;
+  border-color: #cbbfa6;
 }
 :root[data-theme="light"] .switch:not([aria-checked="true"]) .switch-knob {
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgb(41 57 51 / 0.28);
+  background: #fffdf6;
+  box-shadow: 0 1px 2px rgb(60 50 30 / 0.28);
 }
 /* Themed thumb for the menu drawer's (thin, see .drawer-body) scrollbar in the light theme. The
    width stays the same as the other themes; only the color changes. WebKit/Safari ignore
    scrollbar-color, so they get the same thumb through the ::-webkit-scrollbar rules. */
 :root[data-theme="light"] .drawer-body {
-  scrollbar-color: #a4b1a9 transparent;
+  scrollbar-color: #c4b9a0 transparent;
 }
 :root[data-theme="light"] .drawer-body::-webkit-scrollbar {
   width: 6px;
@@ -3107,14 +3112,14 @@ html.depth-25d .knob {
   background: transparent;
 }
 :root[data-theme="light"] .drawer-body::-webkit-scrollbar-thumb {
-  background: #a4b1a9;
+  background: #c4b9a0;
   border-radius: 3px;
 }
 /* Sync-offset number: a white field with a light border instead of a flat gray well. */
 :root[data-theme="light"] .field-value .field-value-input {
-  background: #ffffff;
-  border-color: #c3cdc5;
-  box-shadow: inset 0 1px 2px rgb(41 57 51 / 0.08);
+  background: #fffdf6;
+  border-color: #cbbfa6;
+  box-shadow: inset 0 1px 2px rgb(60 50 30 / 0.08);
 }
 /* Bar 1 pill: sits fully inside the panel's top-right corner, clear of the border, instead of
    straddling it. */
@@ -3130,7 +3135,7 @@ html.depth-25d .knob {
   filter: drop-shadow(0 8px 14px rgb(38 75 63 / 0.22));
 }
 :root[data-theme="light"] .nudge {
-  border-color: #aeb5b8;
+  border-color: #c9bfa8;
   background:
     radial-gradient(circle at 33% 28%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0) 42%),
     repeating-radial-gradient(
@@ -3140,18 +3145,18 @@ html.depth-25d .knob {
       rgb(48 58 63 / 0.06) 0.6px,
       rgb(48 58 63 / 0.06) 1.6px
     ),
-    conic-gradient(from 210deg, #6e777d, #eef0ed, #aeb5b8, #eef0ed, #6e777d, #6e777d);
-  color: #3d484d;
+    conic-gradient(from 210deg, #8a8170, #f6f2e8, #c9bfa8, #f6f2e8, #8a8170, #8a8170);
+  color: #3b382b;
   text-shadow:
     0 1px 1px rgb(255 255 255 / 0.8),
     0 0 2px rgb(35 45 50 / 0.2);
   box-shadow:
-    0 1px 3px rgb(41 57 51 / 0.16),
+    0 1px 3px rgb(60 50 30 / 0.16),
     inset 0 1px 0 rgb(255 255 255 / 0.6);
 }
 :root[data-theme="light"] .nudge::before {
-  background: #e3e8e4;
+  background: #e6dec9;
   box-shadow:
-    inset 0 1px 3px rgb(41 57 51 / 0.14),
-    0 0 0 1px rgb(41 57 51 / 0.18);
+    inset 0 1px 3px rgb(60 50 30 / 0.14),
+    0 0 0 1px rgb(60 50 30 / 0.18);
 }

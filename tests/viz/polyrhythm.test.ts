@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BeatLevel } from '../../src/state/settings';
 import type { NodeSprites } from '../../src/viz/nodeSprite';
 import type { PolyFrame } from '../../src/viz/polyFrame';
+import { darken } from '../../src/viz/nodeStyleKit';
 import { drawPolyrhythm, polyLayerTheme } from '../../src/viz/polyrhythm';
 import type { VizTheme } from '../../src/viz/types';
 
@@ -27,6 +28,12 @@ describe('polyLayerTheme', () => {
     expect(result.ring).toBe(theme.ring);
     expect(result.nodeIdle).toBe(theme.nodeIdle);
     expect(result.core).toBe(theme.core);
+  });
+
+  it('makes the accent the deepest tone in the light theme, not a lighter one', () => {
+    const result = polyLayerTheme({ ...theme, light: true }, '#336699');
+    expect(result.node).toBe(darken('#336699', 0.12));
+    expect(result.accent).toBe(darken('#336699', 0.42));
   });
 });
 

@@ -16,6 +16,9 @@ export interface VizTheme {
   polyLineWidth?: number;
   /** Backdrop fill for the expanded subdivision-click capsule. */
   subFanFill?: string;
+  /** True in the light theme, where the poly layers' accent must read darker than its normal
+   *  beats (the paper background washes out lighter tones). Dark themes leave it unset. */
+  light?: boolean;
   nodeIdle: string;
   hand: string;
   label: string;

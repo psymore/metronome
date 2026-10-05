@@ -38,10 +38,21 @@ function levelColor(layerColor: string, level: BeatLevel): string {
  *  theme both layers would otherwise paint with. Shared with `VizController.paintSprite`, which
  *  must bake a layer's idle sprites in this exact theme for the live and cached paths to match. */
 export function polyLayerTheme(theme: VizTheme, layerColor: string): VizTheme {
+  // Dark themes: normal is a deep tone and the accent a lighter, glowing one.
+  if (!theme.light) {
+    return {
+      ...theme,
+      node: darken(layerColor, 0.3),
+      accent: lighten(layerColor, 0.25),
+      glow: layerColor,
+    };
+  }
+  // Light theme: the hierarchy runs the other way on paper. Normal is a mid tone, and the accent
+  // is the deepest, densest one, so the hit reads as the strongest mark.
   return {
     ...theme,
-    node: darken(layerColor, 0.3),
-    accent: lighten(layerColor, 0.25),
+    node: darken(layerColor, 0.12),
+    accent: darken(layerColor, 0.42),
     glow: layerColor,
   };
 }

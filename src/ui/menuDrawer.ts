@@ -5,6 +5,7 @@ import {
   isLanguage,
   isNodeStyleName,
   isThemeName,
+  nodeStyleForTheme,
   type Settings,
   SYNC_OFFSET_LIMIT_MS,
 } from '../state/settings';
@@ -232,13 +233,18 @@ export function mountMenuDrawer({ store }: { store: Store<Settings> }): void {
   for (const button of themeButtons) {
     button.addEventListener('click', () => {
       const theme = button.dataset.themeOption;
-      if (isThemeName(theme)) store.set({ theme });
+      if (isThemeName(theme)) {
+        store.set({ theme, nodeStyle: nodeStyleForTheme(theme, store.get().nodeStyle) });
+      }
     });
   }
   for (const button of nodeStyleButtons) {
     button.addEventListener('click', () => {
       const nodeStyle = button.dataset.nodeStyleOption;
-      if (isNodeStyleName(nodeStyle)) store.set({ nodeStyle });
+      if (!isNodeStyleName(nodeStyle)) return;
+      // Ignored (not stored) when light theme would fall back, so the hidden Prism can't be set.
+      if (nodeStyleForTheme(store.get().theme, nodeStyle) !== nodeStyle) return;
+      store.set({ nodeStyle });
     });
   }
   depth25dToggle.addEventListener('click', () => {

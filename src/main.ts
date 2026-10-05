@@ -70,7 +70,7 @@ store.subscribe(syncBarCounterDelete);
 const applyTheme = (s: Settings) => {
   document.documentElement.dataset.theme = s.theme;
   const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = s.theme === 'light' ? '#f5f4ed' : '#141416';
+  if (themeColor) themeColor.content = s.theme === 'light' ? '#ece6d6' : '#141416';
   document.documentElement.classList.toggle('depth-25d', s.depth25d);
 };
 applyTheme(store.get());

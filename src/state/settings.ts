@@ -122,6 +122,15 @@ export function resizePolyLevels(levels: readonly BeatLevel[], n: number): BeatL
   return Array.from({ length: n }, (_, i) => levels[i] ?? (i === 0 ? 'accent' : 'normal'));
 }
 
+/**
+ * Prism (wireframe) is not offered in the light theme: its translucent cones wash out on the
+ * paper background. Choosing light while Prism is set falls back to Frosted. The choice is
+ * replaced rather than remembered, so switching back to a dark theme does not restore Prism.
+ */
+export function nodeStyleForTheme(theme: ThemeName, style: NodeStyleName): NodeStyleName {
+  return theme === 'light' && style === 'wireframe' ? 'frosted' : style;
+}
+
 export function defaultSettings(): Settings {
   return { ...DEFAULT_SETTINGS, levels: [...DEFAULT_SETTINGS.levels], subOff: [] };
 }
@@ -341,7 +350,10 @@ export function sanitizeSettings(raw: unknown): Settings {
     accentSoundId: isSoundId(r.accentSoundId) ? r.accentSoundId : d.accentSoundId,
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
     theme: isThemeName(r.theme) ? r.theme : d.theme,
-    nodeStyle: isNodeStyleName(r.nodeStyle) ? r.nodeStyle : d.nodeStyle,
+    nodeStyle: nodeStyleForTheme(
+      isThemeName(r.theme) ? r.theme : d.theme,
+      isNodeStyleName(r.nodeStyle) ? r.nodeStyle : d.nodeStyle,
+    ),
     beatsClickable: typeof r.beatsClickable === 'boolean' ? r.beatsClickable : d.beatsClickable,
     haptics: typeof r.haptics === 'boolean' ? r.haptics : d.haptics,
     targetBars: isIntInRange(r.targetBars, 0, MAX_TARGET_BARS) ? r.targetBars : d.targetBars,

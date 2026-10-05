@@ -40,6 +40,7 @@ export function readTheme(el: Element): VizTheme {
     glow: v('--viz-glow', '#ff2f7d'),
     core: v('--viz-core', '#fff3f7'),
     subFanFill: v('--viz-subfan-fill', 'rgb(0 0 0 / 0.55)'),
+    light: el.ownerDocument.documentElement.dataset.theme === 'light',
     ...(Number.isFinite(polyLineWidth) ? { polyLineWidth } : {}),
   };
 }
