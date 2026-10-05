@@ -32,6 +32,19 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Built-in sounds are not precached (about 1.9 MB). Each one is fetched on first use and
+        // kept here, so it works offline afterwards without a large first-visit download.
+        runtimeCaching: [
+          {
+            urlPattern: /\/sounds\/[^/]+\.wav$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'builtin-sounds',
+              expiration: { maxEntries: 80 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
         // Remove caches from previous SW versions so stale assets never get served.
         cleanupOutdatedCaches: true,
         // Ensure navigating to any route serves the shell (required for offline PWA).

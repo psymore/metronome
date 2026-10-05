@@ -198,7 +198,14 @@ describe('level helpers', () => {
   it('accentProfile accents only the first pulse', () => {
     expect(accentProfile(2, 4)).toEqual(['accent', 'normal']);
     expect(accentProfile(4, 4)).toEqual(['accent', 'normal', 'normal', 'normal']);
-    expect(accentProfile(6, 8)).toEqual(['accent', 'normal', 'normal', 'normal', 'normal', 'normal']);
+    expect(accentProfile(6, 8)).toEqual([
+      'accent',
+      'normal',
+      'normal',
+      'normal',
+      'normal',
+      'normal',
+    ]);
   });
 
   it('recognises compound meters as multiples of 3 eighth-note beats', () => {

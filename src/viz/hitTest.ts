@@ -125,17 +125,25 @@ function polyBeatAtConcentric(
   a: number,
   b: number,
 ): PolyHit | null {
-  const { vertsA, vertsB, nodeRadiusA, nodeRadiusB } = polyConcentricPositions(a, b, cx, cy, radius);
+  const { vertsA, vertsB, nodeRadiusA, nodeRadiusB } = polyConcentricPositions(
+    a,
+    b,
+    cx,
+    cy,
+    radius,
+  );
   let best: { hit: PolyHit; d: number } | null = null;
   const hitRA = nodeRadiusA * 1.8;
   for (const [i, v] of vertsA.entries()) {
     const d = Math.hypot(x - v.x, y - v.y);
-    if (d <= hitRA && (!best || d < best.d)) best = { hit: { kind: 'node', layer: 'A', index: i }, d };
+    if (d <= hitRA && (!best || d < best.d))
+      best = { hit: { kind: 'node', layer: 'A', index: i }, d };
   }
   const hitRB = nodeRadiusB * 1.8;
   for (const [i, v] of vertsB.entries()) {
     const d = Math.hypot(x - v.x, y - v.y);
-    if (d <= hitRB && (!best || d < best.d)) best = { hit: { kind: 'node', layer: 'B', index: i }, d };
+    if (d <= hitRB && (!best || d < best.d))
+      best = { hit: { kind: 'node', layer: 'B', index: i }, d };
   }
   return best?.hit ?? null;
 }

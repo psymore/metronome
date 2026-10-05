@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { isSoundLoading } from '../../src/sounds/loadingStatus';
 import { SoundLibrary, type SoundLibraryDeps } from '../../src/sounds/soundLibrary';
 
 function makeLibrary(overrides: Partial<SoundLibraryDeps> = {}) {
@@ -10,6 +11,7 @@ function makeLibrary(overrides: Partial<SoundLibraryDeps> = {}) {
       channels: [Float32Array.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.9, 0.5])],
     })),
     loadBytes: vi.fn(async (_id: string): Promise<ArrayBuffer | undefined> => new ArrayBuffer(8)),
+    loadAsset: vi.fn(async (_path: string) => new ArrayBuffer(8)),
     ...overrides,
   };
   return { library: new SoundLibrary(deps), deps };
@@ -23,6 +25,29 @@ describe('SoundLibrary', () => {
     expect(r.pcm.sampleRate).toBe(8000);
     expect(r.pcm.channels[0]?.length).toBe(480); // 60 ms at 8 kHz
     expect(deps.loadBytes).not.toHaveBeenCalled();
+  });
+
+  it('loads file-backed built-ins from public/sounds, decoded and trimmed', async () => {
+    const { library, deps } = makeLibrary();
+    const r = await library.resolve('builtin:vcsl_Clap_rr1', 'builtin:click');
+    expect(r.usedId).toBe('builtin:vcsl_Clap_rr1');
+    expect(deps.loadAsset).toHaveBeenCalledWith('sounds/vcsl_Clap_rr1.wav');
+    expect(deps.loadBytes).not.toHaveBeenCalled();
+    expect(r.pcm.channels[0]?.length).toBe(10); // 12 decoded, 2 leading silent samples trimmed
+  });
+
+  it('reports a file-backed sound as loading only while its fetch is in flight', async () => {
+    let release!: (bytes: ArrayBuffer) => void;
+    const gate = new Promise<ArrayBuffer>((resolve) => {
+      release = resolve;
+    });
+    const { library } = makeLibrary({ loadAsset: vi.fn(() => gate) });
+    const id = 'builtin:vcsl_Clap_rr1';
+    const pending = library.load(id);
+    expect(isSoundLoading(id)).toBe(true);
+    release(new ArrayBuffer(8));
+    await pending;
+    expect(isSoundLoading(id)).toBe(false);
   });
 
   it('decodes, trims and caches user sounds', async () => {

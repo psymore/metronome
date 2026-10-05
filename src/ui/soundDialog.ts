@@ -3,11 +3,11 @@ import { format, t } from '../i18n/i18n';
 import { importSoundFile } from '../sounds/importSound';
 import type { SoundLibrary } from '../sounds/soundLibrary';
 import type { SoundMeta, SoundStore } from '../sounds/soundStore';
-import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { type BeatLevel, DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
 import { readTheme } from '../viz/vizController';
+import { builtinOptionGroups } from './builtinOptions';
 import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
 import { mountIntegerInput } from './numericInput';
 import { mountSoundPicker } from './soundPicker';
@@ -73,11 +73,7 @@ export function mountSoundDialog({
   }
 
   function fillSelect(select: HTMLSelectElement, current: string): void {
-    const builtin = document.createElement('optgroup');
-    builtin.label = t('soundGroup.builtin');
-    for (const [id, sound] of Object.entries(BUILTIN_SOUNDS))
-      builtin.append(new Option(sound.name, id));
-    const groups: HTMLElement[] = [builtin];
+    const groups: HTMLElement[] = builtinOptionGroups();
     if (userSounds.length > 0) {
       const mine = document.createElement('optgroup');
       mine.label = t('soundGroup.yours');
@@ -137,10 +133,29 @@ export function mountSoundDialog({
     updateRangeFill(input);
   }
 
+  /** A level whose gain is 0% is silent, so its phase object in the showcase row gets a mute badge.
+   *  Master Volume at 0% silences every level, so all three get one, drawn in red (.is-master-muted)
+   *  to show the master is the cause. The Mute item itself is always silent and never needs one. */
+  const silentByLevel: Partial<Record<BeatLevel, (s: Settings) => number>> = {
+    accent: (s) => s.accentGain,
+    medium: (s) => s.mediumGain,
+    normal: (s) => s.normalGain,
+  };
+  function renderSilentBadges(s: Settings): void {
+    const masterMuted = s.volume === 0;
+    for (const button of dialog.querySelectorAll<HTMLButtonElement>('[data-preview-level]')) {
+      const gain = silentByLevel[button.dataset.previewLevel as BeatLevel];
+      if (!gain) continue;
+      button.classList.toggle('is-silent', masterMuted || gain(s) === 0);
+      button.classList.toggle('is-master-muted', masterMuted);
+    }
+  }
+
   function renderGains(s: Settings): void {
     renderGain(accentGainInput, accentGainValue, s.accentGain);
     renderGain(mediumGainInput, mediumGainValue, s.mediumGain);
     renderGain(normalGainInput, normalGainValue, s.normalGain);
+    renderSilentBadges(s);
   }
 
   function render(s: Settings): void {
@@ -391,6 +406,7 @@ export function mountSoundDialog({
       cancelPhaseAnimations(s);
       renderSoundLevelIcons(s);
     }
+    if (s.volume !== prev.volume) renderSilentBadges(s);
     if (s.accentSoundId !== prev.accentSoundId || s.normalSoundId !== prev.normalSoundId) render(s);
     else if (
       s.accentGain !== prev.accentGain ||

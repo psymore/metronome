@@ -135,6 +135,11 @@ const library = new SoundLibrary({
   sampleRate: engine.sampleRate,
   decode: (bytes) => engine.decode(bytes),
   loadBytes: async (id) => (await sounds.get(id))?.bytes,
+  loadAsset: async (path) => {
+    const response = await fetch(`${import.meta.env.BASE_URL}${path}`);
+    if (!response.ok) throw new Error(`Sound file ${path} failed to load`);
+    return response.arrayBuffer();
+  },
 });
 const previewSound = createSoundPreview(engine, library, toast);
 

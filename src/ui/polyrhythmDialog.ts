@@ -1,8 +1,8 @@
 import { t } from '../i18n/i18n';
 import type { SoundStore } from '../sounds/soundStore';
-import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { clampPolyCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
+import { builtinOptionGroups } from './builtinOptions';
 import { byId } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
 import { mountIntegerInput } from './numericInput';
@@ -62,12 +62,7 @@ export function mountPolyrhythmControls({
   mountIntegerInput(bValue, setB);
 
   async function fillSoundSelect(select: HTMLSelectElement, current: string): Promise<void> {
-    const builtin = document.createElement('optgroup');
-    builtin.label = t('soundGroup.builtin');
-    for (const [id, sound] of Object.entries(BUILTIN_SOUNDS)) {
-      builtin.append(new Option(sound.name, id));
-    }
-    const groups: HTMLElement[] = [builtin];
+    const groups: HTMLElement[] = builtinOptionGroups();
     try {
       const userSounds = await sounds.list();
       if (userSounds.length > 0) {
