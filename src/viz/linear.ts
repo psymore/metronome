@@ -1,5 +1,5 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode } from './drawNode';
+import { drawNode, drawNodeLabel, setNodeLabelFont } from './drawNode';
 import { linearGridStickX, linearMetrics } from './geometry';
 import { spriteSize } from './nodeSprite';
 import { drawSubdivisionDots, drawSubFan } from './subDotsDraw';
@@ -82,9 +82,7 @@ export const linearVisualizer: Visualizer = {
       }
     }
 
-    ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px "Inter", system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    setNodeLabelFont(ctx, nodeR);
     const size = spriteSize(nodeR);
     for (let i = 0; i < n; i++) {
       const cell = cells[i];
@@ -102,14 +100,7 @@ export const linearVisualizer: Visualizer = {
         }
       }
       drawNode(ctx, x, y, nodeR, level, glow, theme, style);
-      if (style === 'classic') {
-        ctx.save();
-        ctx.shadowBlur = 3;
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(label, x, y);
-        ctx.restore();
-      }
+      if (style === 'classic') drawNodeLabel(ctx, x, y, label, level, theme);
     }
 
     if (frame.subdivision > 1) {

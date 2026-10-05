@@ -13,7 +13,7 @@ export function drawNode(
   theme: VizTheme,
   style: NodeStyleName,
 ): void {
-  const kit = getNodeStyleKit(style);
+  const kit = getNodeStyleKit(style, theme.light === true);
   ctx.save();
   if (level === 'mute') {
     kit.paintMute(ctx, x, y, radius, theme.nodeIdle, theme.node, theme.glow, glow);
@@ -33,6 +33,37 @@ export function drawNode(
   } else {
     kit.paintNormal(ctx, x, y, radius, theme.node, theme.glow, theme.core, glow);
   }
+  ctx.restore();
+}
+
+/** The font and centering every beat number is drawn in, sized to the node. Apart from
+ *  `drawNodeLabel` so a loop over same-sized nodes sets it once. */
+export function setNodeLabelFont(ctx: CanvasRenderingContext2D, radius: number): void {
+  ctx.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px "Inter", system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+}
+
+/** Classic's beat number, in the font `setNodeLabelFont` sets: white with a dark halo on the filled sphere. A
+ *  muted beat is only a hollow ring, so on the light theme's paper the white would vanish; it is
+ *  inked in the label color instead. */
+export function drawNodeLabel(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  label: string,
+  level: BeatLevel,
+  theme: VizTheme,
+): void {
+  ctx.save();
+  if (theme.light && level === 'mute') {
+    ctx.fillStyle = theme.label;
+  } else {
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.fillStyle = '#fff';
+  }
+  ctx.fillText(label, x, y);
   ctx.restore();
 }
 

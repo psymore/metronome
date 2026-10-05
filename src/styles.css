@@ -220,11 +220,11 @@
   --viz-ring: #bdb296;
   /* Spokes and Line-view dividers, strengthened from #d8dfda so they read on the cooler bg. */
   --viz-spoke: #c4b9a0;
-  /* Normal beats are a dark teal and the accent beat a deeper one, so the translucent Prism and
-     Frosted styles stay readable on the light bg and the downbeat still outranks the rest. The
-     beat kits in viz/nodeStyleKit.ts derive every highlight and shade from these, so this
-     recolors all four styles and their menu previews. */
-  --viz-node: #2f6f62;
+  /* On paper the beat levels run as an ink ladder: faded mute, a mid teal normal, a deeper medium
+     (mixed from these two) and the deepest accent. The beat kits in viz/nodeStyleKit.ts derive
+     every highlight and shade from these, so this recolors all styles and their menu previews.
+     White Classic labels on the normal teal are 4:1, with their dark halo on top. */
+  --viz-node: #4f8a7c;
   --viz-accent: #0a3d35;
   --viz-accent-alt: #ad7028;
   --viz-node-alt: #9a6424;

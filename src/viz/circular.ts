@@ -1,5 +1,5 @@
 import type { BeatLevel } from '../state/settings';
-import { drawNode } from './drawNode';
+import { drawNode, drawNodeLabel, setNodeLabelFont } from './drawNode';
 import {
   circularLayout,
   circularNodeSpacing,
@@ -72,9 +72,7 @@ export const circularVisualizer: Visualizer = {
       ctx.restore();
     }
 
-    ctx.font = `600 ${Math.round(Math.max(10, nodeR * 1.05))}px "Inter", system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    setNodeLabelFont(ctx, nodeR);
     const size = spriteSize(nodeR);
     for (let i = 0; i < n; i++) {
       const a = nodeAngle(i, n);
@@ -90,14 +88,7 @@ export const circularVisualizer: Visualizer = {
         }
       }
       drawNode(ctx, p.x, p.y, nodeR, level, glow, theme, style);
-      if (style === 'classic') {
-        ctx.save();
-        ctx.shadowBlur = 3;
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(label, p.x, p.y);
-        ctx.restore();
-      }
+      if (style === 'classic') drawNodeLabel(ctx, p.x, p.y, label, level, theme);
     }
 
     if (frame.subdivision > 1) {

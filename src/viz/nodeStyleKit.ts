@@ -48,6 +48,34 @@ export interface NodeStyleKit {
   ): void;
 }
 
+/** The warm contact shadow a raised node casts on the light theme's paper page. */
+const PAPER_SHADOW = 'rgba(72,54,24,0.34)';
+/** The light theme's accent marker: a uniform ink wash, the paper counterpart of Classic's
+ *  white one. */
+const PAPER_INK_WASH = 'rgba(8,20,16,0.24)';
+
+/**
+ * Light theme only. On paper a halo in the node's own hue reads as a smudge rather than a light,
+ * so the paper kits cast this drop shadow in its place: at rest the node sits slightly raised off
+ * the page, and the hit lifts it (a wider, further-dropped shadow) instead of lighting it up. It
+ * replaces the halo's shadow pass rather than adding one, so the live node costs no more to paint
+ * and idle nodes bake it into their sprite. Canvas shadows ignore the transform, so the values
+ * are scaled by it to look the same at every pixel ratio.
+ */
+function paperShadow(ctx: CanvasRenderingContext2D, glow: number): void {
+  const scale = ctx.getTransform().a;
+  ctx.shadowColor = PAPER_SHADOW;
+  ctx.shadowBlur = (4 + 8 * glow) * scale;
+  ctx.shadowOffsetY = (1.5 + 2.5 * glow) * scale;
+}
+
+/** Turns shadows off. Resetting the offset matters as much as the blur: an offset alone still
+ *  casts a hard-edged shadow under every later fill. */
+function noShadow(ctx: CanvasRenderingContext2D): void {
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+}
+
 function classicFill(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -60,16 +88,31 @@ function classicFill(
   startAngle: number,
   endAngle: number,
   extraWash: boolean,
+  paper: boolean,
 ): void {
   const r = radius * (1 + 0.3 * glow);
-  ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 6 + 34 * glow;
+  if (paper) {
+    paperShadow(ctx, glow);
+  } else {
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 6 + 34 * glow;
+  }
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, r, startAngle, endAngle);
   ctx.fill();
+  noShadow(ctx);
 
-  ctx.shadowBlur = 0;
+  if (extraWash && paper) {
+    // On paper the accent is the densest mark, so its marker darkens instead: the white wash
+    // below grayed accent and medium out until they read lighter than normal. It goes under the
+    // shine so the accent keeps its gloss.
+    ctx.fillStyle = PAPER_INK_WASH;
+    ctx.beginPath();
+    ctx.arc(x, y, r, startAngle, endAngle);
+    ctx.fill();
+  }
+
   const shine = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r);
   shine.addColorStop(0, `rgba(255,255,255,${0.55 + 0.45 * glow})`);
   shine.addColorStop(0.45, 'rgba(255,255,255,0)');
@@ -78,7 +121,7 @@ function classicFill(
   ctx.arc(x, y, r, startAngle, endAngle);
   ctx.fill();
 
-  if (extraWash) {
+  if (extraWash && !paper) {
     // The one structural marker that keeps accent visually distinct from normal even when a
     // caller (polyrhythm) passes the identical `color` for both — a uniform brighter wash, never
     // a second hue, so a node never looks like it "belongs to two layers".
@@ -98,65 +141,95 @@ function classicFill(
   }
 }
 
-const classicKit: NodeStyleKit = {
-  paintMute(
-    ctx,
-    x,
-    y,
-    radius,
-    idleColor,
-    flashColor,
-    glowColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // A muted beat still ticks — a very slight ring swell on the hit, much smaller than
-    // normal/accent's, keeps mute from feeling completely inert without making it read as "on".
-    const r = radius * (1 + 0.32 * glow);
-    ctx.shadowColor = glowColor;
-    ctx.shadowBlur = 4 + 8 * glow;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = idleColor;
-    ctx.beginPath();
-    ctx.arc(x, y, r, startAngle, endAngle);
-    ctx.stroke();
-    if (glow > 0) {
-      ctx.globalAlpha = glow;
-      ctx.strokeStyle = flashColor;
+/** `paper` is the light theme's variant (see `getNodeStyleKit`). Mute is the same in both: it stays
+ *  flat on the page, with no lifting shadow, as the quietest mark of the four. */
+function classicKit(paper: boolean): NodeStyleKit {
+  return {
+    paintMute(
+      ctx,
+      x,
+      y,
+      radius,
+      idleColor,
+      flashColor,
+      glowColor,
+      glow,
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // A muted beat still ticks — a very slight ring swell on the hit, much smaller than
+      // normal/accent's, keeps mute from feeling completely inert without making it read as "on".
+      const r = radius * (1 + 0.32 * glow);
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 4 + 8 * glow;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = idleColor;
+      ctx.beginPath();
+      ctx.arc(x, y, r, startAngle, endAngle);
       ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-  },
-  paintNormal(
-    ctx,
-    x,
-    y,
-    radius,
-    color,
-    glowColor,
-    coreColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    classicFill(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle, endAngle, false);
-  },
-  paintAccent(
-    ctx,
-    x,
-    y,
-    radius,
-    color,
-    glowColor,
-    coreColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    classicFill(ctx, x, y, radius, color, glowColor, coreColor, glow, startAngle, endAngle, true);
-  },
-};
+      if (glow > 0) {
+        ctx.globalAlpha = glow;
+        ctx.strokeStyle = flashColor;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    },
+    paintNormal(
+      ctx,
+      x,
+      y,
+      radius,
+      color,
+      glowColor,
+      coreColor,
+      glow,
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      classicFill(
+        ctx,
+        x,
+        y,
+        radius,
+        color,
+        glowColor,
+        coreColor,
+        glow,
+        startAngle,
+        endAngle,
+        false,
+        paper,
+      );
+    },
+    paintAccent(
+      ctx,
+      x,
+      y,
+      radius,
+      color,
+      glowColor,
+      coreColor,
+      glow,
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      classicFill(
+        ctx,
+        x,
+        y,
+        radius,
+        color,
+        glowColor,
+        coreColor,
+        glow,
+        startAngle,
+        endAngle,
+        true,
+        paper,
+      );
+    },
+  };
+}
 
 const RGB_RE = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/;
 
@@ -267,27 +340,32 @@ export function metalDisc(
   endAngle: number,
   alpha: number,
   boost: number,
+  paper = false,
 ): void {
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  // `boost` (accent only) lightens the whole disc, not just the center LED — otherwise normal
-  // and accent read as the same brass disc with only a faint LED-color difference at rest.
-  const ringColor = boost > 0 ? lighten(color, 0.12) : color;
+  // `boost` (accent only) sets the whole disc apart, not just the center LED — otherwise normal
+  // and accent read as the same brass disc with only a faint LED-color difference at rest. It
+  // lightens on the dark themes and deepens on paper, where a lighter disc reads as the weaker
+  // beat.
+  const ringColor = boost > 0 ? (paper ? darken(color, 0.12) : lighten(color, 0.12)) : color;
   const dark = darken(ringColor, 0.45);
   const light = lighten(ringColor, 0.3);
   const sweep = metalSweepGradient(ctx, x, y, r, ringColor, light, dark);
   // A whole-disc glow on the hit (not just the center LED's), matching how strongly Classic's
   // hit flash reads — previously only the small LED brightened, so Metallic's pulse felt much
-  // weaker than Classic's next to it.
-  if (glow > 0) {
+  // weaker than Classic's next to it. Paper lifts the disc on its drop shadow instead.
+  if (paper) {
+    paperShadow(ctx, glow);
+  } else if (glow > 0) {
     ctx.shadowColor = lighten(color, 0.15);
     ctx.shadowBlur = 34 * glow;
   }
   ringPath(ctx, x, y, r, startAngle, endAngle);
   ctx.fillStyle = sweep;
   ctx.fill();
-  ctx.shadowBlur = 0;
+  noShadow(ctx);
 
   ctx.save();
   ringPath(ctx, x, y, r, startAngle, endAngle);
@@ -310,7 +388,9 @@ export function metalDisc(
     y - r * 0.44,
     r * 0.9,
   );
-  hi.addColorStop(0, `rgba(255,255,255,${0.6 + boost * 0.25 + glow * 0.15})`);
+  // A brighter highlight is part of the dark themes' lighter accent; paper keeps it level.
+  const hiBoost = paper ? 0 : boost * 0.25;
+  hi.addColorStop(0, `rgba(255,255,255,${0.6 + hiBoost + glow * 0.15})`);
   hi.addColorStop(0.42, 'rgba(255,255,255,0)');
   ringPath(ctx, x, y, r, startAngle, endAngle);
   ctx.fillStyle = hi;
@@ -342,100 +422,105 @@ export function metalDisc(
   ctx.restore();
 }
 
-const metallicKit: NodeStyleKit = {
-  paintMute(
-    ctx,
-    x,
-    y,
-    radius,
-    idleColor,
-    _flashColor,
-    _glowColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
-    // ticks visibly without reading as "on". No separate flash-ring overlay here (unlike the
-    // other kits' mute) — Metallic's mute is already a solid filled disc, not a hollow outline,
-    // so stroking a flat-colored ring on top of its own reflective gradient/highlight/border
-    // didn't fade cleanly; it clashed instead of blending. `metalDisc`'s own whole-disc shadow
-    // glow (the same one normal/accent use) already gives it a smooth from-within brighten.
-    metalDisc(
+/** `paper` is the light theme's variant; mute is the same in both, as in `classicKit`. */
+function metallicKit(paper: boolean): NodeStyleKit {
+  return {
+    paintMute(
       ctx,
       x,
       y,
-      radius * (1 + 0.32 * glow),
+      radius,
       idleColor,
-      null,
+      _flashColor,
+      _glowColor,
       glow,
-      startAngle,
-      endAngle,
-      0.45,
-      0,
-    );
-  },
-  paintNormal(
-    ctx,
-    x,
-    y,
-    radius,
-    color,
-    _glowColor,
-    _coreColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // The LED face is lit with a lightly lightened version of the node's own color, so it stays
-    // recognizably the theme's hue instead of washing out toward white — dim at rest, full
-    // brightness only on the hit itself. The disc itself also swells on the hit (matching
-    // Classic's radius pulse), since the LED alone read as too subtle a hit cue on its own.
-    metalDisc(
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
+      // ticks visibly without reading as "on". No separate flash-ring overlay here (unlike the
+      // other kits' mute) — Metallic's mute is already a solid filled disc, not a hollow outline,
+      // so stroking a flat-colored ring on top of its own reflective gradient/highlight/border
+      // didn't fade cleanly; it clashed instead of blending. `metalDisc`'s own whole-disc shadow
+      // glow (the same one normal/accent use) already gives it a smooth from-within brighten.
+      metalDisc(
+        ctx,
+        x,
+        y,
+        radius * (1 + 0.32 * glow),
+        idleColor,
+        null,
+        glow,
+        startAngle,
+        endAngle,
+        0.45,
+        0,
+      );
+    },
+    paintNormal(
       ctx,
       x,
       y,
-      radius * (1 + 0.3 * glow),
+      radius,
       color,
-      lighten(color, 0.15),
+      _glowColor,
+      _coreColor,
       glow,
-      startAngle,
-      endAngle,
-      1,
-      0,
-    );
-  },
-  paintAccent(
-    ctx,
-    x,
-    y,
-    radius,
-    color,
-    _glowColor,
-    _coreColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // A more strongly lightened version of the same hue (not the theme's near-white core color),
-    // so accent reads as visibly "hotter" and brighter than normal's dim brass tone while staying
-    // a tinted color rather than turning into a plain white LED like the flash core does. Swells
-    // slightly more than normal on the hit, same reasoning as normal's pulse above.
-    metalDisc(
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // The LED face is lit with a lightly lightened version of the node's own color, so it stays
+      // recognizably the theme's hue instead of washing out toward white — dim at rest, full
+      // brightness only on the hit itself. The disc itself also swells on the hit (matching
+      // Classic's radius pulse), since the LED alone read as too subtle a hit cue on its own.
+      metalDisc(
+        ctx,
+        x,
+        y,
+        radius * (1 + 0.3 * glow),
+        color,
+        lighten(color, 0.15),
+        glow,
+        startAngle,
+        endAngle,
+        1,
+        0,
+        paper,
+      );
+    },
+    paintAccent(
       ctx,
       x,
       y,
-      radius * (1 + 0.3 * glow),
+      radius,
       color,
-      lighten(color, 0.45),
+      _glowColor,
+      _coreColor,
       glow,
-      startAngle,
-      endAngle,
-      1,
-      1,
-    );
-  },
-};
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // A more strongly lightened version of the same hue (not the theme's near-white core color),
+      // so accent reads as visibly "hotter" and brighter than normal's dim brass tone while staying
+      // a tinted color rather than turning into a plain white LED like the flash core does. Swells
+      // slightly more than normal on the hit, same reasoning as normal's pulse above.
+      metalDisc(
+        ctx,
+        x,
+        y,
+        radius * (1 + 0.3 * glow),
+        color,
+        lighten(color, 0.45),
+        glow,
+        startAngle,
+        endAngle,
+        1,
+        1,
+        paper,
+      );
+    },
+  };
+}
 
 const CONE_SEGS = 10;
 /** Vertical squash on the base ring, faking a fixed oblique look — never rotates or animates. */
@@ -613,7 +698,8 @@ const wireframeKit: NodeStyleKit = {
 };
 
 /** Soft translucent, blurred-edge fill with no hard border — matte rather than glossy (Classic),
- *  turned-metal (Metallic) or faceted (Wireframe). */
+ *  turned-metal (Metallic) or faceted (Wireframe). Given `paperGlow` (light theme), it casts the
+ *  paper drop shadow for that glow in place of the colored soft edge, and `blur` goes unused. */
 function frostBase(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -625,6 +711,7 @@ function frostBase(
   hotAlpha: number,
   startAngle: number,
   endAngle: number,
+  paperGlow?: number,
 ): void {
   ctx.save();
   // `ctx.filter = blur(...)` (a full off-screen raster blur pass on every paint) used to stand in
@@ -633,8 +720,12 @@ function frostBase(
   // cache), that cost multiplied across every visible frosted node each frame — visible as a
   // stutter while a conjunction opens/closes. `shadowBlur` gives a comparable soft edge much
   // cheaper, so it replaces the filter entirely.
-  ctx.shadowColor = color;
-  ctx.shadowBlur = blur * 1.6;
+  if (paperGlow !== undefined) {
+    paperShadow(ctx, paperGlow);
+  } else {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = blur * 1.6;
+  }
   const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
   g.addColorStop(0, `rgba(255,255,255,${hotAlpha})`);
   g.addColorStop(0.55, lighten(color, 0.28));
@@ -653,99 +744,126 @@ function frostBase(
   ctx.globalAlpha = 1;
 }
 
-const frostedKit: NodeStyleKit = {
-  paintMute(
-    ctx,
-    x,
-    y,
-    radius,
-    idleColor,
-    flashColor,
-    glowColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
-    // ticks visibly without reading as "on".
-    frostBase(ctx, x, y, radius * (1 + 0.32 * glow), idleColor, 0.28, 3, 0.3, startAngle, endAngle);
-    if (glow > 0) {
-      ctx.save();
-      ctx.globalAlpha = glow;
-      ctx.strokeStyle = flashColor;
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 6 * glow;
-      ringPath(ctx, x, y, radius, startAngle, endAngle);
-      ctx.stroke();
-      ctx.restore();
-    }
-  },
-  paintNormal(
-    ctx,
-    x,
-    y,
-    radius,
-    color,
-    _glowColor,
-    _coreColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // `blur` scales with glow now (previously a flat 3, matching only the idle softness), so the
-    // hit reads as a comparably strong pulse to Classic's big `shadowBlur` swing instead of a
-    // much quieter one.
-    frostBase(
+/** `paper` is the light theme's variant; mute is the same in both, as in `classicKit`. */
+function frostedKit(paper: boolean): NodeStyleKit {
+  return {
+    paintMute(
       ctx,
       x,
       y,
-      radius * (1 + 0.3 * glow),
-      color,
-      0.88 + 0.1 * glow,
-      3 + 22 * glow,
-      0.88 + 0.1 * glow,
-      startAngle,
-      endAngle,
-    );
-  },
-  paintAccent(
-    ctx,
-    x,
-    y,
-    radius,
-    color,
-    _glowColor,
-    _coreColor,
-    glow,
-    startAngle = FULL_START,
-    endAngle = FULL_END,
-  ) {
-    // The old outer shadowColor/shadowBlur set here was immediately overwritten by frostBase's
-    // own shadowBlur assignment, so it never actually did anything — rolled into frostBase's own
-    // `blur` param instead, same as normal above.
-    frostBase(
+      radius,
+      idleColor,
+      flashColor,
+      glowColor,
+      glow,
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // A very slight swell on the hit, much smaller than normal/accent's, so a muted beat still
+      // ticks visibly without reading as "on".
+      frostBase(
+        ctx,
+        x,
+        y,
+        radius * (1 + 0.32 * glow),
+        idleColor,
+        0.28,
+        3,
+        0.3,
+        startAngle,
+        endAngle,
+      );
+      if (glow > 0) {
+        ctx.save();
+        ctx.globalAlpha = glow;
+        ctx.strokeStyle = flashColor;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = 6 * glow;
+        ringPath(ctx, x, y, radius, startAngle, endAngle);
+        ctx.stroke();
+        ctx.restore();
+      }
+    },
+    paintNormal(
       ctx,
       x,
       y,
-      radius * (1 + 0.3 * glow),
+      radius,
       color,
-      0.78 + 0.15 * glow,
-      5 + 26 * glow,
-      0.82 + 0.15 * glow,
-      startAngle,
-      endAngle,
-    );
-  },
-};
+      _glowColor,
+      _coreColor,
+      glow,
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // `blur` scales with glow now (previously a flat 3, matching only the idle softness), so the
+      // hit reads as a comparably strong pulse to Classic's big `shadowBlur` swing instead of a
+      // much quieter one.
+      frostBase(
+        ctx,
+        x,
+        y,
+        radius * (1 + 0.3 * glow),
+        color,
+        0.88 + 0.1 * glow,
+        3 + 22 * glow,
+        0.88 + 0.1 * glow,
+        startAngle,
+        endAngle,
+        paper ? glow : undefined,
+      );
+    },
+    paintAccent(
+      ctx,
+      x,
+      y,
+      radius,
+      color,
+      _glowColor,
+      _coreColor,
+      glow,
+      startAngle = FULL_START,
+      endAngle = FULL_END,
+    ) {
+      // The old outer shadowColor/shadowBlur set here was immediately overwritten by frostBase's
+      // own shadowBlur assignment, so it never actually did anything — rolled into frostBase's own
+      // `blur` param instead, same as normal above. On paper the accent is the most opaque of the
+      // three, not the most translucent, so it reads as the densest mark.
+      frostBase(
+        ctx,
+        x,
+        y,
+        radius * (1 + 0.3 * glow),
+        color,
+        paper ? 0.96 + 0.04 * glow : 0.78 + 0.15 * glow,
+        5 + 26 * glow,
+        0.82 + 0.15 * glow,
+        startAngle,
+        endAngle,
+        paper ? glow : undefined,
+      );
+    },
+  };
+}
 
 const KITS: Record<NodeStyleName, NodeStyleKit> = {
-  classic: classicKit,
-  metallic: metallicKit,
+  classic: classicKit(false),
+  metallic: metallicKit(false),
   wireframe: wireframeKit,
-  frosted: frostedKit,
+  frosted: frostedKit(false),
 };
 
-export function getNodeStyleKit(style: NodeStyleName): NodeStyleKit {
-  return KITS[style];
+/** The light theme's kits. On paper emphasis is ink, not light: accent is the deepest mark, and
+ *  a raised node casts a drop shadow (`paperShadow`) instead of a glow. Prism isn't offered in
+ *  light, so it has no paper variant. */
+const PAPER_KITS: Record<NodeStyleName, NodeStyleKit> = {
+  classic: classicKit(true),
+  metallic: metallicKit(true),
+  wireframe: wireframeKit,
+  frosted: frostedKit(true),
+};
+
+export function getNodeStyleKit(style: NodeStyleName, paper = false): NodeStyleKit {
+  return (paper ? PAPER_KITS : KITS)[style];
 }

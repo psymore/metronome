@@ -1,8 +1,8 @@
 import type { BeatLevel, NodeStyleName } from '../state/settings';
-import { drawNode } from './drawNode';
+import { drawNode, drawNodeLabel, setNodeLabelFont } from './drawNode';
 import { MUTE_GLOW_SCALE } from './geometry';
 import { type NodeSprites, spriteSize } from './nodeSprite';
-import { darken, getNodeStyleKit, lighten, metalDisc } from './nodeStyleKit';
+import { darken, getNodeStyleKit, lighten, metalDisc, mixColor } from './nodeStyleKit';
 import type { PolyFrame } from './polyFrame';
 import {
   polyConcentricPositions,
@@ -25,8 +25,16 @@ const HUB_FADE_FRAC = 0.22;
 /** Normal/accent color for a poly layer node, derived from that layer's own hue the same way
  *  `drawLayer` derives its per-level colors — darker for normal, lighter for accent — instead of
  *  a flat layer color for both. Mute keeps the raw color (its kit paint uses `idleColor` for the
- *  visible ring anyway; `color` there only tints the glow flash). */
-function levelColor(layerColor: string, level: BeatLevel): string {
+ *  visible ring anyway; `color` there only tints the glow flash). On the light theme it follows
+ *  `polyLayerTheme`'s paper ladder instead, so a merged node ranks its levels like a split one. */
+function levelColor(theme: VizTheme, layerColor: string, level: BeatLevel): string {
+  if (theme.light) {
+    const t = polyLayerTheme(theme, layerColor);
+    if (level === 'accent') return t.accent;
+    if (level === 'medium') return mixColor(t.accent, t.node, 0.5);
+    if (level === 'normal') return t.node;
+    return layerColor;
+  }
   if (level === 'accent') return lighten(layerColor, 0.25);
   if (level === 'medium') return lighten(layerColor, 0.1);
   if (level === 'normal') return darken(layerColor, 0.3);
@@ -146,15 +154,14 @@ export function drawPolyrhythm(
         p.x,
         p.y,
         NODE_RADIUS,
-        levelColor(theme.accentAlt, levelA),
-        levelColor(theme.accent, levelB),
+        levelColor(theme, theme.accentAlt, levelA),
+        levelColor(theme, theme.accent, levelB),
         levelA,
         levelB,
         activeA && levelA !== 'mute' ? glowA : 0,
         activeB && levelB !== 'mute' ? glowB : 0,
         String(p.aIndex + 1),
-        theme.nodeIdle,
-        theme.core,
+        theme,
         style,
       );
     } else {
@@ -326,6 +333,7 @@ function drawLayer(
   // hard to tell apart, especially on style kits like Prism whose fill alpha is already subtle.
   const layerTheme = polyLayerTheme(theme, layerColor);
   const size = spriteSize(nodeRadius);
+  if (style === 'classic') setNodeLabelFont(ctx, nodeRadius);
   for (const [i, v] of nodeVerts.entries()) {
     if (skip.has(i)) continue;
     const configured: BeatLevel = levels[i] ?? 'normal';
@@ -345,26 +353,8 @@ function drawLayer(
       }
     }
     drawNode(ctx, v.x, v.y, nodeRadius, configured, g, layerTheme, style);
-    if (style === 'classic') paintLabel(ctx, v.x, v.y, nodeRadius, label);
+    if (style === 'classic') drawNodeLabel(ctx, v.x, v.y, label, configured, layerTheme);
   }
-}
-
-function paintLabel(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  radius: number,
-  label: string,
-): void {
-  ctx.save();
-  ctx.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px "Inter", system-ui, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowBlur = 3;
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(label, x, y);
-  ctx.restore();
 }
 
 /** A single sphere split down the middle — left half layer A, right half layer B — so at rest
@@ -384,8 +374,7 @@ function drawCombinedNode(
   glowA: number,
   glowB: number,
   label: string,
-  idleColor: string,
-  coreColor: string,
+  theme: VizTheme,
   style: NodeStyleName,
 ): void {
   ctx.save();
@@ -412,8 +401,7 @@ function drawCombinedNode(
     colorA,
     levelA,
     glowForGeometry ?? glowA,
-    idleColor,
-    coreColor,
+    theme,
     style,
   );
   drawCombinedHalf(
@@ -426,8 +414,7 @@ function drawCombinedNode(
     colorB,
     levelB,
     glowForGeometry ?? glowB,
-    idleColor,
-    coreColor,
+    theme,
     style,
   );
 
@@ -439,13 +426,10 @@ function drawCombinedNode(
   ctx.stroke();
 
   if (style === 'classic') {
-    ctx.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px "Inter", system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 3;
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(label, x, y);
+    setNodeLabelFont(ctx, radius);
+    // Inked like a muted beat only when both halves are hollow rings.
+    const labelLevel = levelA === 'mute' && levelB === 'mute' ? 'mute' : 'normal';
+    drawNodeLabel(ctx, x, y, label, labelLevel, theme);
   }
   ctx.restore();
 }
@@ -469,18 +453,17 @@ function drawCombinedHalf(
   color: string,
   level: BeatLevel,
   glow: number,
-  idleColor: string,
-  coreColor: string,
+  theme: VizTheme,
   style: NodeStyleName,
 ): void {
-  const kit = getNodeStyleKit(style);
+  const kit = getNodeStyleKit(style, theme.light === true);
   ctx.save();
   if (level === 'mute') {
-    kit.paintMute(ctx, x, y, r, idleColor, color, color, glow, startAngle, endAngle);
+    kit.paintMute(ctx, x, y, r, theme.nodeIdle, color, color, glow, startAngle, endAngle);
   } else if (level === 'accent') {
-    kit.paintAccent(ctx, x, y, r, color, color, coreColor, glow, startAngle, endAngle);
+    kit.paintAccent(ctx, x, y, r, color, color, theme.core, glow, startAngle, endAngle);
   } else {
-    kit.paintNormal(ctx, x, y, r, color, color, coreColor, glow, startAngle, endAngle);
+    kit.paintNormal(ctx, x, y, r, color, color, theme.core, glow, startAngle, endAngle);
   }
   ctx.restore();
 }

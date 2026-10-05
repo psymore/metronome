@@ -2,7 +2,7 @@ import type { PolyBeatEvent } from '../engine/polyScheduler';
 import type { BeatEvent } from '../engine/scheduler';
 import { type BeatLevel, patternFromSettings, type Settings } from '../state/settings';
 import { circularVisualizer } from './circular';
-import { drawNode } from './drawNode';
+import { drawNode, drawNodeLabel, setNodeLabelFont } from './drawNode';
 import { computeFrame } from './frame';
 import { circularLayout } from './geometry';
 import { circularBeatAt, linearBeatAt, polyBeatAt } from './hitTest';
@@ -326,13 +326,8 @@ export class VizController {
           : this.theme;
     drawNode(c, mid, mid, radius, level, 0, theme, style);
     if (style === 'classic') {
-      c.font = `600 ${Math.round(Math.max(10, radius * 1.05))}px "Inter", system-ui, sans-serif`;
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.shadowBlur = 3;
-      c.shadowColor = 'rgba(0,0,0,0.6)';
-      c.fillStyle = '#fff';
-      c.fillText(label, mid, mid);
+      setNodeLabelFont(c, radius);
+      drawNodeLabel(c, mid, mid, label, level, theme);
     }
     return canvas;
   }
