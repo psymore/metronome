@@ -5,12 +5,16 @@ immediately.
 
 ## Where things stand (2026-10-05)
 
-Work is on the local branch `sounds-and-limiter`, 5 commits ahead of `master` (not pushed, not
-merged): soft master limiter, grouped built-in sounds with 59 bundled WAVs fetched on first use,
-the paper light theme (Prism hidden in light, falls back to Frosted), and the light-theme beat
-fixes below. The untracked `sound-candidates/` folder (~9 MB of candidate WAVs + `SOURCES.md`, left
-over from picking the bundled sounds) was deliberately left out of every commit; the user hasn't
-said whether to keep, ignore or delete it.
+Everything is on `master` and pushed (fast-forwarded from `sounds-and-limiter`; the user prefers
+committing straight to `master` over feature branches): soft master limiter, grouped built-in
+sounds with 59 bundled WAVs fetched on first use, the paper light theme (Prism hidden in light,
+falls back to Frosted), the light-theme beat fixes below, and `sound-candidates/` (~9 MB CC0/own
+audition set with `SOURCES.md`; nothing in it is wired into the app).
+
+`npm run build` passes. `npm run lint` fails on pre-existing issues outside this work
+(`index.html` useTemplate/useOptionalChain/noSvgWithoutTitle, `public/icon.svg`,
+`tests/viz/polyrhythm.test.ts` import order), and `npm test` has 5 stale failures (below), so CI is
+red; the Pages deploy only builds.
 
 ### Latest: light-theme beat hierarchy (commit 3a5120b)
 
@@ -41,15 +45,17 @@ said whether to keep, ignore or delete it.
   physical phone; narrow 320/360px widths.
 - **Timer/loop overlap:** both can be active; their button groups may crowd on narrow phones. Ask
   whether both should be allowed simultaneously.
-- **Stale tests:** `npm test` had six known failures in `tests/state/barCounter.test.ts` and
-  `tests/i18n/i18n.test.ts` (old "Bar" strings vs current Loop/Repeat wording).
+- **Stale tests and lint:** `npm test` has five known failures in
+  `tests/state/barCounter.test.ts` and `tests/i18n/i18n.test.ts` (old "Bar" strings vs current
+  Loop/Repeat wording), plus the pre-existing lint errors above. Together they keep CI red.
 - **Android Play Store:** Play Console setup (user side), AAB build/signing, closed testing, and
   production release remain open per
   `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`.
 
 ### Standing instructions
 
-- **Never work in a git worktree for this project.** Use plain local branches in the main directory.
+- **Never work in a git worktree for this project.** The user is fine committing and pushing
+  straight to `master`.
 - No `Co-Authored-By` lines in commits.
 - The user tests on a physical Android phone (Chrome) against the dev server Network URL
   (`http://<LAN-IP>:5173/`).
@@ -59,6 +65,6 @@ said whether to keep, ignore or delete it.
 ## Next step
 
 1. Ask how the light-theme beats look on the phone (including the hit lift while playing).
-2. Ask what to do with `sound-candidates/` (commit, `.gitignore`, or delete) and whether
-   `sounds-and-limiter` is ready to merge into `master` and push.
-3. Then the older items: app icon regeneration, timer/loop crowding, stale tests, Play Store.
+2. Offer to turn CI green: update the five stale Bar→Loop test expectations and fix the
+   pre-existing lint errors.
+3. Then the older items: app icon regeneration, timer/loop crowding, Play Store.
