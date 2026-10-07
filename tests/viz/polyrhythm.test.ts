@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BeatLevel } from '../../src/state/settings';
 import type { NodeSprites } from '../../src/viz/nodeSprite';
-import type { PolyFrame } from '../../src/viz/polyFrame';
 import { darken } from '../../src/viz/nodeStyleKit';
+import type { PolyFrame } from '../../src/viz/polyFrame';
 import { drawPolyrhythm, polyLayerTheme } from '../../src/viz/polyrhythm';
 import type { VizTheme } from '../../src/viz/types';
 
