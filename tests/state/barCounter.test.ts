@@ -26,15 +26,15 @@ describe('formatBarCounter', () => {
   });
 
   it('shows bar/total without a loop label for a single pass', () => {
-    expect(formatBarCounter(2, 7, 1)).toBe('Bar 3 / 7');
+    expect(formatBarCounter(2, 7, 1)).toBe('Loop: Bar 3/7');
   });
 
   it('shows bar and loop progress for a finite loop count', () => {
-    expect(formatBarCounter(8, 7, 4)).toBe('Bar 2/7 Loop 2/4');
+    expect(formatBarCounter(8, 7, 4)).toBe('Loop: Bar 2/7');
   });
 
   it('shows bar and loop progress for an infinite loop', () => {
-    expect(formatBarCounter(15, 7, 0)).toBe('Bar 2/7 Loop 3');
+    expect(formatBarCounter(15, 7, 0)).toBe('Loop: Bar 2/7');
   });
 });
 
@@ -60,9 +60,9 @@ describe('barCounterFinished', () => {
 
 describe('formatIdleBarCounter', () => {
   it('shows a dash for the bar and the target total', () => {
-    expect(formatIdleBarCounter(0, 1)).toBe('Bar −');
-    expect(formatIdleBarCounter(16, 1)).toBe('Bar −/16');
-    expect(formatIdleBarCounter(16, 3)).toBe('Bar −/16 Loop −/3');
-    expect(formatIdleBarCounter(16, 0)).toBe('Bar −/16 Loop ∞');
+    expect(formatIdleBarCounter(0, 1)).toBe('Bar 1');
+    expect(formatIdleBarCounter(16, 1)).toBe('Loop: Bar 1/16');
+    expect(formatIdleBarCounter(16, 3)).toBe('Loop: Bar 1/16');
+    expect(formatIdleBarCounter(16, 0)).toBe('Loop: Bar 1/16');
   });
 });

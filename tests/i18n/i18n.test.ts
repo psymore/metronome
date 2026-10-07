@@ -13,7 +13,7 @@ describe('i18n', () => {
   });
 
   it('substitutes {placeholders} in a formatted string', () => {
-    expect(format('barCounter.withTarget', { n: 3, total: 14 })).toBe('Bar 3 / 14');
+    expect(format('barCounter.withTarget', { n: 3, total: 14 })).toBe('Loop: Bar 3/14');
   });
 
   it('every Turkish key has an English counterpart and vice versa', () => {
