@@ -15,4 +15,5 @@
 -->
 <resources>
     <color name="shortcut_background">#F5F5F5</color>
+    <color name="iconBackground">#000000</color>
 </resources>

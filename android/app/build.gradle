@@ -151,6 +151,12 @@ android {
         
     }
     buildTypes {
+        // Debug builds install next to the Play version (own package id and launcher name), signed
+        // with the auto-generated debug key: for trying icons on a phone without the release key.
+        debug {
+            applicationIdSuffix ".test"
+            resValue "string", "launcherName", "Metronome Test"
+        }
         release {
             minifyEnabled true
         }
