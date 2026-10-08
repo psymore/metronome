@@ -8,9 +8,9 @@ const background = '#141416';
 export default defineConfig({
   preset: {
     ...preset,
-    transparent: { ...preset.transparent, padding: 0.04 },
-    maskable: { ...preset.maskable, padding: 0.22, resizeOptions: { background } },
-    apple: { ...preset.apple, padding: 0.1, resizeOptions: { background } },
+    transparent: { ...preset.transparent, padding: 0 },
+    maskable: { ...preset.maskable, padding: 0.12, resizeOptions: { background } },
+    apple: { ...preset.apple, padding: 0.04, resizeOptions: { background } },
   },
   images: ['public/icon.svg'],
 });
