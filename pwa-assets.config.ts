@@ -1,13 +1,16 @@
 import { defineConfig, minimal2023Preset as preset } from '@vite-pwa/assets-generator/config';
 
-// icon.svg already carries its own full-bleed background, so no extra padding is added:
-// padded output would leave transparent edges that show white on Android's adaptive icon mask.
+// icon.svg is the bare BPM knob on a transparent background. The plain icons keep it
+// transparent (also used for the install splash); the maskable and Apple icons need an opaque
+// square, so they sit on the app's own #141416 with room for the launcher's mask.
+const background = '#141416';
+
 export default defineConfig({
   preset: {
     ...preset,
-    transparent: { ...preset.transparent, padding: 0 },
-    maskable: { ...preset.maskable, padding: 0 },
-    apple: { ...preset.apple, padding: 0 },
+    transparent: { ...preset.transparent, padding: 0.04 },
+    maskable: { ...preset.maskable, padding: 0.22, resizeOptions: { background } },
+    apple: { ...preset.apple, padding: 0.1, resizeOptions: { background } },
   },
   images: ['public/icon.svg'],
 });
