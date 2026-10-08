@@ -5,16 +5,17 @@ immediately.
 
 ## Where things stand (2026-10-08, evening)
 
-The app icon work is **committed** on `master` (not pushed): "Icon: metal play triangle, black
-launcher backing, brighter launcher knob". One uncommitted stream remains in the working tree:
+Everything is **committed** on `master`, nothing is pushed yet, and the working tree is clean:
 
-**Sound previews and presets** (done locally, uncommitted): play buttons in the sound picker, six
-accent/other-beat presets in `src/sounds/presets.ts`, EN/TR copy, plus the boot-screen loop
-(`public/boot-knob.svg`, `public/boot-loop.mp3`, its runtime cache in `vite.config.ts`). Files:
-`src/main.ts`, `src/styles.css`, `index.html`, `src/i18n/translations.ts`,
-`src/ui/{knob,polyrhythmDialog,soundDialog,soundPicker,soundPreview}.ts`, `vite.config.ts`. Build
-passed; awaiting the user's phone review. The user treats `index.html`, `src/main.ts`,
-`src/styles.css` as their in-progress work.
+- `472b10f` Icon: metal play triangle, black launcher backing, brighter launcher knob.
+- `527298d` Sound previews and presets, boot-screen knob with a 142 BPM loop, metal LCD face
+  (sound picker play buttons, six presets in `src/sounds/presets.ts`, the boot-screen loop
+  `public/boot-loop.mp3`, dark brushed-metal LCD on the in-app knob). `npm run build` passed
+  before the commit; the sound previews still await the user's phone review.
+
+Cleanup on 2026-10-08: removed root-level screenshots, `.playwright-mcp/`, the 2026-09-29 release
+APKs in `android/` (outputs of the documented release steps), `cloud-patches/` (every patch was
+already in history) and `.superpowers/`. Kept `.env.local`, `.vercel/` and build outputs.
 
 ### App icon: what shipped in the commit
 
@@ -75,6 +76,6 @@ Test phone: Redmi Note 10 Pro (M2101K6G), MIUI 14 `V14.0.2.0.TKFTRXM`, Android 1
 
 ## Next step
 
-1. Push the icon commit when the user asks (build first, per their rule).
-2. Sound-preview phone review; commit that stream separately when approved.
+1. Push when the user asks (build first, per their rule).
+2. Sound-preview phone review; fix whatever the user reports.
 3. Remaining open items above as directed.
