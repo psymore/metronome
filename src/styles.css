@@ -201,13 +201,14 @@
   --text: #2a2820;
   /* Darkened from #687b75: 4.75:1 on the bg, 6.2:1 on the panel (was 2.95:1). */
   --muted: #5f5744;
-  --knob-face: #f3eee2;
-  --knob-metal-hi: #f6f2e8;
-  --knob-metal-mid: #c9bfa8;
-  --knob-metal-lo: #8a8170;
-  /* The knob's BPM number, "BPM" label and play icon are drawn in this token, so it is set to the
-     near-black text color rather than the old gray metal. */
-  --knob-brass: #2a2820;
+  /* Warm orange machined metal so the knob stands out against the cream page, with a dark LCD
+     like the dark theme's. The readout and play icon are drawn in --knob-brass, so that is a
+     light amber to read on the dark face. */
+  --knob-face: #050a07;
+  --knob-metal-hi: #ffc489;
+  --knob-metal-mid: #ee9448;
+  --knob-metal-lo: #b9631f;
+  --knob-brass: #ffcf9a;
 
   /* Teal text darkened from #147765: 5.25:1 on the bg (was 3.57:1). */
   --pink: #0f5f52;
