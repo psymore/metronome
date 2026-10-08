@@ -37,11 +37,13 @@ export function mountPolyrhythmControls({
     soundASelect,
     byId<HTMLButtonElement>('polySoundATrigger'),
     'sigDialog.polyLayerA',
+    previewSound,
   );
   mountSoundPicker(
     soundBSelect,
     byId<HTMLButtonElement>('polySoundBTrigger'),
     'sigDialog.polyLayerB',
+    previewSound,
   );
 
   const setMode = (enabled: boolean) =>

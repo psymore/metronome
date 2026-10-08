@@ -1,7 +1,8 @@
-import { t } from '../i18n/i18n';
+import { format, t } from '../i18n/i18n';
 import { isSoundLoading, subscribeSoundLoading } from '../sounds/loadingStatus';
 import { byId, closeOnBackdropClick } from './dom';
 import { groupIconMarkup } from './groupIcons';
+import type { PreviewSound } from './soundPreview';
 
 interface PickerState {
   dialog: HTMLDialogElement;
@@ -93,12 +94,16 @@ function optionRow(
   id: string,
   name: string,
   selected: boolean,
-): HTMLButtonElement {
+  previewSound: PreviewSound,
+): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'sound-picker-row';
+  row.dataset.soundId = id;
+  row.classList.toggle('is-loading', isSoundLoading(id));
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'sound-picker-row';
-  button.setAttribute('role', 'option');
-  button.setAttribute('aria-selected', String(selected));
+  button.className = 'sound-picker-choice';
+  button.setAttribute('aria-pressed', String(selected));
   const radio = document.createElement('span');
   radio.className = 'sound-picker-radio';
   const nameEl = document.createElement('span');
@@ -107,8 +112,6 @@ function optionRow(
   const spinner = document.createElement('span');
   spinner.className = 'sound-picker-spinner';
   spinner.setAttribute('aria-hidden', 'true');
-  button.dataset.soundId = id;
-  button.classList.toggle('is-loading', isSoundLoading(id));
   button.append(radio, nameEl, spinner);
   button.addEventListener('click', () => {
     const select = state.activeSelect;
@@ -119,11 +122,29 @@ function optionRow(
     }
     state.dialog.close();
   });
-  return button;
+  const preview = document.createElement('button');
+  preview.type = 'button';
+  preview.className = 'small-btn sound-preview-btn';
+  preview.textContent = '▶';
+  preview.setAttribute('aria-label', format('sound.previewNamed', { name }));
+  preview.addEventListener('click', async () => {
+    preview.disabled = true;
+    try {
+      await previewSound(id);
+    } finally {
+      preview.disabled = false;
+    }
+  });
+  row.append(button, preview);
+  return row;
 }
 
 /** Each opening starts with only the group holding the current sound expanded. */
-function buildRows(state: PickerState, select: HTMLSelectElement): void {
+function buildRows(
+  state: PickerState,
+  select: HTMLSelectElement,
+  previewSound: PreviewSound,
+): void {
   const yoursLabel = t('soundGroup.yours');
   const sections: HTMLElement[] = [];
   let sawYours = false;
@@ -131,7 +152,13 @@ function buildRows(state: PickerState, select: HTMLSelectElement): void {
     const options = Array.from(group.querySelectorAll('option'));
     const holdsCurrent = options.some((option) => option.value === select.value);
     const rows = options.map((option) =>
-      optionRow(state, option.value, option.textContent ?? '', option.value === select.value),
+      optionRow(
+        state,
+        option.value,
+        option.textContent ?? '',
+        option.value === select.value,
+        previewSound,
+      ),
     );
     const isYours = group.label === yoursLabel;
     if (isYours) sawYours = true;
@@ -163,6 +190,7 @@ export function mountSoundPicker(
   select: HTMLSelectElement,
   trigger: HTMLButtonElement,
   titleKey: string,
+  previewSound: PreviewSound,
 ): void {
   const state = getShared();
   const refresh = () => {
@@ -176,7 +204,7 @@ export function mountSoundPicker(
   trigger.addEventListener('click', () => {
     state.activeSelect = select;
     state.title.textContent = t(titleKey);
-    buildRows(state, select);
+    buildRows(state, select, previewSound);
     state.dialog.showModal();
   });
 }

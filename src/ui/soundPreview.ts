@@ -14,8 +14,16 @@ export function createSoundPreview(
   toast: Toast,
 ): PreviewSound {
   return async (id: string, levelGain = 1) => {
-    const result = await library.resolve(id, DEFAULT_SETTINGS.normalSoundId);
-    if (result.error) toast(format('toast.playError', { error: result.error }));
-    else await engine.preview(result.pcm, levelGain);
+    try {
+      const result = await library.resolve(id, DEFAULT_SETTINGS.normalSoundId);
+      if (result.error) toast(format('toast.playError', { error: result.error }));
+      else await engine.preview(result.pcm, levelGain);
+    } catch (error) {
+      toast(
+        format('toast.playError', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
   };
 }

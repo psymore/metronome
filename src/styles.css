@@ -59,6 +59,10 @@
   --text: #f2ead9;
   --muted: #a2967d;
   --knob-face: #050a07;
+  /* LCD face brushed-metal stops (dark gunmetal), shared by both themes. */
+  --knob-lcd-hi: #353837;
+  --knob-lcd-mid: #1e2120;
+  --knob-lcd-lo: #0b0d0c;
   --radius: 4px;
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-score: "EB Garamond", "Palatino Linotype", Georgia, serif;
@@ -205,6 +209,10 @@
      like the dark theme's. The readout and play icon are drawn in --knob-brass, so that is a
      light amber to read on the dark face. */
   --knob-face: #050a07;
+  /* Lighter gunmetal than the dark themes' LCD: it reads better against the orange metal. */
+  --knob-lcd-hi: #4b4f4d;
+  --knob-lcd-mid: #2a2d2c;
+  --knob-lcd-lo: #101312;
   --knob-metal-hi: #ffc489;
   --knob-metal-mid: #ee9448;
   --knob-metal-lo: #b9631f;
@@ -2575,7 +2583,8 @@ html.depth-25d .knob {
   font-size: 13px;
   box-shadow: none;
 }
-.sound-slot-row .small-btn {
+.sound-slot-row .small-btn,
+.small-btn.sound-preview-btn {
   box-sizing: border-box;
   flex: none;
   width: 40px;
@@ -2600,7 +2609,8 @@ html.depth-25d .knob {
     max-width: none;
     height: 50px;
   }
-  .sound-slot-row .small-btn {
+  .sound-slot-row .small-btn,
+  .small-btn.sound-preview-btn {
     width: 50px;
     height: 50px;
   }
@@ -2864,6 +2874,15 @@ html.depth-25d .knob {
   }
 }
 .sound-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border-radius: 10px;
+}
+.sound-picker-choice {
+  flex: 1;
+  min-width: 0;
   width: 100%;
   display: flex;
   align-items: center;
@@ -2878,9 +2897,18 @@ html.depth-25d .knob {
   cursor: pointer;
 }
 .sound-picker-row:hover,
-.sound-picker-row:focus-visible {
-  outline: none;
+.sound-picker-row:focus-within {
   background: var(--panel-lo);
+}
+.sound-picker-choice:focus-visible,
+.sound-preview-btn:focus-visible,
+.sound-preset:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+.sound-preview-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .sound-picker-radio {
   flex: none;
@@ -2890,7 +2918,7 @@ html.depth-25d .knob {
   border: 1px solid var(--line);
   box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.4);
 }
-.sound-picker-row[aria-selected="true"] .sound-picker-radio {
+.sound-picker-choice[aria-pressed="true"] .sound-picker-radio {
   border-color: var(--select);
   background: radial-gradient(circle, var(--select) 42%, transparent 46%);
   box-shadow: 0 0 4px var(--select-soft);
@@ -2905,6 +2933,45 @@ html.depth-25d .knob {
   padding: 6px 8px;
   color: var(--muted);
   font-size: 14px;
+}
+.sound-presets {
+  margin: 16px 0;
+}
+.sound-presets .sheet-sub {
+  margin-bottom: 6px;
+}
+.sound-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.sound-preset {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-lo);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sound-preset[aria-pressed="true"] {
+  border-color: var(--select);
+  box-shadow: inset 0 0 0 1px var(--select);
+}
+.sound-preset-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+.sound-preset-pair {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 @media (min-width: 900px) {

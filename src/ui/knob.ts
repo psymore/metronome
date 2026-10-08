@@ -40,6 +40,24 @@ function themeMatchStops(el: Element): readonly [number, string][] {
   ];
 }
 
+/** The LCD face is a dark brushed-metal disc (same conic + machined-groove texture as the knob
+ *  body, just much darker) so the readout sits on metal rather than a flat black. */
+function lcdStops(el: Element): readonly [number, string][] {
+  const css = getComputedStyle(el);
+  const hi = css.getPropertyValue('--knob-lcd-hi').trim() || '#353837';
+  const mid = css.getPropertyValue('--knob-lcd-mid').trim() || '#1e2120';
+  const lo = css.getPropertyValue('--knob-lcd-lo').trim() || '#0b0d0c';
+  return [
+    [0.0, lo],
+    [0.18, hi],
+    [0.35, lo],
+    [0.52, mid],
+    [0.7, hi],
+    [0.88, lo],
+    [1.0, lo],
+  ];
+}
+
 export interface KnobDeps {
   store: Store<Settings>;
   isRunning: () => boolean;
@@ -197,6 +215,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
   let metalTexture: OffscreenCanvas | HTMLCanvasElement | null = null;
   let teethRing: OffscreenCanvas | HTMLCanvasElement | null = null;
+  let lcdTexture: OffscreenCanvas | HTMLCanvasElement | null = null;
   let sideWall: OffscreenCanvas | HTMLCanvasElement | null = null;
   let assetsFor = { radius: -1, tilted: false, themeName: '' };
 
@@ -246,6 +265,7 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     const stops = themeMatchStops(canvas);
     metalTexture = renderMetalTexture(g.innerRadius, dpr, stops, theme.light);
     teethRing = renderTeethRing(g.outerRadius, g.toothDepth, TOOTH_COUNT, dpr);
+    lcdTexture = renderMetalTexture(g.coreRadius, dpr, lcdStops(canvas), false);
     sideWall = g.tilted
       ? renderSideWall(g.outerRadius, g.thickness, g.perspectiveY, dpr, theme.light)
       : null;
@@ -360,6 +380,18 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     c2d.arc(0, 0, g.coreRadius, 0, Math.PI * 2);
     c2d.fillStyle = theme.face;
     c2d.fill();
+    if (lcdTexture) {
+      c2d.save();
+      c2d.clip();
+      c2d.drawImage(
+        lcdTexture,
+        -lcdTexture.width / (2 * dpr),
+        -lcdTexture.height / (2 * dpr),
+        lcdTexture.width / dpr,
+        lcdTexture.height / dpr,
+      );
+      c2d.restore();
+    }
 
     const flashLeft = Math.max(0, flashUntil - performance.now());
     const flashT = flashLeft / FLASH_MS; // 1 → just flashed, 0 → fully decayed
@@ -416,9 +448,9 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
 
     // "BPM" label — dim, no shadow.
     c2d.textBaseline = 'middle';
-    c2d.font = `${Math.round(g.coreRadius * 0.22)}px "Inter", system-ui, sans-serif`;
-    c2d.fillStyle = rgba(theme.brassRgb, 0.65);
-    c2d.fillText('BPM', 0, g.coreRadius * 0.08);
+    c2d.font = `700 ${Math.round(g.coreRadius * 0.22)}px "Inter", system-ui, sans-serif`;
+    c2d.fillStyle = rgba(theme.brassRgb, 0.75);
+    c2d.fillText('BPM', 0, g.coreRadius * 0.08 + 0.5);
 
     // Play / pause icon — centered below the label. Glows while running, same as the BPM
     // number above, so play state reads through the icon/text rather than the background.

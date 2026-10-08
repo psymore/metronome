@@ -656,7 +656,7 @@ function closeTitlePreview(): void {
   titlePreviewShowing = false;
   bootLoader.style.transition = 'none';
   setBootLoaderHidden(true);
-  bootLoader.classList.remove('boot-playing'); // back to the same at-rest state next time
+  setBootPlaying(false); // back to the same at-rest state next time, and the loop stopped
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       bootLoader.style.transition = '';
@@ -674,6 +674,16 @@ byId('titleBtn').addEventListener('click', () => {
     return;
   }
   titlePreviewShowing = true;
+  // Show the live knob (current theme, BPM and metal) rather than the static loading art.
+  const bootKnobImg = document.querySelector<HTMLImageElement>('.boot-knob img');
+  try {
+    if (bootKnobImg) {
+      bootKnobImg.src = knobEl.toDataURL();
+      bootKnobImg.classList.add('is-live');
+    }
+  } catch {
+    // Tainted or unavailable canvas: keep the static art.
+  }
   setBootLoaderHidden(false);
 });
 // The overlay covers the real title's own position while showing, so it needs its own handler
@@ -682,6 +692,52 @@ byId('bootTopbar').addEventListener('click', closeTitlePreview);
 
 // Tapping the boot-knob mirrors the real knob's tap-to-start/stop: the knob itself never
 // spins (see .boot-knob in index.html), only the beat circle does, and only while "playing."
+// While "playing" it also loops the 142 BPM easter-egg track (public/boot-loop.mp3, 16 bars),
+// fetched and decoded only on the first tap and played through its own throwaway AudioContext so
+// the metronome engine is never touched.
+let bootLoopCtx: AudioContext | null = null;
+let bootLoopSource: AudioBufferSourceNode | null = null;
+let bootLoopBuffer: Promise<AudioBuffer> | null = null;
+
+function stopBootLoop(): void {
+  try {
+    bootLoopSource?.stop();
+  } catch {
+    // Already stopped.
+  }
+  bootLoopSource = null;
+}
+
+async function startBootLoop(): Promise<void> {
+  try {
+    bootLoopCtx ??= new AudioContext();
+    const ctx = bootLoopCtx;
+    void ctx.resume();
+    bootLoopBuffer ??= fetch(`${import.meta.env.BASE_URL}boot-loop.mp3`)
+      .then((res) => res.arrayBuffer())
+      .then((bytes) => ctx.decodeAudioData(bytes));
+    const buffer = await bootLoopBuffer;
+    // Stopped (or the screen closed) while it was still loading.
+    if (!bootLoader?.classList.contains('boot-playing')) return;
+    stopBootLoop();
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(ctx.destination);
+    source.start();
+    bootLoopSource = source;
+  } catch {
+    // The loop is a bonus; the animation works without it. Retry the load on the next tap.
+    bootLoopBuffer = null;
+  }
+}
+
+function setBootPlaying(playing: boolean): void {
+  bootLoader?.classList.toggle('boot-playing', playing);
+  if (playing) void startBootLoop();
+  else stopBootLoop();
+}
+
 document.querySelector('.boot-knob')?.addEventListener('click', () => {
-  bootLoader?.classList.toggle('boot-playing');
+  setBootPlaying(!bootLoader?.classList.contains('boot-playing'));
 });

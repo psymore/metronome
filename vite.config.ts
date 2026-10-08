@@ -38,6 +38,15 @@ export default defineConfig({
         // kept here, so it works offline afterwards without a large first-visit download.
         runtimeCaching: [
           {
+            // The boot-screen easter-egg loop (about 270 KB): fetched the first time it is played.
+            urlPattern: /\/boot-loop\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'boot-loop',
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /\/sounds\/[^/]+\.wav$/,
             handler: 'CacheFirst',
             options: {

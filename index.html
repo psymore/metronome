@@ -82,7 +82,6 @@
       .boot-node {
         fill: #4fb894;
         filter: drop-shadow(0 0 6px #4fb894);
-        animation: bootThemeCycle 3.2s ease-in-out infinite;
       }
       /* Invisible spacer, not a visible box (no background/border): a structural mirror of the
          real .controls grid (3 columns — auto/1fr/auto, 64px side columns, 12px gap, 22px/18px
@@ -117,27 +116,30 @@
         width: min(228px, 55.2vw);
         max-width: 100%;
         aspect-ratio: 1;
-        border-radius: 50%;
-        border: 3px solid #4fb894;
-        box-shadow: 0 0 24px 4px #4fb894;
         cursor: pointer;
-        /* Only the color cycles here — the knob itself never spins, tapped or not. Tapping it
-           (see main.ts) starts the beat circle above spinning instead, mirroring the real
-           knob's own tap-to-start/stop. */
-        animation: bootThemeCycle 3.2s ease-in-out infinite;
       }
-      /* Static, like the real knob's own BPM tick at rest — not tied to any animation here
-         since the knob itself never rotates. */
-      .boot-knob::before {
-        content: "";
+      /* The app icon (bare knob + glow, see public/icon.svg) stands in for the knob. The knob
+         art fills about 80% of the SVG's square, so the image is scaled up to land on the real
+         knob's footprint; the glow is meant to bleed past the box.          tapping starts the beat pulse (see main.ts), at the icon's own 142 BPM. */
+      .boot-knob img {
         position: absolute;
-        top: 8%;
+        top: 50%;
         left: 50%;
-        width: 4px;
-        height: 14%;
-        background: #fff;
-        border-radius: 2px;
-        transform: translateX(-50%);
+        width: 117%;
+        height: 117%;
+        max-width: none;
+        transform: translate(-50%, -50%);
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      /* A snapshot of the real knob canvas (main.ts swaps it in when the screen is replayed), which
+         already fills its square, so it needs no upscaling. */
+      .boot-knob img.is-live {
+        width: 100%;
+        height: 100%;
+      }
+      #bootLoader.boot-playing .boot-knob img {
+        animation: bootKnobBeat 0.4225s ease-out infinite;
       }
       /* Invisible: stands in for the real dial-col's content below the knob (a gap, the
          tempo-marking label, another gap, the −/+ nudge buttons — 89px measured directly).
@@ -152,8 +154,7 @@
       /* opacity: 0 (see #bootLoader) doesn't stop a running CSS animation on its own — without
          this, the spin/color-cycle would keep ticking in the background for the entire life of
          the tab even while invisible. main.ts's setBootLoaderHidden() toggles this class. */
-      #bootLoader.is-hidden .boot-node,
-      #bootLoader.is-hidden .boot-knob {
+      #bootLoader.is-hidden .boot-knob img {
         animation-play-state: paused;
       }
       @keyframes bootSpin {
@@ -161,31 +162,9 @@
           transform: rotate(360deg);
         }
       }
-      @keyframes bootThemeCycle {
-        0%, 100% {
-          fill: #4fb894;
-          border-color: #4fb894;
-          box-shadow: 0 0 24px 4px #4fb894;
-          filter: drop-shadow(0 0 6px #4fb894);
-        }
-        25% {
-          fill: #d99a3f;
-          border-color: #d99a3f;
-          box-shadow: 0 0 24px 4px #d99a3f;
-          filter: drop-shadow(0 0 6px #d99a3f);
-        }
-        50% {
-          fill: #58a6ff;
-          border-color: #58a6ff;
-          box-shadow: 0 0 24px 4px #58a6ff;
-          filter: drop-shadow(0 0 6px #58a6ff);
-        }
-        75% {
-          fill: #b0b4bc;
-          border-color: #b0b4bc;
-          box-shadow: 0 0 24px 4px #b0b4bc;
-          filter: drop-shadow(0 0 6px #b0b4bc);
-        }
+      @keyframes bootKnobBeat {
+        from { transform: translate(-50%, -50%) scale(1.045); }
+        to { transform: translate(-50%, -50%) scale(1); }
       }
     </style>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -299,7 +278,7 @@
           </svg>
         </div>
         <div class="boot-panel-space">
-          <div class="boot-knob"></div>
+          <div class="boot-knob"><img src="/boot-knob.svg" alt="" draggable="false" /></div>
           <div class="boot-knob-footer"></div>
         </div>
       </div>
@@ -686,6 +665,11 @@
           <span data-i18n="beatLevel.mute">mute</span>
         </button>
       </div>
+      <section class="sound-presets" aria-labelledby="soundPresetsTitle">
+        <h3 id="soundPresetsTitle" class="sheet-sub" data-i18n="soundPreset.title">Sound presets</h3>
+        <p class="sub-label" data-i18n="soundPreset.hint">Accent / other beats — choose a pair, or pick each sound below.</p>
+        <div id="soundPresets" class="sound-preset-grid"></div>
+      </section>
       <div class="slot sound-level-card sound-level-card--accent-medium">
         <div class="sound-level-card-header">
           <label class="sound-slot-label" for="accentSelectTrigger">
@@ -763,7 +747,7 @@
         <h2 id="soundPickerTitle" data-i18n="soundDialog.title">Sounds</h2>
         <button type="submit" class="icon-btn" data-i18n-aria-label="close.ariaLabel" aria-label="Close">✕</button>
       </form>
-      <div id="soundPickerList" class="sound-picker-list" role="listbox"></div>
+      <div id="soundPickerList" class="sound-picker-list" role="group" aria-labelledby="soundPickerTitle"></div>
     </dialog>
   </body>
 </html>

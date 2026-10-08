@@ -1,8 +1,10 @@
 import type { AudioEngine } from '../engine/audioEngine';
 import { format, t } from '../i18n/i18n';
 import { importSoundFile } from '../sounds/importSound';
+import { SOUND_PRESETS } from '../sounds/presets';
 import type { SoundLibrary } from '../sounds/soundLibrary';
 import type { SoundMeta, SoundStore } from '../sounds/soundStore';
+import { BUILTIN_SOUNDS } from '../sounds/synth';
 import { type BeatLevel, DEFAULT_SETTINGS, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
@@ -45,11 +47,13 @@ export function mountSoundDialog({
     selects.accentSoundId,
     byId<HTMLButtonElement>('accentSelectTrigger'),
     'accent.label',
+    previewSound,
   );
   mountSoundPicker(
     selects.normalSoundId,
     byId<HTMLButtonElement>('normalSelectTrigger'),
     'otherBeats.label',
+    previewSound,
   );
   const accentGainInput = byId<HTMLInputElement>('accentGainInput');
   const accentGainValue = byId<HTMLInputElement>('accentGainValue');
@@ -61,6 +65,37 @@ export function mountSoundDialog({
   const dropZone = byId('dropZone');
   const list = byId('userSounds');
   let userSounds: SoundMeta[] = [];
+
+  const presetButtons = SOUND_PRESETS.map((preset) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sound-preset';
+    const name = document.createElement('span');
+    name.className = 'sound-preset-name';
+    name.dataset.i18n = `soundPreset.${preset.id}`;
+    name.textContent = t(name.dataset.i18n);
+    const pair = document.createElement('span');
+    pair.className = 'sound-preset-pair';
+    pair.textContent = `${BUILTIN_SOUNDS[preset.accentSoundId]?.name} / ${BUILTIN_SOUNDS[preset.normalSoundId]?.name}`;
+    button.append(name, pair);
+    button.addEventListener('click', () => {
+      store.set({ accentSoundId: preset.accentSoundId, normalSoundId: preset.normalSoundId });
+    });
+    return { button, preset };
+  });
+  byId('soundPresets').replaceChildren(...presetButtons.map(({ button }) => button));
+
+  function renderPresets(s: Settings): void {
+    for (const { button, preset } of presetButtons) {
+      button.setAttribute(
+        'aria-pressed',
+        String(
+          s.accentSoundId === preset.accentSoundId && s.normalSoundId === preset.normalSoundId,
+        ),
+      );
+    }
+  }
+  renderPresets(store.get());
 
   async function refresh(): Promise<void> {
     try {
@@ -163,6 +198,7 @@ export function mountSoundDialog({
     fillSelect(selects.normalSoundId, s.normalSoundId);
     renderGains(s);
     renderList();
+    renderPresets(s);
   }
 
   function renderSoundLevelIcon(
