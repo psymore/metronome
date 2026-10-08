@@ -11,6 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: false,
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
+      // The 192/512 icons are knob-only on transparent: Chrome centres one of these on the
+      // background_color for the installed-PWA splash, and a full-bleed tile shows as a box.
       manifest: {
         name: 'Metronome',
         short_name: 'Metronome',
@@ -20,8 +22,8 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'splash-icon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'splash-icon-512x512.png', sizes: '512x512', type: 'image/png' },
           {
             src: 'maskable-icon-512x512.png',
             sizes: '512x512',
