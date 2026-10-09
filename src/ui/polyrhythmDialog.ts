@@ -1,27 +1,17 @@
-import { t } from '../i18n/i18n';
-import type { SoundStore } from '../sounds/soundStore';
 import { clampPolyCount, type Settings } from '../state/settings';
 import type { Store } from '../state/store';
-import { builtinOptionGroups } from './builtinOptions';
 import { byId } from './dom';
 import { mountHoldRepeat } from './holdRepeat';
 import { mountIntegerInput } from './numericInput';
-import { mountSoundPicker } from './soundPicker';
-import type { PreviewSound } from './soundPreview';
 
 export interface PolyrhythmControlsDeps {
   store: Store<Settings>;
-  sounds: SoundStore;
-  previewSound: PreviewSound;
 }
 
 /** Lives inside the existing #signatureDialog sheet (see signatureDialog.ts) — a separate
- *  module purely to keep each file focused on one concern within the shared dialog. */
-export function mountPolyrhythmControls({
-  store,
-  sounds,
-  previewSound,
-}: PolyrhythmControlsDeps): void {
+ *  module purely to keep each file focused on one concern within the shared dialog. The layer
+ *  sounds are picked in the Sound dialog (see soundDialog.ts), like every other sound. */
+export function mountPolyrhythmControls({ store }: PolyrhythmControlsDeps): void {
   const modeButtons = Array.from(
     document.querySelectorAll<HTMLButtonElement>('#signatureDialog [data-sig-mode]'),
   );
@@ -31,20 +21,6 @@ export function mountPolyrhythmControls({
   const polyBlock = byId('polyBlock');
   const aValue = byId<HTMLInputElement>('polyAValue');
   const bValue = byId<HTMLInputElement>('polyBValue');
-  const soundASelect = byId<HTMLSelectElement>('polySoundA');
-  const soundBSelect = byId<HTMLSelectElement>('polySoundB');
-  mountSoundPicker(
-    soundASelect,
-    byId<HTMLButtonElement>('polySoundATrigger'),
-    'sigDialog.polyLayerA',
-    previewSound,
-  );
-  mountSoundPicker(
-    soundBSelect,
-    byId<HTMLButtonElement>('polySoundBTrigger'),
-    'sigDialog.polyLayerB',
-    previewSound,
-  );
 
   const setMode = (enabled: boolean) =>
     store.set({ polyrhythm: { ...store.get().polyrhythm, enabled } });
@@ -63,49 +39,6 @@ export function mountPolyrhythmControls({
   mountIntegerInput(aValue, setA);
   mountIntegerInput(bValue, setB);
 
-  async function fillSoundSelect(select: HTMLSelectElement, current: string): Promise<void> {
-    const groups: HTMLElement[] = builtinOptionGroups();
-    try {
-      const userSounds = await sounds.list();
-      if (userSounds.length > 0) {
-        const mine = document.createElement('optgroup');
-        mine.label = t('soundGroup.yours');
-        for (const sound of userSounds) mine.append(new Option(sound.name, sound.id));
-        groups.push(mine);
-      }
-    } catch {
-      // User sound list unavailable (private window, etc.) — builtin sounds still work.
-    }
-    select.replaceChildren(...groups);
-    select.value = current;
-  }
-
-  soundASelect.addEventListener('change', () =>
-    store.set({ polyrhythm: { ...store.get().polyrhythm, soundIdA: soundASelect.value } }),
-  );
-  soundBSelect.addEventListener('change', () =>
-    store.set({ polyrhythm: { ...store.get().polyrhythm, soundIdB: soundBSelect.value } }),
-  );
-  byId('polyPreviewA').addEventListener(
-    'click',
-    () => void previewSound(store.get().polyrhythm.soundIdA),
-  );
-  byId('polyPreviewB').addEventListener(
-    'click',
-    () => void previewSound(store.get().polyrhythm.soundIdB),
-  );
-
-  const refreshSoundSelects = async (): Promise<void> => {
-    await Promise.all([
-      fillSoundSelect(soundASelect, store.get().polyrhythm.soundIdA),
-      fillSoundSelect(soundBSelect, store.get().polyrhythm.soundIdB),
-    ]);
-  };
-
-  // A sound may have been uploaded or deleted (via the Sound dialog) since these selects were
-  // last populated — re-list on every open so the options stay current, same as soundDialog.ts.
-  byId('signatureBtn').addEventListener('click', () => void refreshSoundSelects());
-
   const render = (s: Settings) => {
     const enabled = s.polyrhythm.enabled;
     for (const button of modeButtons) {
@@ -116,11 +49,8 @@ export function mountPolyrhythmControls({
     for (const block of standardBlocks) block.hidden = enabled;
     aValue.value = String(s.polyrhythm.a);
     bValue.value = String(s.polyrhythm.b);
-    if (soundASelect.value !== s.polyrhythm.soundIdA) soundASelect.value = s.polyrhythm.soundIdA;
-    if (soundBSelect.value !== s.polyrhythm.soundIdB) soundBSelect.value = s.polyrhythm.soundIdB;
   };
 
-  void refreshSoundSelects().then(() => render(store.get()));
   render(store.get());
   store.subscribe(render);
 }

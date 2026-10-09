@@ -9,8 +9,6 @@ const ICONS: Record<string, string> = {
   woodblock: '<rect x="2.5" y="5" width="11" height="6" rx="1.5"/><path d="M5.5 8h5"/>',
   // Clock face with hands.
   clock: '<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.2l2 1.3"/>',
-  // Lightning bolt for sci-fi lasers and impacts.
-  scifi: '<path d="M9.5 2L4.5 9h3.5l-1 5L11.5 7H8z"/>',
   // Bass drum: a shell with a head on top.
   drums:
     '<ellipse cx="8" cy="5" rx="5.5" ry="2"/><path d="M2.5 5v5.5c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2V5"/>',

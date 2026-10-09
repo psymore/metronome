@@ -5,18 +5,25 @@ import { SOUND_PRESETS } from '../sounds/presets';
 import type { SoundLibrary } from '../sounds/soundLibrary';
 import type { SoundMeta, SoundStore } from '../sounds/soundStore';
 import { BUILTIN_SOUNDS } from '../sounds/synth';
-import { type BeatLevel, DEFAULT_SETTINGS, type Settings } from '../state/settings';
+import {
+  type BeatLevel,
+  DEFAULT_SETTINGS,
+  MAX_CUSTOM_PRESETS,
+  MAX_PRESET_NAME_LENGTH,
+  type Settings,
+} from '../state/settings';
 import type { Store } from '../state/store';
 import { drawNode } from '../viz/drawNode';
 import { readTheme } from '../viz/vizController';
 import { builtinOptionGroups } from './builtinOptions';
 import { byId, closeOnBackdropClick, updateRangeFill } from './dom';
 import { mountIntegerInput } from './numericInput';
-import { mountSoundPicker } from './soundPicker';
+import { mountSoundPicker, openChoicePicker } from './soundPicker';
 import type { PreviewSound } from './soundPreview';
 import type { Toast } from './toast';
 
 type SlotKey = 'accentSoundId' | 'normalSoundId';
+type PolySlotKey = 'soundIdA' | 'soundIdB';
 
 export interface SoundDialogDeps {
   store: Store<Settings>;
@@ -55,6 +62,27 @@ export function mountSoundDialog({
     'otherBeats.label',
     previewSound,
   );
+  // Polyrhythm plays only its two layer sounds, so in that mode these replace the accent/other
+  // slots (and the per-level volumes, which polyrhythm does not use).
+  const polySelects: Record<PolySlotKey, HTMLSelectElement> = {
+    soundIdA: byId<HTMLSelectElement>('polySoundA'),
+    soundIdB: byId<HTMLSelectElement>('polySoundB'),
+  };
+  mountSoundPicker(
+    polySelects.soundIdA,
+    byId<HTMLButtonElement>('polySoundATrigger'),
+    'sigDialog.polyLayerA',
+    previewSound,
+  );
+  mountSoundPicker(
+    polySelects.soundIdB,
+    byId<HTMLButtonElement>('polySoundBTrigger'),
+    'sigDialog.polyLayerB',
+    previewSound,
+  );
+  const standardParts = Array.from(dialog.querySelectorAll<HTMLElement>('[data-standard-sound]'));
+  const polyParts = Array.from(dialog.querySelectorAll<HTMLElement>('[data-poly-sound]'));
+  const presetHint = byId('soundPresetHint');
   const accentGainInput = byId<HTMLInputElement>('accentGainInput');
   const accentGainValue = byId<HTMLInputElement>('accentGainValue');
   const mediumGainInput = byId<HTMLInputElement>('mediumGainInput');
@@ -66,34 +94,128 @@ export function mountSoundDialog({
   const list = byId('userSounds');
   let userSounds: SoundMeta[] = [];
 
-  const presetButtons = SOUND_PRESETS.map((preset) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'sound-preset';
-    const name = document.createElement('span');
-    name.className = 'sound-preset-name';
-    name.dataset.i18n = `soundPreset.${preset.id}`;
-    name.textContent = t(name.dataset.i18n);
-    const pair = document.createElement('span');
-    pair.className = 'sound-preset-pair';
-    pair.textContent = `${BUILTIN_SOUNDS[preset.accentSoundId]?.name} / ${BUILTIN_SOUNDS[preset.normalSoundId]?.name}`;
-    button.append(name, pair);
-    button.addEventListener('click', () => {
+  // Presets: a dropdown (the shared picker popover) instead of a wall of cards. In polyrhythm
+  // mode a pair fills Layer A (accent sound) and Layer B (other-beats sound).
+  const presetTrigger = byId<HTMLButtonElement>('soundPresetTrigger');
+  const pairOf = (s: Settings): [string, string] =>
+    s.polyrhythm.enabled
+      ? [s.polyrhythm.soundIdA, s.polyrhythm.soundIdB]
+      : [s.accentSoundId, s.normalSoundId];
+  /** The built-in or saved preset matching the current pair, if any (built-ins first). */
+  const currentPreset = (s: Settings): { name: string; id: string } | undefined => {
+    const [first, second] = pairOf(s);
+    const matches = (p: { accentSoundId: string; normalSoundId: string }) =>
+      p.accentSoundId === first && p.normalSoundId === second;
+    const builtin = SOUND_PRESETS.find(matches);
+    if (builtin) return { id: builtin.id, name: t(`soundPreset.${builtin.id}`) };
+    const custom = s.customPresets.find(matches);
+    return custom && { id: custom.id, name: custom.name };
+  };
+  const soundName = (id: string): string =>
+    BUILTIN_SOUNDS[id]?.name ?? userSounds.find((u) => u.id === id)?.name ?? '?';
+  function applyPreset(preset: { accentSoundId: string; normalSoundId: string }): void {
+    const s = store.get();
+    if (s.polyrhythm.enabled) {
+      store.set({
+        polyrhythm: {
+          ...s.polyrhythm,
+          soundIdA: preset.accentSoundId,
+          soundIdB: preset.normalSoundId,
+        },
+      });
+    } else {
       store.set({ accentSoundId: preset.accentSoundId, normalSoundId: preset.normalSoundId });
-    });
-    return { button, preset };
+    }
+  }
+  const presetChoice = (
+    preset: { accentSoundId: string; normalSoundId: string },
+    id: string,
+    name: string,
+    selectedId: string | undefined,
+  ) => ({
+    name,
+    detail: `${soundName(preset.accentSoundId)} / ${soundName(preset.normalSoundId)}`,
+    selected: id === selectedId,
+    choose: () => applyPreset(preset),
+    // The pair as it would sound: the accent, then the other beat.
+    preview: async () => {
+      await previewSound(preset.accentSoundId);
+      await new Promise((resolve) => setTimeout(resolve, 380));
+      await previewSound(preset.normalSoundId);
+    },
   });
-  byId('soundPresets').replaceChildren(...presetButtons.map(({ button }) => button));
+
+  /** "Save current sounds": a name field and Save button under the list. */
+  function presetSaveForm(): HTMLElement {
+    const s = store.get();
+    const form = document.createElement('form');
+    form.className = 'preset-save';
+    const heading = document.createElement('div');
+    heading.className = 'sound-picker-heading';
+    heading.textContent = t('soundPreset.saveTitle');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'preset-save-input';
+    input.maxLength = MAX_PRESET_NAME_LENGTH;
+    input.enterKeyHint = 'done';
+    input.placeholder = format('soundPreset.defaultName', { n: s.customPresets.length + 1 });
+    input.setAttribute('aria-label', t('soundPreset.nameLabel'));
+    const save = document.createElement('button');
+    save.type = 'submit';
+    save.className = 'small-btn';
+    save.textContent = t('soundPreset.save');
+    const full = s.customPresets.length >= MAX_CUSTOM_PRESETS;
+    input.disabled = full;
+    save.disabled = full;
+    form.append(heading, input, save);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const current = store.get();
+      if (current.customPresets.length >= MAX_CUSTOM_PRESETS) return;
+      const [accentSoundId, normalSoundId] = pairOf(current);
+      const name = input.value.trim().slice(0, MAX_PRESET_NAME_LENGTH) || input.placeholder;
+      const id = `custom:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+      store.set({
+        customPresets: [...current.customPresets, { id, name, accentSoundId, normalSoundId }],
+      });
+      openPresetPicker();
+    });
+    return form;
+  }
+
+  function openPresetPicker(): void {
+    const s = store.get();
+    const selectedId = currentPreset(s)?.id;
+    const yours = t('soundPreset.yours');
+    openChoicePicker(
+      t('soundPreset.title'),
+      [
+        ...SOUND_PRESETS.map((preset) =>
+          presetChoice(preset, preset.id, t(`soundPreset.${preset.id}`), selectedId),
+        ),
+        ...s.customPresets.map((preset) => ({
+          ...presetChoice(preset, preset.id, preset.name, selectedId),
+          heading: yours,
+          removeLabel: format('sound.deleteNamed', { name: preset.name }),
+          remove: () => {
+            store.set({
+              customPresets: store.get().customPresets.filter((p) => p.id !== preset.id),
+            });
+            openPresetPicker();
+          },
+        })),
+      ],
+      presetSaveForm(),
+    );
+  }
+  presetTrigger.addEventListener('click', openPresetPicker);
 
   function renderPresets(s: Settings): void {
-    for (const { button, preset } of presetButtons) {
-      button.setAttribute(
-        'aria-pressed',
-        String(
-          s.accentSoundId === preset.accentSoundId && s.normalSoundId === preset.normalSoundId,
-        ),
-      );
-    }
+    const preset = currentPreset(s);
+    const label = presetTrigger.querySelector<HTMLElement>('.sound-trigger-value');
+    if (label) label.textContent = preset?.name ?? t('soundPreset.custom');
+    presetHint.dataset.i18n = s.polyrhythm.enabled ? 'soundPreset.hintPoly' : 'soundPreset.hint';
+    presetHint.textContent = t(presetHint.dataset.i18n);
   }
   renderPresets(store.get());
 
@@ -194,8 +316,13 @@ export function mountSoundDialog({
   }
 
   function render(s: Settings): void {
+    const poly = s.polyrhythm.enabled;
+    for (const part of standardParts) part.hidden = poly;
+    for (const part of polyParts) part.hidden = !poly;
     fillSelect(selects.accentSoundId, s.accentSoundId);
     fillSelect(selects.normalSoundId, s.normalSoundId);
+    fillSelect(polySelects.soundIdA, s.polyrhythm.soundIdA);
+    fillSelect(polySelects.soundIdB, s.polyrhythm.soundIdB);
     renderGains(s);
     renderList();
     renderPresets(s);
@@ -301,6 +428,15 @@ export function mountSoundDialog({
     const patch: Partial<Settings> = {};
     if (current.accentSoundId === sound.id) patch.accentSoundId = DEFAULT_SETTINGS.accentSoundId;
     if (current.normalSoundId === sound.id) patch.normalSoundId = DEFAULT_SETTINGS.normalSoundId;
+    const { polyrhythm } = current;
+    if (polyrhythm.soundIdA === sound.id || polyrhythm.soundIdB === sound.id) {
+      const d = DEFAULT_SETTINGS.polyrhythm;
+      patch.polyrhythm = {
+        ...polyrhythm,
+        soundIdA: polyrhythm.soundIdA === sound.id ? d.soundIdA : polyrhythm.soundIdA,
+        soundIdB: polyrhythm.soundIdB === sound.id ? d.soundIdB : polyrhythm.soundIdB,
+      };
+    }
     if (Object.keys(patch).length > 0) store.set(patch);
     await refresh();
   }
@@ -331,6 +467,19 @@ export function mountSoundDialog({
       store.set({ [key]: selects[key].value } as Partial<Settings>);
     });
   }
+  for (const key of Object.keys(polySelects) as PolySlotKey[]) {
+    polySelects[key].addEventListener('change', () => {
+      store.set({ polyrhythm: { ...store.get().polyrhythm, [key]: polySelects[key].value } });
+    });
+  }
+  byId('polyPreviewA').addEventListener(
+    'click',
+    () => void previewSound(store.get().polyrhythm.soundIdA),
+  );
+  byId('polyPreviewB').addEventListener(
+    'click',
+    () => void previewSound(store.get().polyrhythm.soundIdB),
+  );
 
   /** Wires a 0-100% range+number pair to one gain field, same pattern as the Volume slider
    *  above and Visual sync offset in the side menu. */
@@ -354,6 +503,20 @@ export function mountSoundDialog({
       { min: 0, max: 100, maxDigits: 3 },
     );
   }
+  // ↺ next to each volume puts it back to its default; dimmed while it already is.
+  type GainKey = 'volume' | 'accentGain' | 'mediumGain' | 'normalGain';
+  const resetButtons = Array.from(
+    dialog.querySelectorAll<HTMLButtonElement>('[data-reset-gain]'),
+  ).map((button) => ({ button, key: button.dataset.resetGain as GainKey }));
+  for (const { button, key } of resetButtons) {
+    button.addEventListener('click', () => store.set({ [key]: DEFAULT_SETTINGS[key] }));
+  }
+  const renderResetButtons = (s: Settings): void => {
+    for (const { button, key } of resetButtons) button.disabled = s[key] === DEFAULT_SETTINGS[key];
+  };
+  renderResetButtons(store.get());
+  store.subscribe(renderResetButtons);
+
   mountGainSlider(accentGainInput, accentGainValue, 'accentGain');
   mountGainSlider(mediumGainInput, mediumGainValue, 'mediumGain');
   mountGainSlider(normalGainInput, normalGainValue, 'normalGain');
@@ -443,7 +606,15 @@ export function mountSoundDialog({
       renderSoundLevelIcons(s);
     }
     if (s.volume !== prev.volume) renderSilentBadges(s);
-    if (s.accentSoundId !== prev.accentSoundId || s.normalSoundId !== prev.normalSoundId) render(s);
+    if (
+      s.accentSoundId !== prev.accentSoundId ||
+      s.normalSoundId !== prev.normalSoundId ||
+      s.polyrhythm.enabled !== prev.polyrhythm.enabled ||
+      s.polyrhythm.soundIdA !== prev.polyrhythm.soundIdA ||
+      s.polyrhythm.soundIdB !== prev.polyrhythm.soundIdB ||
+      s.customPresets !== prev.customPresets
+    )
+      render(s);
     else if (
       s.accentGain !== prev.accentGain ||
       s.mediumGain !== prev.mediumGain ||

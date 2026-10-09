@@ -3,19 +3,31 @@
 If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step"
 immediately.
 
-## Where things stand (2026-10-08, evening)
+## Where things stand (2026-10-09, afternoon)
 
-Everything is **committed** on `master`, nothing is pushed yet, and the working tree is clean:
+`master` is at `dba0329`, nothing pushed. **Uncommitted work in the tree** (awaiting the user's
+phone check, then a commit — ask first):
 
-- `472b10f` Icon: metal play triangle, black launcher backing, brighter launcher knob.
-- `527298d` Sound previews and presets, boot-screen knob with a 142 BPM loop, metal LCD face
-  (sound picker play buttons, six presets in `src/sounds/presets.ts`, the boot-screen loop
-  `public/boot-loop.mp3`, dark brushed-metal LCD on the in-app knob). `npm run build` passed
-  before the commit; the sound previews still await the user's phone review.
+- **Boot screen** (`index.html`, `public/boot-knob.svg`, `src/main.ts`): only the knob, centred and
+  slowly spinning as the loading indicator, blank dark brushed-metal LCD matching the in-app knob
+  (regenerated from `knob.ts` lcdStops), four-colour box-shadow (teal left, light-theme orange
+  `#ee9448` right, chrome bottom-left, blue bottom-right). No fade; no live-knob snapshot. Tapping
+  the knob plays the 142 BPM loop and shows the spinning ring around it; tapping outside closes
+  the title-button preview.
+- **Audio start hang** (`audioEngine.ts`, `transport.ts`): suspend only 45 s after stop; silent
+  unlock `play()` not awaited; `ensureRunning()` retries on a fresh AudioContext after a 1.5 s
+  stuck resume. Blinking knob + toast removed; a real failure shows index.html's reload screen
+  (`window.showReloadScreen`). Boot-loop context is suspended when the loop stops.
+- **Sounds**: 5 new presets (Claves, Log drum, Cowbell, Drum kit, Digital). Sci-fi group removed:
+  lasers/phaser deleted, Metal Impact 1–3 → drums, Tone → built-in, stale built-in ids fall back
+  to defaults in `sanitizeSettings`.
+- **Polyrhythm**: coincident layer hits are scaled so the pair peaks like one click (fixes downbeat
+  distortion; `PolyBeatEvent.otherIndex`), poly gains lowered to 0.8/0.88/1.08. Layer A/B sound
+  pickers moved from the Signature dialog to the Sound dialog (which hides the accent/other
+  cards and level volumes in poly mode; presets fill A/B). The top-right Polyrhythm tag is a
+  button (opens Signature) with a ✕ back to standard mode.
 
-Cleanup on 2026-10-08: removed root-level screenshots, `.playwright-mcp/`, the 2026-09-29 release
-APKs in `android/` (outputs of the documented release steps), `cloud-patches/` (every patch was
-already in history) and `.superpowers/`. Kept `.env.local`, `.vercel/` and build outputs.
+All 275 tests pass; type-check and lint are clean.
 
 ### App icon: what shipped in the commit
 
@@ -57,9 +69,8 @@ Test phone: Redmi Note 10 Pro (M2101K6G), MIUI 14 `V14.0.2.0.TKFTRXM`, Android 1
 - **Phone check of the light theme beats** (ink ladder, hit lift).
 - **Phone checks:** +/- long-press, signature wheel scrolling, Save/Cancel; 320/360px widths.
 - **Timer/loop overlap** on narrow phones: ask whether both may be active.
-- **Stale tests and lint:** five failures in `tests/state/barCounter.test.ts` and
-  `tests/i18n/i18n.test.ts`, plus lint errors in `index.html`, `public/icon.svg`,
-  `tests/viz/polyrhythm.test.ts`. CI is red; Pages deployment only builds.
+- **Tests and lint are green again** (275 tests, `npm run lint` clean as of 2026-10-09); CI
+  should pass once this work is pushed.
 - **Android Play Store:** Play Console setup, AAB build/signing, closed testing, production per
   `docs/superpowers/plans/2026-09-24-mobile-performance-and-play-store-v2.md`. The new icon needs a
   new Play release; signing needs the user's permission to read the keystore password file.
@@ -76,6 +87,7 @@ Test phone: Redmi Note 10 Pro (M2101K6G), MIUI 14 `V14.0.2.0.TKFTRXM`, Android 1
 
 ## Next step
 
-1. Push when the user asks (build first, per their rule).
-2. Sound-preview phone review; fix whatever the user reports.
-3. Remaining open items above as directed.
+1. User checks the uncommitted work above on the phone; fix what they report, then commit (ask).
+2. Push when the user asks (build first, per their rule).
+3. The beat ring on the boot screen will be redesigned ("orayı başka türlü değiştireceğiz").
+4. Remaining open items above as directed.

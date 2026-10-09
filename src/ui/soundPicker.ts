@@ -1,5 +1,6 @@
 import { format, t } from '../i18n/i18n';
 import { isSoundLoading, subscribeSoundLoading } from '../sounds/loadingStatus';
+import { mountDeleteConfirm } from './deleteConfirm';
 import { byId, closeOnBackdropClick } from './dom';
 import { groupIconMarkup } from './groupIcons';
 import type { PreviewSound } from './soundPreview';
@@ -177,6 +178,106 @@ function buildRows(
 function updateTriggerLabel(select: HTMLSelectElement, trigger: HTMLButtonElement): void {
   const label = trigger.querySelector<HTMLElement>('.sound-trigger-value');
   if (label) label.textContent = select.selectedOptions[0]?.textContent ?? '';
+}
+
+export interface PickerChoice {
+  name: string;
+  /** Secondary line under the name (e.g. a preset's sound pair). */
+  detail?: string;
+  selected: boolean;
+  choose: () => void;
+  preview: () => Promise<void>;
+  /** Shows a trash button that deletes the choice after the ✕/✓ confirm (labelled with
+   *  `removeLabel`), the same one the practice timer and loop pill use. */
+  remove?: () => void;
+  removeLabel?: string;
+  /** A heading is inserted wherever this changes from the previous choice's. */
+  heading?: string;
+}
+
+/** Opens the shared picker popover with a flat list of arbitrary choices, each with a preview
+ *  button, in the same look as the sound lists, plus an optional footer. Calling it again while
+ *  it is open rebuilds the list in place. */
+export function openChoicePicker(
+  title: string,
+  choices: PickerChoice[],
+  footer?: HTMLElement,
+): void {
+  const state = getShared();
+  state.activeSelect = null;
+  state.title.textContent = title;
+  const items: HTMLElement[] = [];
+  let heading: string | undefined;
+  for (const choice of choices) {
+    if (choice.heading !== heading) {
+      heading = choice.heading;
+      if (heading) {
+        const h = document.createElement('div');
+        h.className = 'sound-picker-heading';
+        h.textContent = heading;
+        items.push(h);
+      }
+    }
+    items.push(choiceRow(state, choice));
+  }
+  const list = document.createElement('div');
+  list.className = 'sound-picker-flat';
+  list.append(...items);
+  state.list.replaceChildren(list, ...(footer ? [footer] : []));
+  if (!state.dialog.open) state.dialog.showModal();
+}
+
+function choiceRow(state: PickerState, choice: PickerChoice): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'sound-picker-row';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'sound-picker-choice';
+  button.setAttribute('aria-pressed', String(choice.selected));
+  const radio = document.createElement('span');
+  radio.className = 'sound-picker-radio';
+  const text = document.createElement('span');
+  text.className = 'sound-picker-text';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'sound-picker-name';
+  nameEl.textContent = choice.name;
+  text.append(nameEl);
+  if (choice.detail) {
+    const detail = document.createElement('span');
+    detail.className = 'sound-picker-detail';
+    detail.textContent = choice.detail;
+    text.append(detail);
+  }
+  button.append(radio, text);
+  button.addEventListener('click', () => {
+    choice.choose();
+    state.dialog.close();
+  });
+  const preview = document.createElement('button');
+  preview.type = 'button';
+  preview.className = 'small-btn sound-preview-btn';
+  preview.textContent = '▶';
+  preview.setAttribute('aria-label', format('sound.previewNamed', { name: choice.name }));
+  preview.addEventListener('click', async () => {
+    preview.disabled = true;
+    try {
+      await choice.preview();
+    } finally {
+      preview.disabled = false;
+    }
+  });
+  row.append(button, preview);
+  if (choice.remove) {
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'practice-icon-btn is-small';
+    remove.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    remove.setAttribute('aria-label', choice.removeLabel ?? '');
+    mountDeleteConfirm(remove, choice.remove);
+    row.append(remove);
+  }
+  return row;
 }
 
 /**

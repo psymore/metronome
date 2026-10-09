@@ -13,6 +13,14 @@ export interface PolyBeatEvent {
   n: number;
   /** 0-based count of cycles since start. */
   cycleIndex: number;
+  /** Index of the other layer's event that sounds at exactly the same time (always on the
+   *  downbeat, plus wherever the ratio shares a factor), or undefined if this one sounds alone. */
+  otherIndex?: number;
+}
+
+/** The other layer's index at the same point of the cycle, if `index / n` lands on its grid. */
+function coincidentIndex(index: number, n: number, otherN: number): number | undefined {
+  return (index * otherN) % n === 0 ? (index * otherN) / n : undefined;
 }
 
 export interface PolyPattern {
@@ -145,6 +153,7 @@ export class PolyScheduler {
           index: this.nextIndexA,
           n: a,
           cycleIndex: this.cycleIndex,
+          otherIndex: coincidentIndex(this.nextIndexA, a, b),
         });
         this.nextIndexA++;
       } else {
@@ -155,6 +164,7 @@ export class PolyScheduler {
           index: this.nextIndexB,
           n: b,
           cycleIndex: this.cycleIndex,
+          otherIndex: coincidentIndex(this.nextIndexB, b, a),
         });
         this.nextIndexB++;
       }

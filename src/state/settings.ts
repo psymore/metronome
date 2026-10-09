@@ -1,5 +1,6 @@
 import type { Pattern } from '../engine/scheduler';
 import { clampBpm } from '../engine/timing';
+import { BUILTIN_SOUNDS } from '../sounds/synth';
 
 export type BeatLevel = 'accent' | 'medium' | 'normal' | 'mute';
 export type VisualizerKind = 'circular' | 'linear';
@@ -26,6 +27,16 @@ export const SETTINGS_KEY = 'metronome.settings.v1';
 export const LOOP_COUNTS = [1, 2, 4, 8, 0] as const;
 export type LoopCount = (typeof LOOP_COUNTS)[number];
 
+/** A sound pair the user saved from the Sound dialog's preset list. */
+export interface CustomPreset {
+  id: string;
+  name: string;
+  accentSoundId: string;
+  normalSoundId: string;
+}
+export const MAX_CUSTOM_PRESETS = 20;
+export const MAX_PRESET_NAME_LENGTH = 32;
+
 export interface Settings {
   bpm: number;
   beatsPerBar: number;
@@ -42,6 +53,8 @@ export interface Settings {
   normalGain: number;
   accentSoundId: string;
   normalSoundId: string;
+  /** User-saved accent/other pairs, listed after the built-in presets. */
+  customPresets: CustomPreset[];
   theme: ThemeName;
   nodeStyle: NodeStyleName;
   /** Whether tapping a beat node directly on the circular/linear visualizer cycles its level. */
@@ -90,6 +103,7 @@ export const DEFAULT_SETTINGS: Settings = {
   normalGain: 1,
   accentSoundId: 'builtin:click-high',
   normalSoundId: 'builtin:click',
+  customPresets: [],
   theme: 'teal',
   nodeStyle: 'classic',
   beatsClickable: true,
@@ -132,7 +146,12 @@ export function nodeStyleForTheme(theme: ThemeName, style: NodeStyleName): NodeS
 }
 
 export function defaultSettings(): Settings {
-  return { ...DEFAULT_SETTINGS, levels: [...DEFAULT_SETTINGS.levels], subOff: [] };
+  return {
+    ...DEFAULT_SETTINGS,
+    levels: [...DEFAULT_SETTINGS.levels],
+    subOff: [],
+    customPresets: [],
+  };
 }
 
 export function isBeatLevel(v: unknown): v is BeatLevel {
@@ -316,8 +335,38 @@ function clampNumber(v: unknown, fallback: number, min: number, max: number): nu
   return typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
 }
 
+/** Built-in ids must still exist (sounds get retired, e.g. the old sci-fi lasers): a stale one
+ *  falls back to the default instead of failing to load on every start. */
 function isSoundId(v: unknown): v is string {
-  return typeof v === 'string' && v.length > 0 && v.length < 200;
+  if (typeof v !== 'string' || v.length === 0 || v.length >= 200) return false;
+  return !v.startsWith('builtin:') || Object.hasOwn(BUILTIN_SOUNDS, v);
+}
+
+function sanitizeCustomPresets(v: unknown): CustomPreset[] {
+  if (!Array.isArray(v)) return [];
+  const presets: CustomPreset[] = [];
+  for (const item of v) {
+    if (typeof item !== 'object' || item === null) continue;
+    const p = item as Record<string, unknown>;
+    const name = typeof p.name === 'string' ? p.name.trim().slice(0, MAX_PRESET_NAME_LENGTH) : '';
+    if (
+      typeof p.id !== 'string' ||
+      p.id.length === 0 ||
+      p.id.length > 64 ||
+      name.length === 0 ||
+      !isSoundId(p.accentSoundId) ||
+      !isSoundId(p.normalSoundId)
+    )
+      continue;
+    presets.push({
+      id: p.id,
+      name,
+      accentSoundId: p.accentSoundId,
+      normalSoundId: p.normalSoundId,
+    });
+    if (presets.length === MAX_CUSTOM_PRESETS) break;
+  }
+  return presets;
 }
 
 export function sanitizeSettings(raw: unknown): Settings {
@@ -349,6 +398,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     normalGain: clampNumber(r.normalGain, d.normalGain, 0, 1),
     accentSoundId: isSoundId(r.accentSoundId) ? r.accentSoundId : d.accentSoundId,
     normalSoundId: isSoundId(r.normalSoundId) ? r.normalSoundId : d.normalSoundId,
+    customPresets: sanitizeCustomPresets(r.customPresets),
     theme: isThemeName(r.theme) ? r.theme : d.theme,
     nodeStyle: nodeStyleForTheme(
       isThemeName(r.theme) ? r.theme : d.theme,

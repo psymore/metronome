@@ -22,6 +22,7 @@ import { mountBarCounterDialog } from './ui/barCounterDialog';
 import { mountClickFx } from './ui/clickFx';
 import { mountControls } from './ui/controls';
 import { mountDebugOverlay } from './ui/debugOverlay';
+import { mountDeleteConfirm } from './ui/deleteConfirm';
 import { mountDialHub } from './ui/dialHub';
 import { byId } from './ui/dom';
 import { mountErrorFloor } from './ui/errorFloor';
@@ -436,63 +437,6 @@ practiceResetBtn.addEventListener('click', () => {
   if (!engine.running) void transport.toggle();
 });
 
-// Delete button: inline confirm pattern — first click splits to [ ✕ | ✓ ],
-// ✓ runs onConfirm, ✕ or timeout resets button. Shared by the practice timer's trash button and
-// the smaller one beside the loop pill.
-function mountDeleteConfirm(deleteBtn: HTMLButtonElement, onConfirm: () => void): void {
-  let deleteState: 'idle' | 'confirming' | 'closing' = 'idle';
-  let deleteTimeout: ReturnType<typeof setTimeout> | undefined;
-  // The trash icon as authored in index.html, so idle always restores that exact markup.
-  const trashIconHtml = deleteBtn.innerHTML;
-  const CLOSE_MS = 180; // matches capsuleCollapse in styles.css
-
-  /** Plays the capsule's collapse, then swaps the trash icon back in. */
-  const resetDeleteBtn = (): void => {
-    if (deleteState !== 'confirming') return;
-    clearTimeout(deleteTimeout);
-    deleteState = 'closing';
-    deleteBtn.classList.add('is-closing');
-    deleteTimeout = setTimeout(() => {
-      deleteTimeout = undefined;
-      deleteState = 'idle';
-      deleteBtn.innerHTML = trashIconHtml;
-      deleteBtn.classList.remove('is-confirming', 'is-closing');
-    }, CLOSE_MS);
-  };
-
-  deleteBtn.addEventListener('click', () => {
-    if (deleteState === 'idle') {
-      deleteState = 'confirming';
-      deleteBtn.classList.add('is-confirming');
-
-      const cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.className = 'confirm-cancel-btn';
-      cancelBtn.textContent = '✕';
-      cancelBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        resetDeleteBtn();
-      });
-
-      const confirmBtn = document.createElement('button');
-      confirmBtn.type = 'button';
-      confirmBtn.className = 'confirm-confirm-btn';
-      confirmBtn.textContent = '✓';
-      confirmBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        onConfirm();
-        resetDeleteBtn();
-      });
-
-      deleteBtn.innerHTML = '';
-      deleteBtn.appendChild(cancelBtn);
-      deleteBtn.appendChild(confirmBtn);
-
-      deleteTimeout = setTimeout(resetDeleteBtn, 3000);
-    }
-  });
-}
-
 mountDeleteConfirm(practiceDeleteBtn, () => {
   if (engine.running) void transport.toggle();
   stopPracticeTimer();
@@ -503,11 +447,8 @@ mountDeleteConfirm(barCounterDeleteBtn, () => {
   store.set({ targetBars: 0 });
 });
 
-const knobEl = byId<HTMLCanvasElement>('knob');
 const transport = mountTransport({
   engine,
-  toast,
-  onBusyChange: (busy) => knobEl.classList.toggle('starting', busy),
   onToggle: () => {
     wakeLock.setActive(engine.running);
     knob.invalidate();
@@ -566,7 +507,7 @@ void Promise.all([
 mountVizSwitch({ store });
 mountControls({ store, toggle: transport.toggle });
 mountSignatureDialog({ store });
-mountPolyrhythmControls({ store, sounds, previewSound });
+mountPolyrhythmControls({ store });
 mountBarCounterDialog({ store, toast });
 mountPracticeTimerDialog({
   store,
@@ -622,16 +563,16 @@ if (!('__TAURI_INTERNALS__' in window)) {
 
 // The boot loader (inline styles in index.html, so it can paint before this bundle even
 // finishes loading) has done its job once we get here — everything above has run
-// synchronously, so the real UI is already in the DOM and ready to be shown. Fade it out
-// (matching its own inline transition) rather than removing it outright — it stays in the DOM
-// so the title button below can bring it back as an on-demand preview.
+// synchronously, so the real UI is already in the DOM and ready to be shown. Hide it rather
+// than removing it outright — it stays in the DOM so the title button below can bring it back
+// as an on-demand preview.
 const bootLoader = document.getElementById('bootLoader');
 /** pointer-events must track visibility, not just sit at "none" forever: while the preview is
  *  actually showing it should behave like the real loading screen and block clicks on whatever
  *  is behind it (Settings, the knob, ...) — it was previously always pointer-events: none, so
  *  the real buttons underneath stayed clickable right through it.
- *  Also toggles the "is-hidden" class (see styles.css), which pauses the spin/color-cycle
- *  animations on the nodes and knob — opacity: 0 alone doesn't stop a running CSS animation,
+ *  Also toggles the "is-hidden" class (see index.html), which pauses the knob's spin and beat
+ *  animations — opacity: 0 alone doesn't stop a running CSS animation,
  *  so without this they'd keep ticking in the background for the entire life of the tab, never
  *  actually visible again unless the preview is reopened. */
 function setBootLoaderHidden(hidden: boolean): void {
@@ -642,56 +583,33 @@ function setBootLoaderHidden(hidden: boolean): void {
 }
 setBootLoaderHidden(true);
 // A signal the index.html boot-failure script can check that isn't the loader's own opacity —
-// that gets set back to '1' every time the title button below reopens it as a preview, which
+// that gets set back to '1' every time the dial hub below reopens it as a preview, which
 // would otherwise make a later, unrelated window error look exactly like a failed boot.
 document.documentElement.dataset.booted = 'true';
 
-// Clicking the "Metronome" title replays the boot loading screen — just a fun way to see it
-// again without reloading the page. It stays open until closed (no auto-hide timer), and
-// closing snaps it shut instantly (transition: none, skipping the normal 250ms fade) since a
-// deliberate close reads as "dismiss this now", not "fade it like usual."
-let titlePreviewShowing = false;
-function closeTitlePreview(): void {
-  if (!bootLoader || !titlePreviewShowing) return;
-  titlePreviewShowing = false;
-  bootLoader.style.transition = 'none';
+// A small surprise: tapping the dark metal hub at the centre of the circular visualiser replays
+// the boot loading screen. It stays open until closed (no auto-hide timer): a tap anywhere
+// outside the knob closes it.
+let bootPreviewShowing = false;
+function closeBootPreview(): void {
+  if (!bootLoader || !bootPreviewShowing) return;
+  bootPreviewShowing = false;
   setBootLoaderHidden(true);
   setBootPlaying(false); // back to the same at-rest state next time, and the loop stopped
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      bootLoader.style.transition = '';
-    });
-  });
 }
-byId('titleBtn').addEventListener('click', () => {
-  if (!bootLoader) return;
-  // While showing, the overlay itself sits on top and intercepts the click (see
-  // #bootTopbar below) — this only ever fires to open it, or via keyboard activation
-  // (Enter/Space), which targets the focused element directly regardless of what's drawn
-  // on top of it.
-  if (titlePreviewShowing) {
-    closeTitlePreview();
-    return;
-  }
-  titlePreviewShowing = true;
-  // Show the live knob (current theme, BPM and metal) rather than the static loading art.
-  const bootKnobImg = document.querySelector<HTMLImageElement>('.boot-knob img');
-  try {
-    if (bootKnobImg) {
-      bootKnobImg.src = knobEl.toDataURL();
-      bootKnobImg.classList.add('is-live');
-    }
-  } catch {
-    // Tainted or unavailable canvas: keep the static art.
-  }
+dialHub.addEventListener('click', () => {
+  if (!bootLoader || bootPreviewShowing) return;
+  bootPreviewShowing = true;
   setBootLoaderHidden(false);
 });
-// The overlay covers the real title's own position while showing, so it needs its own handler
-// on that same top-left corner to close — otherwise there'd be no way to dismiss it at all.
-byId('bootTopbar').addEventListener('click', closeTitlePreview);
+bootLoader?.addEventListener('click', (e) => {
+  if (!(e.target instanceof Element && e.target.closest('.boot-knob'))) closeBootPreview();
+});
+// The title is part of the menu control: tapping it opens the menu, like the ☰ beside it.
+byId('titleBtn').addEventListener('click', () => byId('menuBtn').click());
 
-// Tapping the boot-knob mirrors the real knob's tap-to-start/stop: the knob itself never
-// spins (see .boot-knob in index.html), only the beat circle does, and only while "playing."
+// Tapping the boot-knob mirrors the real knob's tap-to-start/stop: the beat circle appears
+// around it and spins, and the knob pulses, only while "playing."
 // While "playing" it also loops the 142 BPM easter-egg track (public/boot-loop.mp3, 16 bars),
 // fetched and decoded only on the first tap and played through its own throwaway AudioContext so
 // the metronome engine is never touched.
@@ -706,6 +624,9 @@ function stopBootLoop(): void {
     // Already stopped.
   }
   bootLoopSource = null;
+  // Release the audio output: a second context left running can get in the way of the
+  // metronome's own resume() on Android. startBootLoop() resumes it.
+  bootLoopCtx?.suspend().catch(() => {});
 }
 
 async function startBootLoop(): Promise<void> {
@@ -720,6 +641,7 @@ async function startBootLoop(): Promise<void> {
     // Stopped (or the screen closed) while it was still loading.
     if (!bootLoader?.classList.contains('boot-playing')) return;
     stopBootLoop();
+    void ctx.resume();
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;

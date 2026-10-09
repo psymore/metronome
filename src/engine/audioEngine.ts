@@ -1,4 +1,5 @@
 import type { PcmData } from '../sounds/pcm';
+import type { BeatLevel } from '../state/settings';
 import { BeatTimeline } from './beatTimeline';
 import { computeHeardTime } from './clock';
 import { type PolyBeatEvent, type PolyPattern, PolyScheduler } from './polyScheduler';
@@ -39,6 +40,34 @@ function createSoftLimiter(ctx: AudioContext): AudioNode {
   return input;
 }
 
+/** Polyrhythm click gain per beat level. Tuned by ear: medium sits between normal and accent.
+ *  Kept below the earlier 1 / 1.1 / 1.35 so a lone accent stays near the limiter's knee. */
+function polyLevelGain(level: BeatLevel): number {
+  return level === 'accent' ? 1.08 : level === 'medium' ? 0.88 : 0.8;
+}
+
+/** How long stop() keeps the context running before suspending it (see `stop`). */
+const IDLE_SUSPEND_MS = 45_000;
+/** How long a `resume()` may take before the context is treated as wedged (see `ensureRunning`). */
+const RESUME_TIMEOUT_MS = 1500;
+
+/** True if `promise` fulfils within `ms`; false if it rejects or is still pending by then. */
+function settlesWithin(promise: Promise<unknown>, ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), ms);
+    promise.then(
+      () => {
+        clearTimeout(timer);
+        resolve(true);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(false);
+      },
+    );
+  });
+}
+
 export class AudioEngine {
   private _ctx: AudioContext;
   readonly timeline = new BeatTimeline<BeatEvent>();
@@ -64,6 +93,8 @@ export class AudioEngine {
   private accentGain = 1;
   private mediumGain = 0.6;
   private normalGain = 1;
+  /** Pending delayed suspend after stop() (see `stop`). */
+  private idleSuspendTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(opts: AudioEngineOptions) {
     this.getPolyPattern = opts.getPolyPattern;
@@ -120,12 +151,12 @@ export class AudioEngine {
   /**
    * `AudioContext.resume()` can hang forever instead of ever settling — once that happens, per
    * spec every later `resume()` call on the same context returns that same stuck promise, so the
-   * context can never recover on its own. Call this after a failed `start()` (see
-   * `ui/transport.ts`'s timeout) to throw the wedged context away and build a fresh one, so the
-   * next tap gets a real chance instead of being doomed to time out forever.
+   * context can never recover on its own. `ensureRunning` calls this when a resume times out,
+   * to throw the wedged context away and build a fresh one.
    */
-  recoverContext(): void {
+  private recoverContext(): void {
     if (this.scheduler.isRunning || this.polyScheduler.isRunning) return;
+    this.cancelIdleSuspend();
     const stale = this._ctx;
     this._ctx = this.createContext();
     this.master = this.createMaster();
@@ -144,12 +175,35 @@ export class AudioEngine {
     return this.scheduler.stats;
   }
 
+  private cancelIdleSuspend(): void {
+    clearTimeout(this.idleSuspendTimer);
+    this.idleSuspendTimer = undefined;
+  }
+
+  /**
+   * Resumes the context, but never waits on a wedged `resume()` (see `recoverContext`): after
+   * RESUME_TIMEOUT_MS the context is rebuilt and resumed once more. Chrome lets the fresh context
+   * start without a new gesture (sticky user activation), so this recovers silently there.
+   * Throws only if the fresh context is stuck too.
+   */
+  private async ensureRunning(): Promise<void> {
+    this.cancelIdleSuspend();
+    if (this._ctx.state === 'running') return;
+    if (await settlesWithin(this._ctx.resume(), RESUME_TIMEOUT_MS)) return;
+    this.recoverContext();
+    if (await settlesWithin(this._ctx.resume(), RESUME_TIMEOUT_MS * 2)) return;
+    throw new Error('AudioContext.resume() did not settle');
+  }
+
   /** Must be called from a user gesture (autoplay policy). */
   async start(): Promise<void> {
     if (this.scheduler.isRunning || this.polyScheduler.isRunning) return;
-    // Started together, from the same gesture: iOS only exempts Web Audio from the Ring/Silent
-    // switch while a real media element is actively playing on the page.
-    await Promise.all([this.ctx.resume(), this.silentUnlock.play().catch(() => {})]);
+    // Started from the same gesture as the resume below: iOS only exempts Web Audio from the
+    // Ring/Silent switch while a real media element is actively playing on the page. Not
+    // awaited: the call is what has to happen inside the gesture, and a play() promise that
+    // never settles must not hold up the start.
+    this.silentUnlock.play().catch(() => {});
+    await this.ensureRunning();
     this.timeline.clear();
     this.polyTimelineA.clear();
     this.polyTimelineB.clear();
@@ -193,11 +247,17 @@ export class AudioEngine {
     this.polyTimelineA.clear();
     this.polyTimelineB.clear();
     this.silentUnlock.pause();
-    // A running context holds the audio hardware clock open and drains battery in silence.
-    // start() and preview() both resume it, so suspending here is self-healing.
-    this.ctx.suspend().catch(() => {
-      // Nothing to do: the context is already closed or the browser refused.
-    });
+    // A running context holds the audio hardware clock open and drains battery in silence, but
+    // waking it up again is exactly where Android's resume() sometimes hangs. So it is suspended
+    // only after IDLE_SUSPEND_MS without playback: a quick stop/start never needs a resume.
+    this.cancelIdleSuspend();
+    this.idleSuspendTimer = setTimeout(() => {
+      this.idleSuspendTimer = undefined;
+      if (this.running) return;
+      this._ctx.suspend().catch(() => {
+        // Nothing to do: the context is already closed or the browser refused.
+      });
+    }, IDLE_SUSPEND_MS);
   }
 
   private stopSources(): void {
@@ -246,7 +306,7 @@ export class AudioEngine {
   }
 
   async preview(pcm: PcmData, levelGain = 1): Promise<void> {
-    await this.ctx.resume();
+    await this.ensureRunning();
     const source = this.ctx.createBufferSource();
     source.buffer = this.toBuffer(pcm);
     const gain = this.ctx.createGain();
@@ -302,19 +362,28 @@ export class AudioEngine {
 
   private playPolyBeat(beat: PolyBeatEvent): void {
     (beat.layer === 'A' ? this.polyTimelineA : this.polyTimelineB).push(beat);
-    const layerLevels =
-      beat.layer === 'A'
-        ? this.getPolyPattern().polyrhythm.levelsA
-        : this.getPolyPattern().polyrhythm.levelsB;
-    const level = layerLevels?.[beat.index] ?? 'normal';
+    const { levelsA, levelsB } = this.getPolyPattern().polyrhythm;
+    const [ownLevels, otherLevels] = beat.layer === 'A' ? [levelsA, levelsB] : [levelsB, levelsA];
+    const level = ownLevels?.[beat.index] ?? 'normal';
     if (level === 'mute') return;
     const buffer = this.polyBuffers[beat.layer === 'A' ? 'polyA' : 'polyB'];
     if (!buffer) return;
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
     const gain = this.ctx.createGain();
-    // Tuned by ear: normal 1, medium 1.1 (between normal and accent), accent 1.35.
-    gain.gain.value = level === 'accent' ? 1.35 : level === 'medium' ? 1.1 : 1;
+    let value = polyLevelGain(level);
+    // Both layers hitting at once (the downbeat, at least) used to sum to ~2.7x a click and get
+    // squashed audibly by the soft limiter. Scale the pair so together they carry the energy of
+    // the louder one alone (equal power): as loud to the ear as that click, with ~1.4x its peak
+    // instead of 2x. Scaling to equal *peak* made the downbeat sound weaker than a lone accent.
+    // Both events see the same two levels, so they agree.
+    const otherLevel =
+      beat.otherIndex === undefined ? 'mute' : (otherLevels?.[beat.otherIndex] ?? 'normal');
+    if (otherLevel !== 'mute') {
+      const other = polyLevelGain(otherLevel);
+      value *= Math.max(value, other) / Math.hypot(value, other);
+    }
+    gain.gain.value = value;
     source.connect(gain);
     gain.connect(this.master);
     source.onended = () => {

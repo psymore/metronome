@@ -7,14 +7,7 @@ export interface ClickSpec {
 }
 
 /** Display groups for built-ins, in the order they appear in the sound pickers. */
-export const BUILTIN_GROUPS = [
-  'builtin',
-  'woodblock',
-  'clock',
-  'scifi',
-  'drums',
-  'drumMachine',
-] as const;
+export const BUILTIN_GROUPS = ['builtin', 'woodblock', 'clock', 'drums', 'drumMachine'] as const;
 export type BuiltinGroup = (typeof BUILTIN_GROUPS)[number];
 
 /** A built-in is either rendered from a synth spec or decoded from a WAV in `public/sounds/`. */
@@ -50,6 +43,7 @@ export const BUILTIN_SOUNDS: Record<string, BuiltinSound> = {
     spec: { frequency: 880, durationMs: 90, decayMs: 60 },
     group: 'builtin',
   },
+  'builtin:kenney_tone1': fileSound('Tone', 'kenney_tone1', 'builtin'), // Kenney, CC0
 
   // Woodblock & claves (VCSL, CC0)
   'builtin:vcsl_Agogo_High_v2_rr1_Mid': fileSound(
@@ -126,18 +120,7 @@ export const BUILTIN_SOUNDS: Record<string, BuiltinSound> = {
   ),
   'builtin:fs_unfa_metronome-2khz': fileSound('2 kHz Beep', 'fs_unfa_metronome-2khz', 'clock'),
 
-  // Sci-fi (Kenney, CC0)
-  'builtin:kenney_impactMetal_000': fileSound('Metal Impact 1', 'kenney_impactMetal_000', 'scifi'),
-  'builtin:kenney_impactMetal_002': fileSound('Metal Impact 2', 'kenney_impactMetal_002', 'scifi'),
-  'builtin:kenney_impactMetal_004': fileSound('Metal Impact 3', 'kenney_impactMetal_004', 'scifi'),
-  'builtin:kenney_laserLarge_003': fileSound('Laser Large', 'kenney_laserLarge_003', 'scifi'),
-  'builtin:kenney_laserSmall_000': fileSound('Laser Small 1', 'kenney_laserSmall_000', 'scifi'),
-  'builtin:kenney_laserSmall_001': fileSound('Laser Small 2', 'kenney_laserSmall_001', 'scifi'),
-  'builtin:kenney_laserSmall_003': fileSound('Laser Small 3', 'kenney_laserSmall_003', 'scifi'),
-  'builtin:kenney_phaserUp7': fileSound('Phaser Up', 'kenney_phaserUp7', 'scifi'),
-  'builtin:kenney_tone1': fileSound('Tone', 'kenney_tone1', 'scifi'),
-
-  // Acoustic drums & percussion (VCSL + Freesound, CC0)
+  // Acoustic drums & percussion (VCSL, Freesound + Kenney, CC0)
   'builtin:fs_gnuoctathorpe_rimshot': fileSound('Rimshot', 'fs_gnuoctathorpe_rimshot', 'drums'),
   'builtin:fs_pjcohen_ludwig-closed-rimshot': fileSound(
     'Rimshot 2',
@@ -192,6 +175,9 @@ export const BUILTIN_SOUNDS: Record<string, BuiltinSound> = {
     'vcsl_Triangle1_HitM_v1_rr2_Mid',
     'drums',
   ),
+  'builtin:kenney_impactMetal_000': fileSound('Metal Impact 1', 'kenney_impactMetal_000', 'drums'),
+  'builtin:kenney_impactMetal_002': fileSound('Metal Impact 2', 'kenney_impactMetal_002', 'drums'),
+  'builtin:kenney_impactMetal_004': fileSound('Metal Impact 3', 'kenney_impactMetal_004', 'drums'),
 
   // Drum machine (rendered by us, 808/909-style)
   'builtin:synth_digital-blip-high': fileSound(
