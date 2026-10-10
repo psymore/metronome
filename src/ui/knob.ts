@@ -364,10 +364,9 @@ export function mountKnob(canvas: HTMLCanvasElement, deps: KnobDeps): Knob {
     c2d.lineTo(0, -g.innerRadius + g.innerRadius * 0.25);
     c2d.lineWidth = Math.max(2, g.outerRadius * 0.03);
     c2d.lineCap = 'round';
-    // On the light theme's orange metal a light tick would vanish, so it is drawn dark there.
-    c2d.strokeStyle = theme.light ? theme.face : theme.brass;
-    c2d.shadowColor = theme.light ? 'transparent' : theme.brass;
-    c2d.shadowBlur = 6;
+    // Near-black in every theme (matching the boot knob's pin) so it always reads against the
+    // metal. No glow: a shadow would be re-blurred on every rotation frame.
+    c2d.strokeStyle = '#0c0e0d';
     c2d.stroke();
     c2d.restore();
 

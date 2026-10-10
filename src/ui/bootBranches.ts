@@ -9,7 +9,11 @@ const BRANCH_COUNT = 8;
 const START_GAP = 8;
 const NODE_RADIUS = 7;
 const CLEARANCE = NODE_RADIUS * 2.4;
-const EDGE_MARGIN = 14;
+/** A branch may reach this fraction of the way from the knob to each screen edge, so nothing
+ *  touches the edge or sits under an on-screen navigation bar. */
+const REACH = 0.8;
+const MIN_SEGMENT = 16;
+const MAX_SEGMENT = 120;
 const MAX_TRIES = 40;
 const TURNS = [-2, -1, 1, 2];
 
@@ -27,7 +31,6 @@ export interface Bounds {
 
 export interface PlanContext {
   startRadius: number;
-  segmentLength: number;
   bounds: Bounds;
   /** Polylines of the other branches, which the new one must keep clear of. */
   others: Pt[][];
@@ -89,6 +92,15 @@ function inside(p: Pt, b: Bounds): boolean {
 export function planBranch(base: number, ctx: PlanContext, rand: () => number = Math.random): Pt[] {
   const start = dir(base);
   const p0 = { x: start.x * ctx.startRadius, y: start.y * ctx.startRadius };
+  // Segments scale with the room the screen leaves in this branch's own direction, so the
+  // north and south ones (most room on a phone) run long and the sideways ones stay short.
+  const room = Math.min(
+    start.x > 1e-6 ? (ctx.bounds.maxX - p0.x) / start.x : Number.POSITIVE_INFINITY,
+    start.x < -1e-6 ? (ctx.bounds.minX - p0.x) / start.x : Number.POSITIVE_INFINITY,
+    start.y > 1e-6 ? (ctx.bounds.maxY - p0.y) / start.y : Number.POSITIVE_INFINITY,
+    start.y < -1e-6 ? (ctx.bounds.minY - p0.y) / start.y : Number.POSITIVE_INFINITY,
+  );
+  const segmentLength = Math.max(MIN_SEGMENT, Math.min(MAX_SEGMENT, room / 2.2));
 
   const build = (headings: number[], lengths: number[]): Pt[] => {
     const pts = [p0];
@@ -108,7 +120,7 @@ export function planBranch(base: number, ctx: PlanContext, rand: () => number = 
   for (let i = 0; i < MAX_TRIES; i++) {
     const h2 = turn(base);
     const h3 = turn(h2);
-    const lengths = [0, 0, 0].map(() => ctx.segmentLength * (0.7 + 0.6 * rand()));
+    const lengths = [0, 0, 0].map(() => segmentLength * (0.7 + 0.6 * rand()));
     const pts = build([base, h2, h3], lengths);
     const fits =
       pts.every((p) => inside(p, ctx.bounds) && Math.hypot(p.x, p.y) >= ctx.startRadius - 1) &&
@@ -119,13 +131,13 @@ export function planBranch(base: number, ctx: PlanContext, rand: () => number = 
   let scale = 1;
   let pts = build(
     [base, base, base],
-    [0, 0, 0].map(() => ctx.segmentLength * scale),
+    [0, 0, 0].map(() => segmentLength * scale),
   );
   while (!inside(pts[3], ctx.bounds) && scale > 0.2) {
     scale -= 0.15;
     pts = build(
       [base, base, base],
-      [0, 0, 0].map(() => ctx.segmentLength * scale),
+      [0, 0, 0].map(() => segmentLength * scale),
     );
   }
   return pts;
@@ -174,16 +186,14 @@ export function createBootBranches(svg: SVGSVGElement, knob: HTMLElement): { res
     const cx = box.left + w / 2;
     const cy = box.top + w / 2;
     const bounds: Bounds = {
-      minX: EDGE_MARGIN - cx,
-      maxX: window.innerWidth - EDGE_MARGIN - cx,
-      minY: EDGE_MARGIN - cy,
-      maxY: window.innerHeight - EDGE_MARGIN - cy,
+      minX: -cx * REACH,
+      maxX: (window.innerWidth - cx) * REACH,
+      minY: -cy * REACH,
+      maxY: (window.innerHeight - cy) * REACH,
     };
     const startRadius = knobBox.width * 0.47 + START_GAP;
-    const room = Math.min(bounds.maxX, -bounds.minX) - startRadius;
     context = {
       startRadius,
-      segmentLength: Math.max(16, Math.min(46, room / 2.2)),
       bounds,
     };
   }

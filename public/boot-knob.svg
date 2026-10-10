@@ -462,7 +462,7 @@
   </g>
   <circle cx="256" cy="256" r="189" fill="url(#hl)" />
   <circle cx="256" cy="256" r="189" fill="none" stroke="url(#bezel)" stroke-width="4" />
-  <path d="M256 84V116" stroke="#7fe0bb" stroke-width="9" stroke-linecap="round" />
+  <path d="M256 84V116" stroke="#0c0e0d" stroke-width="9" stroke-linecap="round" />
   <!-- Blank LCD face, as the app's knob paints it (ui/knob.ts lcdStops + metalTexture.ts), with no readout. -->
   <circle cx="256" cy="256" r="113.4" fill="url(#lcdBleed)" />
   <g clip-path="url(#lcd)">
