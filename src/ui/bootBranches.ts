@@ -191,7 +191,7 @@ export function createBootBranches(svg: SVGSVGElement, knob: HTMLElement): { res
       minY: -cy * REACH,
       maxY: (window.innerHeight - cy) * REACH,
     };
-    const startRadius = knobBox.width * 0.47 + START_GAP;
+    const startRadius = knobBox.width * 0.4 + START_GAP;
     context = {
       startRadius,
       bounds,

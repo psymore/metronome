@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 500 500">
+  <!-- Play glyph in polished green metal: same rounded triangle, lit from the top right like the knob. -->
+  <defs>
+    <mask id="playShape" maskUnits="userSpaceOnUse" x="224" y="214" width="78" height="84">
+      <path d="M238 224V288L292 256Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round" />
+    </mask>
+    <linearGradient id="playMetal" gradientUnits="userSpaceOnUse" x1="288" y1="220" x2="236" y2="292">
+      <stop offset="0" stop-color="#d6f9eb" />
+      <stop offset="0.3" stop-color="#8fe6c4" />
+      <stop offset="0.5" stop-color="#b4f0d8" />
+      <stop offset="0.72" stop-color="#4fae8a" />
+      <stop offset="1" stop-color="#2f7a5f" />
+    </linearGradient>
+  </defs>
+  <rect x="224" y="214" width="78" height="84" fill="url(#playMetal)" mask="url(#playShape)" />
+</svg>

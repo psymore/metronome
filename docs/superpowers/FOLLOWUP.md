@@ -39,6 +39,11 @@ work listed below is **committed and pushed**; it still awaits the user's phone 
   rest, playbackRate ramps to 5x (4 beats/turn) while playing; the beat circle is replaced by 8
   compass-start branches (`src/ui/bootBranches.ts`, lazy chunk, CSS-animated, re-planned each
   12-beat cycle with overlap rejection). Needs a phone look at 320/360px for overlap/clipping.
+- **Boot knob = Android splash (2026-10-10):** `scripts/boot-knob.cjs` builds `public/boot-knob.svg`
+  (body + baked mint halo, spins) and `public/boot-glyph.svg` (static play glyph) from `icon.svg`;
+  loader art is 216px on #141416 like the splash (CENTER scale type). No box-shadow. Branch fade
+  starts/ends at opacity 0 (suspected wrap-frame flash); branches reach 80% of the way to each edge.
+  Rerun the script after editing `icon.svg`.
 - **Open questions to the user**: what "title ortak olmalı with the menu button" means if not
   "opens the menu"; app rename — suggested Orbit (recommended), TempoDial, Kadran, Pulse Ring,
   Ritmo; check Play Store availability once picked. Boot animation will be revised later.

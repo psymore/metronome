@@ -86,48 +86,39 @@
         19% { transform: scale(1.35); }
         24%, 100% { transform: scale(1); }
       }
+      /* Starts and ends fully transparent: the three animations of a branch wrap on the same
+         instant, but the compositor and main thread can disagree by a frame, and a branch that
+         is opaque at the wrap would flash its old line for that frame. */
       @keyframes bootBranchFade {
-        0%, 78% { opacity: 1; }
+        0% { opacity: 0; }
+        2%, 78% { opacity: 1; }
         92%, 100% { opacity: 0; }
       }
-      /* Same size as the real .knob. */
+      /* The Android launch splash, exactly: the same art (public/boot-knob.svg and
+         boot-glyph.svg are built from icon.svg by scripts/boot-knob.cjs, halo baked in) at the
+         splash's 216 dp, on the same #141416, so the hand-over is seamless. The halo is part of
+         the image, so there is no box-shadow to paint. */
       .boot-knob {
         grid-area: 1 / 1;
         position: relative;
-        width: min(228px, 55.2vw);
+        width: 216px;
         aspect-ratio: 1;
         cursor: pointer;
-      }
-      /* The glow sits on its own static disc (the knob's footprint, 94% of the box) so it keeps
-         its directions while the knob spins above it, and is painted only once. */
-      .boot-knob::before {
-        content: '';
-        position: absolute;
-        inset: 3%;
-        border-radius: 50%;
-        box-shadow:
-          -20px -6px 36px rgb(79 184 148 / 0.8),
-          20px -6px 36px rgb(238 148 72 / 0.8),
-          -15px 18px 36px rgb(216 220 228 / 0.55),
-          15px 18px 36px rgb(88 166 255 / 0.85);
       }
       .boot-knob-spin {
         position: absolute;
         inset: 0;
         /* Lazy at rest: 20 beats a turn. While playing, main.ts raises the playback rate to 5x
-           so it turns once per 4 beats, in time with the 142 BPM loop. */
+           so it turns once per 4 beats, in time with the 142 BPM loop. A transform animation
+           on its own layer: the GPU re-composites one cached texture, nothing is repainted. */
         animation: bootSpin calc(var(--beat) * 20) linear infinite;
+        will-change: transform;
       }
-      /* The knob art fills 80% of the SVG's square, so it is scaled up to the real knob's
-         footprint. */
       .boot-knob img {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 117%;
-        height: 117%;
-        max-width: none;
-        transform: translate(-50%, -50%);
+        inset: 0;
+        width: 100%;
+        height: 100%;
         user-select: none;
         -webkit-user-drag: none;
       }
@@ -146,8 +137,8 @@
         }
       }
       @keyframes bootKnobBeat {
-        from { transform: translate(-50%, -50%) scale(1.045); }
-        to { transform: translate(-50%, -50%) scale(1); }
+        from { transform: scale(1.045); }
+        to { transform: scale(1); }
       }
     </style>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -257,6 +248,7 @@
       </div>
       <div class="boot-knob">
         <div class="boot-knob-spin"><img src="/boot-knob.svg" alt="" draggable="false" /></div>
+        <img src="/boot-glyph.svg" alt="" draggable="false" />
       </div>
     </div>
     <main class="app">
