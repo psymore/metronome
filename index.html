@@ -43,25 +43,52 @@
         width: 100%;
         height: 100%;
         overflow: visible;
-        transform-origin: 50% 50%;
-        animation: bootSpin 1.4s linear infinite;
-        animation-play-state: paused;
       }
-      #bootLoader.boot-playing .boot-stage svg {
-        animation-play-state: running;
+      /* Eight branches are drawn out of the knob only while it plays (src/ui/bootBranches.ts
+         plans the paths). One cycle is 12 beats at 142 BPM; --i staggers the branches a beat
+         apart. Outside .boot-playing no animation exists, so the idle cost is zero. */
+      #bootLoader {
+        --beat: 0.4225s;
       }
-      .boot-spoke {
-        stroke: #3a3730;
-        stroke-width: 1;
-      }
-      .boot-ring {
+      .boot-line {
         fill: none;
-        stroke: #3a3730;
-        stroke-width: 1.5;
+        stroke: #4fb894;
+        stroke-opacity: 0.6;
+        stroke-width: 2;
+        stroke-linejoin: round;
+        stroke-dasharray: 1 2;
+        stroke-dashoffset: 1;
       }
       .boot-node {
-        fill: #4fb894;
-        filter: drop-shadow(0 0 6px #4fb894);
+        fill: url(#bootNodeGlow);
+        transform-box: fill-box;
+        transform-origin: center;
+        transform: scale(0);
+      }
+      #bootLoader.boot-playing .boot-branch {
+        animation: bootBranchFade calc(var(--beat) * 12) linear infinite;
+        animation-delay: calc(var(--beat) * var(--i));
+      }
+      #bootLoader.boot-playing .boot-line {
+        animation: bootBranchLine calc(var(--beat) * 12) linear infinite;
+        animation-delay: calc(var(--beat) * var(--i));
+      }
+      #bootLoader.boot-playing .boot-node {
+        animation: bootBranchNode calc(var(--beat) * 12) ease-out infinite;
+        animation-delay: calc(var(--beat) * var(--i));
+      }
+      @keyframes bootBranchLine {
+        0% { stroke-dashoffset: 1; }
+        14%, 100% { stroke-dashoffset: 0; }
+      }
+      @keyframes bootBranchNode {
+        0%, 13% { transform: scale(0); }
+        19% { transform: scale(1.35); }
+        24%, 100% { transform: scale(1); }
+      }
+      @keyframes bootBranchFade {
+        0%, 78% { opacity: 1; }
+        92%, 100% { opacity: 0; }
       }
       /* Same size as the real .knob. */
       .boot-knob {
@@ -87,7 +114,9 @@
       .boot-knob-spin {
         position: absolute;
         inset: 0;
-        animation: bootSpin 2.4s linear infinite;
+        /* Lazy at rest: 20 beats a turn. While playing, main.ts raises the playback rate to 5x
+           so it turns once per 4 beats, in time with the 142 BPM loop. */
+        animation: bootSpin calc(var(--beat) * 20) linear infinite;
       }
       /* The knob art fills 80% of the SVG's square, so it is scaled up to the real knob's
          footprint. */
@@ -215,24 +244,15 @@
   <body>
     <div id="bootLoader" aria-hidden="true">
       <div class="boot-stage">
-        <svg viewBox="0 0 200 200" aria-hidden="true">
-          <circle class="boot-ring" cx="100" cy="100" r="80" />
-          <line class="boot-spoke" x1="100" y1="100" x2="100" y2="20" />
-          <line class="boot-spoke" x1="100" y1="100" x2="157" y2="43" />
-          <line class="boot-spoke" x1="100" y1="100" x2="180" y2="100" />
-          <line class="boot-spoke" x1="100" y1="100" x2="157" y2="157" />
-          <line class="boot-spoke" x1="100" y1="100" x2="100" y2="180" />
-          <line class="boot-spoke" x1="100" y1="100" x2="43" y2="157" />
-          <line class="boot-spoke" x1="100" y1="100" x2="20" y2="100" />
-          <line class="boot-spoke" x1="100" y1="100" x2="43" y2="43" />
-          <circle class="boot-node" cx="100" cy="20" r="12" />
-          <circle class="boot-node" cx="157" cy="43" r="12" />
-          <circle class="boot-node" cx="180" cy="100" r="12" />
-          <circle class="boot-node" cx="157" cy="157" r="12" />
-          <circle class="boot-node" cx="100" cy="180" r="12" />
-          <circle class="boot-node" cx="43" cy="157" r="12" />
-          <circle class="boot-node" cx="20" cy="100" r="12" />
-          <circle class="boot-node" cx="43" cy="43" r="12" />
+        <svg id="bootBranches" viewBox="-100 -100 200 200" aria-hidden="true">
+          <defs>
+            <radialGradient id="bootNodeGlow">
+              <stop offset="0" stop-color="#9af0d2" />
+              <stop offset="0.4" stop-color="#4fb894" />
+              <stop offset="0.46" stop-color="#4fb894" stop-opacity="0.55" />
+              <stop offset="1" stop-color="#4fb894" stop-opacity="0" />
+            </radialGradient>
+          </defs>
         </svg>
       </div>
       <div class="boot-knob">

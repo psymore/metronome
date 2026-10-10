@@ -645,7 +645,10 @@ async function startBootLoop(): Promise<void> {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
-    source.connect(ctx.destination);
+    // The track is mastered loud; 70% keeps a surprise tap from startling anyone.
+    const gain = ctx.createGain();
+    gain.gain.value = 0.7;
+    source.connect(gain).connect(ctx.destination);
     source.start();
     bootLoopSource = source;
   } catch {
@@ -654,10 +657,56 @@ async function startBootLoop(): Promise<void> {
   }
 }
 
+// The knob turns lazily at rest (20 beats a turn) and eases up to one turn per 4 beats of the
+// 142 BPM loop (5x) while it plays. The CSS animation's playbackRate carries the change, so the
+// angle never jumps.
+const BOOT_SPIN_PLAYING_RATE = 5;
+const BOOT_SPIN_RAMP_MS = 900;
+let bootSpinRamp = 0;
+
+function rampBootSpin(target: number): void {
+  const spin = document
+    .querySelector('.boot-knob-spin')
+    ?.getAnimations?.()
+    .find((a) => a.effect !== null);
+  if (!spin) return;
+  cancelAnimationFrame(bootSpinRamp);
+  const from = spin.playbackRate;
+  const t0 = performance.now();
+  const step = (now: number): void => {
+    const t = Math.min(1, (now - t0) / BOOT_SPIN_RAMP_MS);
+    const eased = t * t * (3 - 2 * t);
+    spin.playbackRate = from + (target - from) * eased;
+    if (t < 1) bootSpinRamp = requestAnimationFrame(step);
+  };
+  bootSpinRamp = requestAnimationFrame(step);
+}
+
+// The branch drawing is a lazy chunk: nothing of it exists until the knob is first tapped.
+let bootBranches: Promise<{ reset(): void } | null> | null = null;
+
+function startBootBranches(): void {
+  bootBranches ??= import('./ui/bootBranches')
+    .then(({ createBootBranches }) => {
+      const svg = document.getElementById('bootBranches');
+      const knob = document.querySelector<HTMLElement>('.boot-knob');
+      return svg instanceof SVGSVGElement && knob ? createBootBranches(svg, knob) : null;
+    })
+    .catch(() => null);
+  void bootBranches.then((b) => {
+    if (bootLoader?.classList.contains('boot-playing')) b?.reset();
+  });
+}
+
 function setBootPlaying(playing: boolean): void {
   bootLoader?.classList.toggle('boot-playing', playing);
-  if (playing) void startBootLoop();
-  else stopBootLoop();
+  rampBootSpin(playing ? BOOT_SPIN_PLAYING_RATE : 1);
+  if (playing) {
+    void startBootLoop();
+    startBootBranches();
+  } else {
+    stopBootLoop();
+  }
 }
 
 document.querySelector('.boot-knob')?.addEventListener('click', () => {

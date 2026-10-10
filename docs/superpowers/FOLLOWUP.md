@@ -3,10 +3,10 @@
 If you are a fresh session: read `CLAUDE.md` first, then this file, then act on "Next step"
 immediately.
 
-## Where things stand (2026-10-09, afternoon)
+## Where things stand (2026-10-10)
 
-`master` is at `dba0329`, nothing pushed. **Uncommitted work in the tree** (awaiting the user's
-phone check, then a commit — ask first):
+`master` is at `8dd7520` ("All Done."), pushed, and the tree is clean apart from this note. All the
+work listed below is **committed and pushed**; it still awaits the user's phone check:
 
 - **Boot screen** (`index.html`, `public/boot-knob.svg`, `src/main.ts`): only the knob, centred and
   slowly spinning as the loading indicator, blank dark brushed-metal LCD matching the in-app knob
@@ -26,6 +26,24 @@ phone check, then a commit — ask first):
   pickers moved from the Signature dialog to the Sound dialog (which hides the accent/other
   cards and level volumes in poly mode; presets fill A/B). The top-right Polyrhythm tag is a
   button (opens Signature) with a ✕ back to standard mode.
+
+- **Sound dialog extras**: presets are a dropdown (shared picker popover via
+  `openChoicePicker` in `soundPicker.ts`, ▶ plays the pair); user-saved presets
+  (`Settings.customPresets`, max 20) with a save form and a trash + ✕/✓ confirm
+  (`src/ui/deleteConfirm.ts`, extracted from main.ts, also used by timer and loop pill); ↺ reset
+  buttons on master/accent/medium/normal volume. Coincident poly hits use equal-power scaling.
+- **2026-10-10, not yet seen in a browser** (dev server was killed for low memory): the boot-screen
+  easter egg now opens from the centre dial hub (`#dialHub`, no pointer cursor) instead of the
+  title; the title now opens the menu like ☰; light theme title glow is the four accents at 0.5.
+- **Easter egg redo (2026-10-10, pushed untested):** loop gain 0.7; knob spins 20 beats/turn at
+  rest, playbackRate ramps to 5x (4 beats/turn) while playing; the beat circle is replaced by 8
+  compass-start branches (`src/ui/bootBranches.ts`, lazy chunk, CSS-animated, re-planned each
+  12-beat cycle with overlap rejection). Needs a phone look at 320/360px for overlap/clipping.
+- **Open questions to the user**: what "title ortak olmalı with the menu button" means if not
+  "opens the menu"; app rename — suggested Orbit (recommended), TempoDial, Kadran, Pulse Ring,
+  Ritmo; check Play Store availability once picked. Boot animation will be revised later.
+- **Play closed testing**: user plans Testers Community Starter (₺499, 15 testers) plus friends
+  via a Play Console email list on the same closed track; needs a signed AAB first.
 
 All 275 tests pass; type-check and lint are clean.
 
@@ -87,7 +105,8 @@ Test phone: Redmi Note 10 Pro (M2101K6G), MIUI 14 `V14.0.2.0.TKFTRXM`, Android 1
 
 ## Next step
 
-1. User checks the uncommitted work above on the phone; fix what they report, then commit (ask).
-2. Push when the user asks (build first, per their rule).
+1. Restart the dev server only when the user asks; they check the 2026-10-10 changes on the phone
+   and report what to fix. Commit/push fixes only after asking (build first).
+2. Get answers on the open questions (app rename, "title ortak" meaning).
 3. The beat ring on the boot screen will be redesigned ("orayı başka türlü değiştireceğiz").
 4. Remaining open items above as directed.
